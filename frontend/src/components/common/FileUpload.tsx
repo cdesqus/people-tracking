@@ -118,7 +118,7 @@ const FileUpload = forwardRef<HTMLInputElement, FileUploadProps>(
                 if (typeof ref === 'function') {
                   ref(el);
                 } else {
-                  ref.current = el;
+                  (ref as any).current = el;
                 }
               }
               inputRef.current = el;
