@@ -85,6 +85,8 @@ export interface SelectProps
   isLoading?: boolean;
   /** Error message */
   error?: string;
+  /** Placeholder text */
+  placeholder?: string;
   /** Change handler */
   onChange?: (
     value: string | number | (string | number)[]
