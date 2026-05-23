@@ -218,13 +218,13 @@ const ComponentShowcase: React.FC = () => {
                 <Checkbox
                   label="Standard Checkbox"
                   checked={checkboxValue}
-                  onChange={(e) => setCheckboxValue(e.target.checked)}
+                  onChange={setCheckboxValue}
                 />
                 <Checkbox
                   toggle
                   label="Toggle Switch"
                   checked={toggleValue}
-                  onChange={(e) => setToggleValue(e.target.checked)}
+                  onChange={setToggleValue}
                 />
               </div>
             </Card>
