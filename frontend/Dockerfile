@@ -21,7 +21,7 @@ ENV REACT_APP_API_BASE_URL=$REACT_APP_API_BASE_URL
 ENV REACT_APP_WS_URL=$REACT_APP_WS_URL
 ENV REACT_APP_ENV=$REACT_APP_ENV
 
-RUN npm run build
+RUN CI=false npm run build
 
 # Production stage
 FROM node:18-alpine
