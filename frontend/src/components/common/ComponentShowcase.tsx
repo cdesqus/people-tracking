@@ -203,7 +203,7 @@ const ComponentShowcase: React.FC = () => {
                 label="Camera Selection"
                 options={cameraOptions}
                 value={selectedCamera}
-                onChange={setSelectedCamera}
+                onChange={(val) => setSelectedCamera(val as string)}
                 placeholder="Select a camera"
               />
             </Card>

@@ -193,7 +193,7 @@ const SecurityReport: React.FC = () => {
             <Select
               label="Filter by Severity"
               value={severityFilter}
-              onChange={setSeverityFilter}
+              onChange={(val) => setSeverityFilter(val as string)}
               options={[
                 { value: '', label: 'All Severities' },
                 { value: 'critical', label: 'Critical' },

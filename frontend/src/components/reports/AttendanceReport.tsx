@@ -193,7 +193,7 @@ const AttendanceReport: React.FC = () => {
             <Select
               label="Filter by Department"
               value={filterDepartment}
-              onChange={setFilterDepartment}
+              onChange={(val) => setFilterDepartment(val as string)}
               options={[
                 { value: '', label: 'All Departments' },
                 { value: 'HR', label: 'HR' },

@@ -256,7 +256,7 @@ const CameraConfiguration: React.FC = () => {
             label="Camera Type"
             value={formData.type || 'ip'}
             onChange={(value) =>
-              setFormData({ ...formData, type: value })
+              setFormData({ ...formData, type: value as string })
             }
             options={[
               { value: 'ip', label: 'IP Camera' },

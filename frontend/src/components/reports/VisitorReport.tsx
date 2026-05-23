@@ -150,7 +150,7 @@ const VisitorReport: React.FC = () => {
             <Select
               label="Filter by Organization"
               value={filterOrg}
-              onChange={setFilterOrg}
+              onChange={(val) => setFilterOrg(val as string)}
               options={[
                 { value: '', label: 'All Organizations' },
                 ...Array.from(new Set(visitorData.map((r) => r.organization))).map(

@@ -204,7 +204,7 @@ const NotificationSettings: React.FC = () => {
                   ...settings.notifications,
                   smsGatewayConfig: {
                     ...settings.notifications.smsGatewayConfig,
-                    provider: value,
+                    provider: value as string,
                   },
                 },
               })
