@@ -70,7 +70,10 @@ export interface SelectOptionGroup {
 }
 
 export interface SelectProps
-  extends Omit<React.SelectHTMLAttributes<HTMLSelectElement>, 'value'> {
+  extends Omit<
+    React.SelectHTMLAttributes<HTMLSelectElement>,
+    'value' | 'onChange'
+  > {
   /** Select label */
   label?: string;
   /** Available options */
@@ -242,13 +245,18 @@ export interface BadgeProps extends React.HTMLAttributes<HTMLSpanElement> {
  * Checkbox component props
  */
 export interface CheckboxProps
-  extends Omit<React.InputHTMLAttributes<HTMLInputElement>, 'type'> {
+  extends Omit<
+    React.InputHTMLAttributes<HTMLInputElement>,
+    'type' | 'value' | 'onChange'
+  > {
   /** Checkbox label */
   label?: string;
   /** Is toggle switch variant */
   toggle?: boolean;
   /** Error message */
   error?: string;
+  /** Change handler with boolean state */
+  onChange?: (checked: boolean) => void;
 }
 
 /**
@@ -283,7 +291,10 @@ export interface RadioGroupProps
  * DatePicker component props
  */
 export interface DatePickerProps
-  extends Omit<React.InputHTMLAttributes<HTMLInputElement>, 'type'> {
+  extends Omit<
+    React.InputHTMLAttributes<HTMLInputElement>,
+    'type' | 'value' | 'onChange'
+  > {
   /** Selected date */
   value?: Date | null;
   /** Date change handler */
@@ -324,14 +335,23 @@ export interface FileUploadProps
 /**
  * Dropdown context menu props
  */
-export interface DropdownItem {
-  id: string;
-  label: string;
-  icon?: React.ReactNode;
-  onClick: () => void;
-  divider?: boolean;
-  disabled?: boolean;
-}
+export type DropdownItem =
+  | {
+      id: string;
+      label: string;
+      icon?: React.ReactNode;
+      onClick: () => void;
+      divider?: false;
+      disabled?: boolean;
+    }
+  | {
+      id: string;
+      divider: true;
+      label?: never;
+      icon?: never;
+      onClick?: never;
+      disabled?: never;
+    };
 
 export interface DropdownProps {
   /** Dropdown items */

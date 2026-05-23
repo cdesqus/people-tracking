@@ -24,10 +24,23 @@ import { TRANSITIONS } from './constants';
  */
 const Checkbox = forwardRef<HTMLInputElement, CheckboxProps>(
   (
-    { label, toggle = false, error, id, className = '', disabled = false, ...rest },
+    {
+      label,
+      toggle = false,
+      error,
+      id,
+      className = '',
+      disabled = false,
+      onChange,
+      ...rest
+    },
     ref
   ) => {
     const inputId = id || `checkbox-${Math.random().toString(36).substr(2, 9)}`;
+
+    const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+      onChange?.(e.target.checked);
+    };
 
     if (toggle) {
       return (
@@ -39,6 +52,7 @@ const Checkbox = forwardRef<HTMLInputElement, CheckboxProps>(
               type="checkbox"
               className="sr-only peer"
               disabled={disabled}
+              onChange={handleChange}
               {...rest}
             />
             <div
@@ -89,6 +103,7 @@ const Checkbox = forwardRef<HTMLInputElement, CheckboxProps>(
               error ? 'border-red-500' : ''
             } ${disabled ? 'opacity-50 cursor-not-allowed' : ''} ${className}`}
             disabled={disabled}
+            onChange={handleChange}
             {...rest}
           />
         </div>
