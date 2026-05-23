@@ -270,7 +270,7 @@ export interface RadioOption {
 }
 
 export interface RadioGroupProps
-  extends Omit<React.FieldSetHTMLAttributes<HTMLFieldSetElement>, 'onChange'> {
+  extends Omit<React.FieldsetHTMLAttributes<HTMLFieldSetElement>, 'onChange'> {
   /** Radio group name */
   name: string;
   /** Available options */
