@@ -6,6 +6,7 @@
 import React, { useState, useEffect } from 'react';
 import Card from '@components/common/Card';
 import Badge from '@components/common/Badge';
+import { BadgeColor } from '@components/common/types';
 import { VisitorTimeline as TimelineData } from '@/types/management';
 
 interface VisitorTimelineProps {
@@ -51,16 +52,16 @@ const VisitorTimeline: React.FC<VisitorTimelineProps> = ({
     return new Date(timestamp).toLocaleDateString();
   };
 
-  const getEventColor = (event: string) => {
+  const getEventColor = (event: string): BadgeColor => {
     switch (event) {
       case 'check_in':
-        return 'success';
+        return 'green';
       case 'check_out':
-        return 'danger';
+        return 'red';
       case 'movement':
-        return 'info';
+        return 'blue';
       default:
-        return 'secondary';
+        return 'gray';
     }
   };
 
@@ -113,7 +114,7 @@ const VisitorTimeline: React.FC<VisitorTimelineProps> = ({
                           <h4 className="font-semibold text-gray-900 dark:text-white">
                             {item.location}
                           </h4>
-                          <Badge variant={getEventColor(item.event)}>
+                          <Badge color={getEventColor(item.event)}>
                             {getEventLabel(item.event)}
                           </Badge>
                         </div>

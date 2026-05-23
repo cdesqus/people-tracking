@@ -46,9 +46,9 @@ const VisitorList: React.FC<VisitorListProps> = ({
   const totalPages = Math.ceil(total / pageSize);
 
   const statusColorMap = {
-    checked_in: 'success',
-    checked_out: 'secondary',
-    expired: 'danger',
+    checked_in: 'green',
+    checked_out: 'gray',
+    expired: 'red',
   } as const;
 
   const calculateDuration = (checkInTime: string, checkOutTime?: string) => {
@@ -100,7 +100,7 @@ const VisitorList: React.FC<VisitorListProps> = ({
       label: 'Status',
       sortable: true,
       render: (value: string) => (
-        <Badge variant={statusColorMap[value as keyof typeof statusColorMap] || 'secondary'}>
+        <Badge color={statusColorMap[value as keyof typeof statusColorMap] || 'gray'}>
           {value.replace('_', ' ').toUpperCase()}
         </Badge>
       ),

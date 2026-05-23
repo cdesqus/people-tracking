@@ -160,7 +160,7 @@ const VisitorsPage: React.FC = () => {
   };
 
   // Handle extend stay
-  const handleExtendVisit = async (visitor: Visitor, hours: number) => {
+  const handleExtendVisit = async (visitor: Visitor, hours: number = 1) => {
     dispatch(updateVisitorStart());
     try {
       const response = await fetch(`/api/visitors/${visitor.id}/extend`, {

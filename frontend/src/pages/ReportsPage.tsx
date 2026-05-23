@@ -60,12 +60,9 @@ const ReportsPage: React.FC = () => {
   ];
 
   const handleTabChange = (tabId: string) => {
-    setActiveTab(tabId);
-    dispatch(
-      setReportType(
-        tabId as 'attendance' | 'visitors' | 'camera_uptime' | 'security_incidents'
-      )
-    );
+    const reportType = tabId as 'attendance' | 'visitors' | 'camera_uptime' | 'security_incidents';
+    setActiveTab(reportType);
+    dispatch(setReportType(reportType));
   };
 
   return (

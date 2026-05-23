@@ -107,7 +107,7 @@ const Tabs: React.FC<TabsProps> = ({
       </div>
 
       {/* Tab content */}
-      {activeTabData && (
+      {activeTabData && activeTabData.content && (
         <div
           id={`panel-${activeTab}`}
           className="mt-4 animate-in fade-in-50 duration-200"

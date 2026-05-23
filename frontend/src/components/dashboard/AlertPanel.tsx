@@ -9,7 +9,7 @@ import Card from '@components/common/Card';
 import Badge from '@components/common/Badge';
 import Button from '@components/common/Button';
 import { Alert } from '@/types/index';
-import { formatRelativeTime } from '@utils/formatTime';
+import { formatRelativeTime } from '@/utils';
 
 interface AlertPanelProps {
   alerts: Alert[];

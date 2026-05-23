@@ -171,7 +171,7 @@ const UserManagement: React.FC = () => {
     {
       key: 'actions',
       label: 'Actions',
-      render: (_, row: User) => (
+      render: (_: any, row: User) => (
         <div className="flex gap-2">
           <Button
             variant="secondary"

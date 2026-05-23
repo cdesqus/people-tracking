@@ -39,9 +39,9 @@ const VisitorModal: React.FC<VisitorModalProps> = ({
   if (!visitor) return null;
 
   const statusColorMap = {
-    checked_in: 'success',
-    checked_out: 'secondary',
-    expired: 'danger',
+    checked_in: 'green',
+    checked_out: 'gray',
+    expired: 'red',
   } as const;
 
   const tabs = [
@@ -79,7 +79,7 @@ const VisitorModal: React.FC<VisitorModalProps> = ({
           <div className="space-y-2">
             <div className="flex items-center justify-between">
               <span className="text-sm text-gray-600 dark:text-gray-400">Status:</span>
-              <Badge variant={statusColorMap[visitor.status]}>
+              <Badge color={statusColorMap[visitor.status] || 'gray'}>
                 {visitor.status.replace('_', ' ')}
               </Badge>
             </div>

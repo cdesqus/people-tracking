@@ -11,7 +11,7 @@ import Card from '@components/common/Card';
 import { Employee } from '@/types/management';
 
 interface EmployeeFormProps {
-  onSubmit: (employee: Omit<Employee, 'id' | 'created_at' | 'updated_at'> & { photo?: File }) => Promise<void>;
+  onSubmit: (employee: Omit<Employee, 'created_at' | 'updated_at'> & { photo?: File }) => Promise<void>;
   isLoading?: boolean;
   onCancel?: () => void;
 }

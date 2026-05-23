@@ -35,9 +35,9 @@ const EmployeeModal: React.FC<EmployeeModalProps> = ({
   if (!employee) return null;
 
   const statusColorMap = {
-    active: 'success',
-    inactive: 'danger',
-    on_leave: 'warning',
+    active: 'green',
+    inactive: 'red',
+    on_leave: 'yellow',
   } as const;
 
   const tabs = [
@@ -65,7 +65,7 @@ const EmployeeModal: React.FC<EmployeeModalProps> = ({
             <div className="flex items-center justify-between">
               <span className="text-sm text-gray-600 dark:text-gray-400">Status:</span>
               <Badge
-                variant={statusColorMap[employee.status] || 'secondary'}
+                color={statusColorMap[employee.status] || 'gray'}
               >
                 {employee.status.replace('_', ' ')}
               </Badge>

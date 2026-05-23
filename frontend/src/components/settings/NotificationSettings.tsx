@@ -229,6 +229,7 @@ const NotificationSettings: React.FC = () => {
                     ...settings.notifications,
                     smsGatewayConfig: {
                       ...settings.notifications.smsGatewayConfig,
+                      provider: settings.notifications.smsGatewayConfig?.provider || '',
                       apiKey: e.target.value,
                     },
                   },

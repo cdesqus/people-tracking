@@ -373,7 +373,7 @@ export interface TabItem {
   id: string;
   label: string;
   icon?: React.ReactNode;
-  content: React.ReactNode;
+  content?: React.ReactNode;
   disabled?: boolean;
 }
 

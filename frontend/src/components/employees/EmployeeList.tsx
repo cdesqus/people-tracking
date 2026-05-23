@@ -46,9 +46,9 @@ const EmployeeList: React.FC<EmployeeListProps> = ({
   const totalPages = Math.ceil(total / pageSize);
 
   const statusColorMap = {
-    active: 'success',
-    inactive: 'danger',
-    on_leave: 'warning',
+    active: 'green',
+    inactive: 'red',
+    on_leave: 'yellow',
   } as const;
 
   const columns = [
@@ -85,7 +85,7 @@ const EmployeeList: React.FC<EmployeeListProps> = ({
       label: 'Status',
       sortable: true,
       render: (value: string) => (
-        <Badge variant={statusColorMap[value as keyof typeof statusColorMap] || 'secondary'}>
+        <Badge color={statusColorMap[value as keyof typeof statusColorMap] || 'gray'}>
           {value.replace('_', ' ').charAt(0).toUpperCase() + value.slice(1)}
         </Badge>
       ),

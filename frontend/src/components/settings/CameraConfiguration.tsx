@@ -185,7 +185,7 @@ const CameraConfiguration: React.FC = () => {
     {
       key: 'actions',
       label: 'Actions',
-      render: (_, row: Camera) => (
+      render: (_: any, row: Camera) => (
         <div className="flex gap-2">
           <Button
             variant="secondary"

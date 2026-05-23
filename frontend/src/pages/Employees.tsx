@@ -118,7 +118,7 @@ const EmployeesPage: React.FC = () => {
 
   // Handle form submission
   const handleRegisterEmployee = async (
-    formData: Omit<Employee, 'id' | 'created_at' | 'updated_at'> & { photo?: File }
+    formData: Omit<Employee, 'created_at' | 'updated_at'> & { photo?: File }
   ) => {
     dispatch(createEmployeeStart());
     try {
