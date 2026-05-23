@@ -38,7 +38,7 @@ export interface ButtonProps
  * Input component props
  */
 export interface InputProps
-  extends React.InputHTMLAttributes<HTMLInputElement> {
+  extends Omit<React.InputHTMLAttributes<HTMLInputElement>, 'size'> {
   /** Input label */
   label?: string;
   /** Input size */
