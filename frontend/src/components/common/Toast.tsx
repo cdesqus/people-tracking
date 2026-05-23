@@ -43,13 +43,13 @@ const Toast: React.FC<ToastProps> = ({
   onDismiss,
 }) => {
   useEffect(() => {
-    if (duration && duration > 0) {
-      const timer = setTimeout(() => {
-        onDismiss(id);
-      }, duration);
+    if (!duration || duration <= 0) return;
 
-      return () => clearTimeout(timer);
-    }
+    const timer = setTimeout(() => {
+      onDismiss(id);
+    }, duration);
+
+    return () => clearTimeout(timer);
   }, [duration, id, onDismiss]);
 
   const styles = TOAST_STYLES[type];

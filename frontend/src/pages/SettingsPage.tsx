@@ -87,17 +87,17 @@ const SettingsPage: React.FC = () => {
 
   // Auto-dismiss messages
   useEffect(() => {
-    if (success) {
-      const timer = setTimeout(() => dispatch(clearSuccess()), 3000);
-      return () => clearTimeout(timer);
-    }
+    if (!success) return;
+
+    const timer = setTimeout(() => dispatch(clearSuccess()), 3000);
+    return () => clearTimeout(timer);
   }, [success, dispatch]);
 
   useEffect(() => {
-    if (error) {
-      const timer = setTimeout(() => dispatch(clearError()), 3000);
-      return () => clearTimeout(timer);
-    }
+    if (!error) return;
+
+    const timer = setTimeout(() => dispatch(clearError()), 3000);
+    return () => clearTimeout(timer);
   }, [error, dispatch]);
 
   const tabs = [
