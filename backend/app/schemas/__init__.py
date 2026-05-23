@@ -1,0 +1,20 @@
+from app.schemas.camera import CameraCreate, CameraUpdate, CameraResponse
+from app.schemas.face import FaceCreate, FaceResponse
+from app.schemas.person import PersonCreate, PersonUpdate, PersonResponse
+from app.schemas.alert import AlertCreate, AlertResponse
+from app.schemas.user import UserCreate, UserResponse
+
+__all__ = [
+    'CameraCreate',
+    'CameraUpdate',
+    'CameraResponse',
+    'FaceCreate',
+    'FaceResponse',
+    'PersonCreate',
+    'PersonUpdate',
+    'PersonResponse',
+    'AlertCreate',
+    'AlertResponse',
+    'UserCreate',
+    'UserResponse',
+]

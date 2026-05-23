@@ -1,0 +1,101 @@
+
+---
+config:
+    flowchart:
+        htmlLabels: true
+---
+
+graph TD
+    A["FLOW 1: EMPLOYEE REGISTRATION & TRACKING"] -->|Start| B["Receptionist Opens<br/>Admin Panel"]
+    B --> C["Click: Register New Employee"]
+    C --> D["Fill Form<br/>Name, ID, Dept, Role"]
+    D --> E["Capture Face Photos<br/>Multiple Angles"]
+    E --> F["System Processes<br/>Face Detection & Extraction"]
+    F --> G["Generate Face Embedding<br/>Vector Representation"]
+    G --> H["Store in Vector DB<br/>+ Employee Record"]
+    H --> I["✓ Registration Complete<br/>Employee in System"]
+    I --> J["REAL-TIME TRACKING BEGINS"]
+    J --> K["CCTV Feed Captured<br/>30fps Continuous"]
+    K --> L["Frame by Frame<br/>Face Detection"]
+    L --> M["Extract Face from Frame"]
+    M --> N["Generate Embedding<br/>for Detected Face"]
+    N --> O["Search Vector DB<br/>for Matching Employee"]
+    O --> P{Face Match<br/>Found?}
+    P -->|Yes| Q["Retrieve Employee ID<br/>& Confidence Score"]
+    Q --> R["Log Detection Event<br/>Timestamp + Camera Location"]
+    R --> S["Update Real-time Dashboard<br/>Show Location + Time"]
+    S --> T["Store in Database<br/>for Reports"]
+    P -->|No| U["Label as Unknown<br/>Log for Review"]
+
+    V["FLOW 2: VISITOR REGISTRATION & TRACKING"] -->|Start| W["Visitor Arrives<br/>at Reception"]
+    W --> X["Receptionist: Check-in Visitor"]
+    X --> Y["Fill Visitor Form<br/>Name, Org, Purpose, Host"]
+    Y --> Z["Capture/Upload Face Photo"]
+    Z --> AA["System Processes Face<br/>Face Detection & Embedding"]
+    AA --> AB["Generate QR Code<br/>+ Validity Period"]
+    AB --> AC["Print Badge with QR<br/>+ Photo"]
+    AC --> AD["Give to Visitor"]
+    AD --> AE["Visitor Enters Building<br/>Passes by CCTV"]
+    AE --> AF["System Detects Face<br/>Matches Against Visitor DB"]
+    AF --> AG{Face Match<br/>& Valid?}
+    AG -->|Yes| AH["Log Entry Point<br/>+ Timestamp"]
+    AH --> AI["Send Alert to Host<br/>Visitor Arrived"]
+    AI --> AJ["Track Movement<br/>Real-time Location"]
+    AJ --> AK["Continue Tracking<br/>Throughout Visit"]
+    AG -->|No| AL["⚠️ Alert Security<br/>Unknown Person"]
+    AK --> AM["Visitor Ready to Leave<br/>Check-out at Reception"]
+    AM --> AN["Receptionist: Process Check-out"]
+    AN --> AO["System Logs Exit Time<br/>Duration Calculated"]
+    AO --> AP["Generate Visit Report<br/>Entry/Exit/Path"]
+    AP --> AQ["Archive Visitor Data"]
+
+    AR["FLOW 3: CAMERA MONITORING ALERT"] -->|Start| AS["CCTV Camera<br/>Streaming Active"]
+    AS --> AT["Every 30 Seconds<br/>Frame Analysis"]
+    AT --> AU["Check Frame Quality<br/>Detect Anomalies"]
+    AU --> AV{Anomaly<br/>Detected?}
+    AV -->|Black Screen| AW["⚠️ Camera Blocked"]
+    AV -->|Blur Only| AX["⚠️ Lens Covered"]
+    AV -->|No Signal| AY["⚠️ Connection Lost"]
+    AV -->|Normal| AZ["✓ Continue Monitoring"]
+    AW --> BA["Trigger Alert<br/>Type: Camera Coverage Lost"]
+    AX --> BA
+    AY --> BA
+    BA --> BB["Queue Alert Event"]
+    BB --> BC["Send Notifications<br/>Push + Email + Dashboard"]
+    BC --> BD["Log to Audit Trail"]
+    BD --> BE["Wait for Resolution"]
+    BE --> BF["Manually Clear Alert<br/>or Auto-clear if Fixed"]
+    BF --> BG["Send Resolution Notification"]
+    BG --> AZ
+
+    BH["FLOW 4: UNKNOWN PERSON DETECTION"] -->|Start| BI["Face Detected by CCTV"]
+    BI --> BJ["Generate Embedding"]
+    BJ --> BK["Search Employee DB<br/>Confidence Threshold"]
+    BK --> BL["Search Visitor DB<br/>Active Visitors Only"]
+    BL --> BM{Match<br/>Found?}
+    BM -->|Yes| BN["Classify as Known<br/>Update Timeline"]
+    BM -->|No| BO["⚠️ Unknown Person Alert"]
+    BO --> BP["Capture Face Snapshot<br/>Save to Storage"]
+    BP --> BQ["Check Restricted Areas<br/>Zone Rules"]
+    BQ --> BR{In Restricted<br/>Area?}
+    BR -->|Yes| BS["🔴 CRITICAL ALERT<br/>Unauthorized Access"]
+    BR -->|No| BT["⚠️ INFO ALERT<br/>Unknown Person Detected"]
+    BS --> BU["Notify Security Team<br/>with Snapshot"]
+    BT --> BU
+    BU --> BV["Start Tracking<br/>Movement"]
+    BV --> BW["Log All Movements<br/>for Review"]
+    BW --> BX["Queue for<br/>Manual Verification"]
+
+    style A fill:#4A90E2,stroke:#2E5C8A,color:#fff,font-weight:bold
+    style V fill:#7ED321,stroke:#5FA319,color:#fff,font-weight:bold
+    style AR fill:#F5A623,stroke:#C97F1F,color:#fff,font-weight:bold
+    style BH fill:#BD10E0,stroke:#8A0AA8,color:#fff,font-weight:bold
+
+    style I fill:#90EE90,stroke:#4CAF50,color:#000,font-weight:bold
+    style J fill:#87CEEB,stroke:#2196F3,color:#000,font-weight:bold
+    style AQ fill:#90EE90,stroke:#4CAF50,color:#000,font-weight:bold
+    style BG fill:#90EE90,stroke:#4CAF50,color:#000,font-weight:bold
+
+    style BS fill:#FF6B6B,stroke:#C92A2A,color:#fff,font-weight:bold
+    style AL fill:#FF6B6B,stroke:#C92A2A,color:#fff,font-weight:bold
+    style BO fill:#FF6B6B,stroke:#C92A2A,color:#fff,font-weight:bold

@@ -1,0 +1,125 @@
+graph TB
+    subgraph "Frontend Layer"
+        WEB["🌐 Web Dashboard<br/>React + Tailwind"]
+        MOBILE["📱 Mobile App<br/>React Native/Flutter"]
+        ADMIN["⚙️ Admin Panel<br/>React"]
+    end
+
+    subgraph "API Gateway & Authentication"
+        GATEWAY["API Gateway<br/>FastAPI/Express"]
+        AUTH["Authentication<br/>JWT + OAuth2"]
+    end
+
+    subgraph "Core Business Logic"
+        EMP["Employee<br/>Management"]
+        VIS["Visitor<br/>Management"]
+        DETECT["Detection<br/>Engine"]
+        ALERT["Alert<br/>System"]
+        REPORT["Report<br/>Generator"]
+    end
+
+    subgraph "AI/ML Processing"
+        FACE_DET["Face Detection<br/>YOLOv8/RetinaFace"]
+        FACE_REC["Face Recognition<br/>InsightFace/FaceNet"]
+        TRACK["Object Tracking<br/>DeepSORT"]
+        CAM_STATUS["Camera Status<br/>Detection"]
+    end
+
+    subgraph "Data & Storage"
+        SQL["PostgreSQL<br/>Employees, Visitors,<br/>Detections, Alerts"]
+        VECTOR["Vector DB<br/>pgvector<br/>Face Embeddings"]
+        REDIS["Redis Cache<br/>Real-time Data,<br/>Sessions"]
+        S3["Object Storage<br/>Face Images,<br/>Snapshots"]
+    end
+
+    subgraph "Message Queue & Events"
+        QUEUE["Message Queue<br/>RabbitMQ/Kafka"]
+        EVENTS["Event Stream<br/>Processing"]
+    end
+
+    subgraph "External Integrations"
+        CCTV["📹 CCTV Cameras<br/>RTSP Stream"]
+        EMAIL["📧 Email<br/>Notifications"]
+        SMS["💬 SMS<br/>Alerts"]
+        SLACK["💼 Slack<br/>Integration"]
+    end
+
+    subgraph "Infrastructure & Monitoring"
+        DOCKER["Docker<br/>Containerization"]
+        K8S["Kubernetes<br/>Orchestration"]
+        MONITOR["Prometheus<br/>Grafana"]
+        LOG["ELK Stack<br/>Logging"]
+    end
+
+    WEB --> GATEWAY
+    MOBILE --> GATEWAY
+    ADMIN --> GATEWAY
+
+    GATEWAY --> AUTH
+    AUTH --> EMP
+    AUTH --> VIS
+    AUTH --> DETECT
+    AUTH --> ALERT
+    AUTH --> REPORT
+
+    CCTV --> FACE_DET
+    CCTV --> CAM_STATUS
+    FACE_DET --> FACE_REC
+    FACE_REC --> TRACK
+    TRACK --> DETECT
+    CAM_STATUS --> ALERT
+
+    DETECT --> QUEUE
+    DETECT --> SQL
+    DETECT --> VECTOR
+    FACE_REC --> VECTOR
+
+    EMP --> SQL
+    VIS --> SQL
+    ALERT --> QUEUE
+    REPORT --> SQL
+
+    QUEUE --> EVENTS
+    EVENTS --> ALERT
+    EVENTS --> REDIS
+
+    ALERT --> EMAIL
+    ALERT --> SMS
+    ALERT --> SLACK
+
+    FACE_DET --> S3
+    TRACK --> S3
+
+    GATEWAY --> REDIS
+    EMP --> REDIS
+    VIS --> REDIS
+    DETECT --> REDIS
+
+    DOCKER --> K8S
+    K8S --> MONITOR
+    K8S --> LOG
+
+    style WEB fill:#4A90E2,stroke:#2E5C8A,color:#fff
+    style MOBILE fill:#4A90E2,stroke:#2E5C8A,color:#fff
+    style ADMIN fill:#4A90E2,stroke:#2E5C8A,color:#fff
+    style GATEWAY fill:#F5A623,stroke:#C97F1F,color:#fff
+    style AUTH fill:#F5A623,stroke:#C97F1F,color:#fff
+    style EMP fill:#7ED321,stroke:#5FA319,color:#fff
+    style VIS fill:#7ED321,stroke:#5FA319,color:#fff
+    style DETECT fill:#7ED321,stroke:#5FA319,color:#fff
+    style ALERT fill:#7ED321,stroke:#5FA319,color:#fff
+    style REPORT fill:#7ED321,stroke:#5FA319,color:#fff
+    style FACE_DET fill:#BD10E0,stroke:#8A0AA8,color:#fff
+    style FACE_REC fill:#BD10E0,stroke:#8A0AA8,color:#fff
+    style TRACK fill:#BD10E0,stroke:#8A0AA8,color:#fff
+    style CAM_STATUS fill:#BD10E0,stroke:#8A0AA8,color:#fff
+    style SQL fill:#FF6B6B,stroke:#C92A2A,color:#fff
+    style VECTOR fill:#FF6B6B,stroke:#C92A2A,color:#fff
+    style REDIS fill:#FF6B6B,stroke:#C92A2A,color:#fff
+    style S3 fill:#FF6B6B,stroke:#C92A2A,color:#fff
+    style QUEUE fill:#50E3C2,stroke:#369B8B,color:#fff
+    style EVENTS fill:#50E3C2,stroke:#369B8B,color:#fff
+    style CCTV fill:#B8E986,stroke:#8AB846,color:#000
+    style EMAIL fill:#B8E986,stroke:#8AB846,color:#000
+    style SMS fill:#B8E986,stroke:#8AB846,color:#000
+    style SLACK fill:#B8E986,stroke:#8AB846,color:#000
