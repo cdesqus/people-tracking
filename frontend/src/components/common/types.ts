@@ -285,6 +285,8 @@ export interface RadioGroupProps
   error?: string;
   /** Vertical layout (default true) */
   vertical?: boolean;
+  /** Is the field required */
+  required?: boolean;
 }
 
 /**
@@ -293,7 +295,7 @@ export interface RadioGroupProps
 export interface DatePickerProps
   extends Omit<
     React.InputHTMLAttributes<HTMLInputElement>,
-    'type' | 'value' | 'onChange'
+    'type' | 'value' | 'onChange' | 'min' | 'max'
   > {
   /** Selected date */
   value?: Date | null;
