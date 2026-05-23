@@ -239,7 +239,7 @@ const ComponentShowcase: React.FC = () => {
                   { value: 'error', label: 'Error', description: 'Camera offline' },
                 ]}
                 value={radioValue}
-                onChange={setRadioValue}
+                onChange={(val) => setRadioValue(val as string)}
               />
             </Card>
 
