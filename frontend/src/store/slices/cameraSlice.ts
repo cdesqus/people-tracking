@@ -1,5 +1,5 @@
 import { createSlice, PayloadAction } from '@reduxjs/toolkit';
-import { Camera } from '@types/index';
+import { Camera } from '@/types/index';
 
 interface CameraState {
   cameras: Camera[];

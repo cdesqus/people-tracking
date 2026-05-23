@@ -1,5 +1,5 @@
 import { createSlice, PayloadAction } from '@reduxjs/toolkit';
-import { Face, Person } from '@types/index';
+import { Face, Person } from '@/types/index';
 
 interface FaceState {
   faces: Face[];

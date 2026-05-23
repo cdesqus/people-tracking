@@ -6,7 +6,7 @@
 import React, { useState, useEffect } from 'react';
 import Card from '@components/common/Card';
 import Input from '@components/common/Input';
-import { EmployeeTimeline as TimelineData } from '@types/management';
+import { EmployeeTimeline as TimelineData } from '@/types/management';
 
 interface EmployeeTimelineProps {
   employeeId: string;

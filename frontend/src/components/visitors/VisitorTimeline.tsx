@@ -6,7 +6,7 @@
 import React, { useState, useEffect } from 'react';
 import Card from '@components/common/Card';
 import Badge from '@components/common/Badge';
-import { VisitorTimeline as TimelineData } from '@types/management';
+import { VisitorTimeline as TimelineData } from '@/types/management';
 
 interface VisitorTimelineProps {
   visitorId: string;

@@ -1,5 +1,5 @@
 import axios, { AxiosInstance, AxiosError } from 'axios';
-import { ApiResponse, PaginatedResponse } from '@types/index';
+import { ApiResponse, PaginatedResponse } from '@/types/index';
 
 const API_BASE_URL = process.env.REACT_APP_API_BASE_URL || 'http://localhost:8000/api';
 

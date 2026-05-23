@@ -29,7 +29,7 @@ import Alert from '@components/common/Alert';
 import Card from '@components/common/Card';
 import Button from '@components/common/Button';
 import Tabs from '@components/common/Tabs';
-import { Employee } from '@types/management';
+import { Employee } from '@/types/management';
 
 const EmployeesPage: React.FC = () => {
   const dispatch = useAppDispatch();

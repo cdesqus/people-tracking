@@ -4,7 +4,7 @@
  */
 
 import { createSlice, PayloadAction } from '@reduxjs/toolkit';
-import { DashboardKPIs } from '@types/dashboard';
+import { DashboardKPIs } from '@/types/dashboard';
 
 interface DashboardState {
   kpis: DashboardKPIs;

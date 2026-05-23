@@ -14,7 +14,7 @@ import Alert from '@components/common/Alert';
 import Card from '@components/common/Card';
 import Button from '@components/common/Button';
 import { acknowledgeAlertStart, acknowledgeAlertSuccess } from '@store/slices/alertSlice';
-import { CameraStatus } from '@types/dashboard';
+import { CameraStatus } from '@/types/dashboard';
 
 const Dashboard: React.FC = () => {
   const dispatch = useAppDispatch();

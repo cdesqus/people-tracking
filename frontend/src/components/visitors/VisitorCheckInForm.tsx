@@ -9,7 +9,7 @@ import Button from '@components/common/Button';
 import FileUpload from '@components/common/FileUpload';
 import Card from '@components/common/Card';
 import Alert from '@components/common/Alert';
-import { Visitor } from '@types/management';
+import { Visitor } from '@/types/management';
 
 interface VisitorCheckInFormProps {
   onSubmit: (visitor: Omit<Visitor, 'id' | 'created_at' | 'updated_at' | 'check_in_time' | 'status'> & { photo?: File }) => Promise<Visitor>;

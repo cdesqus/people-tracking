@@ -14,7 +14,7 @@ import {
   setPageSize,
 } from '@store/slices/alertSlice';
 import { apiClient } from '@services/api';
-import { Alert } from '@types/index';
+import { Alert } from '@/types/index';
 import { POLL_INTERVAL_ALERTS } from '@utils/constants';
 
 export const useAlerts = () => {

@@ -1,5 +1,5 @@
 import { createSlice, PayloadAction } from '@reduxjs/toolkit';
-import { Visitor } from '@types/management';
+import { Visitor } from '@/types/management';
 
 interface VisitorState {
   visitors: Visitor[];

@@ -11,7 +11,7 @@ import Card from '@components/common/Card';
 import Input from '@components/common/Input';
 import Tabs from '@components/common/Tabs';
 import VisitorTimeline from './VisitorTimeline';
-import { Visitor } from '@types/management';
+import { Visitor } from '@/types/management';
 
 interface VisitorModalProps {
   isOpen: boolean;

@@ -10,7 +10,7 @@ import Badge from '@components/common/Badge';
 import Card from '@components/common/Card';
 import Pagination from '@components/common/Pagination';
 import Input from '@components/common/Input';
-import { Employee } from '@types/management';
+import { Employee } from '@/types/management';
 
 interface EmployeeListProps {
   employees: Employee[];

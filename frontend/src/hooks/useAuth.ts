@@ -1,6 +1,6 @@
 import { useAppDispatch, useAppSelector } from '@store/store';
 import { setUser, logout, setAuthError, clearError } from '@store/slices/authSlice';
-import { User } from '@types/index';
+import { User } from '@/types/index';
 
 export const useAuth = () => {
   const dispatch = useAppDispatch();

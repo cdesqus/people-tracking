@@ -22,7 +22,7 @@ import {
   fetchFacesSuccess,
   fetchFacesError,
 } from '@store/slices/faceSlice';
-import { Camera, Face, Alert } from '@types/index';
+import { Camera, Face, Alert } from '@/types/index';
 
 interface UseDashboardDataOptions {
   autoConnect?: boolean;

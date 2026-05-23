@@ -10,7 +10,7 @@ import Badge from '@components/common/Badge';
 import Card from '@components/common/Card';
 import Tabs from '@components/common/Tabs';
 import EmployeeTimeline from './EmployeeTimeline';
-import { Employee } from '@types/management';
+import { Employee } from '@/types/management';
 
 interface EmployeeModalProps {
   isOpen: boolean;

@@ -7,7 +7,7 @@
 import React, { useState } from 'react';
 import Card from '@components/common/Card';
 import Badge from '@components/common/Badge';
-import { CameraStatus } from '@types/dashboard';
+import { CameraStatus } from '@/types/dashboard';
 import { formatRelativeTime } from '@utils/formatTime';
 
 interface CameraGridProps {

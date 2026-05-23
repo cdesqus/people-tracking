@@ -8,7 +8,7 @@ import React, { useEffect, useState } from 'react';
 import Card from '@components/common/Card';
 import Badge from '@components/common/Badge';
 import Button from '@components/common/Button';
-import { Alert } from '@types/index';
+import { Alert } from '@/types/index';
 import { formatRelativeTime } from '@utils/formatTime';
 
 interface AlertPanelProps {

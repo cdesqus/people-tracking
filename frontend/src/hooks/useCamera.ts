@@ -12,7 +12,7 @@ import {
   setPageSize,
 } from '@store/slices/cameraSlice';
 import { apiClient } from '@services/api';
-import { Camera } from '@types/index';
+import { Camera } from '@/types/index';
 
 export const useCamera = () => {
   const dispatch = useAppDispatch();

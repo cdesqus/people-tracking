@@ -32,7 +32,7 @@ import Alert from '@components/common/Alert';
 import Card from '@components/common/Card';
 import Tabs from '@components/common/Tabs';
 import Button from '@components/common/Button';
-import { Visitor } from '@types/management';
+import { Visitor } from '@/types/management';
 
 const VisitorsPage: React.FC = () => {
   const dispatch = useAppDispatch();

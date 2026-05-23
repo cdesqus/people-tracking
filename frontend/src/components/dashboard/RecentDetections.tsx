@@ -7,7 +7,7 @@ import React, { useState } from 'react';
 import Card from '@components/common/Card';
 import Table from '@components/common/Table';
 import Pagination from '@components/common/Pagination';
-import { DetectionRecord } from '@types/dashboard';
+import { DetectionRecord } from '@/types/dashboard';
 import { formatRelativeTime, formatDateTime } from '@utils/formatTime';
 
 interface RecentDetectionsProps {

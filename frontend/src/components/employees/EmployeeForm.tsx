@@ -8,7 +8,7 @@ import Input from '@components/common/Input';
 import Button from '@components/common/Button';
 import FileUpload from '@components/common/FileUpload';
 import Card from '@components/common/Card';
-import { Employee } from '@types/management';
+import { Employee } from '@/types/management';
 
 interface EmployeeFormProps {
   onSubmit: (employee: Omit<Employee, 'id' | 'created_at' | 'updated_at'> & { photo?: File }) => Promise<void>;
