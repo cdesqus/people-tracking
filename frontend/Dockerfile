@@ -6,8 +6,9 @@ WORKDIR /app
 # Copy package files
 COPY package*.json ./
 
-# Install dependencies with legacy peer deps and force resolution
-RUN npm install --legacy-peer-deps --force
+# Clean npm cache and install with maximum compatibility settings
+RUN npm cache clean --force && \
+    npm install --legacy-peer-deps --force --no-fund --no-audit
 
 # Copy source code
 COPY . .
@@ -21,7 +22,11 @@ ENV REACT_APP_API_BASE_URL=$REACT_APP_API_BASE_URL
 ENV REACT_APP_WS_URL=$REACT_APP_WS_URL
 ENV REACT_APP_ENV=$REACT_APP_ENV
 
-RUN CI=false npm run build
+# Clean node_modules cache before build
+RUN npm cache clean --force
+
+# Build application
+RUN npm run build
 
 # Production stage
 FROM node:18-alpine
