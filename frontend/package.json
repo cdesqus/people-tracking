@@ -22,6 +22,7 @@
     "postcss": "^8.4.32",
     "autoprefixer": "^10.4.16",
     "react-icons": "^4.12.0",
+    "lucide-react": "^0.292.0",
     "chart.js": "^4.4.1",
     "react-chartjs-2": "^5.2.0",
     "react-hot-toast": "^2.4.1",
