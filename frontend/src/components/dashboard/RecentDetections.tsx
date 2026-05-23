@@ -142,7 +142,7 @@ const RecentDetections: React.FC<RecentDetectionsProps> = ({
         <Table
           columns={columns}
           data={paginatedDetections}
-          loading={loading}
+          isLoading={loading}
           hoverable
           striped
           onSort={handleSort}
