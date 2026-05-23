@@ -66,3 +66,6 @@ local.db
 # OS-specific
 .vscode/launch.json
 .vscode/settings.json
+
+#tutor
+*.md
