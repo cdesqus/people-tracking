@@ -199,15 +199,22 @@ const VisitorsPage: React.FC = () => {
   ];
 
   return (
-    <div className="space-y-6">
+    <div className="p-6 max-w-7xl mx-auto w-full space-y-6">
       {/* Header */}
-      <div>
-        <h1 className="text-3xl font-bold text-gray-900 dark:text-white">
-          Visitor Management
-        </h1>
-        <p className="text-gray-600 dark:text-gray-400 mt-1">
-          Manage visitor check-ins, check-outs, and track movements
-        </p>
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+        <div>
+          <h1 className="text-3xl font-bold text-gray-900 dark:text-white">
+            Visitor Management
+          </h1>
+          <p className="text-gray-600 dark:text-gray-400 mt-1">
+            Manage visitor check-ins, check-outs, and track movements
+          </p>
+        </div>
+        {activeTab !== 'checkin' && (
+          <Button variant="primary" onClick={() => setActiveTab('checkin')}>
+            + Tambah Tamu (Check-In)
+          </Button>
+        )}
       </div>
 
       {/* Stats */}

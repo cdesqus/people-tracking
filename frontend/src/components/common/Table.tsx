@@ -82,18 +82,18 @@ const Table: React.FC<TableProps> = ({
   }
 
   return (
-    <div className="overflow-x-auto rounded-lg border border-gray-200 dark:border-slate-700">
+    <div className="overflow-auto max-h-[calc(100vh-325px)] rounded-lg border border-gray-200 dark:border-slate-700 relative">
       <table
         className={`w-full text-sm text-gray-900 dark:text-white ${className}`}
         role="grid"
         {...rest}
       >
-        <thead className="bg-gray-50 dark:bg-slate-700 border-b border-gray-200 dark:border-slate-600">
+        <thead className="bg-gray-50 dark:bg-slate-700 border-b border-gray-200 dark:border-slate-600 sticky top-0 z-10 shadow-[inset_0_-1px_0_rgba(0,0,0,0.1)]">
           <tr>
             {columns.map((column) => (
               <th
                 key={column.key}
-                className="px-6 py-3 font-semibold text-left text-gray-700 dark:text-gray-200"
+                className="px-6 py-3 font-semibold text-left text-gray-700 dark:text-gray-200 sticky top-0 bg-gray-50 dark:bg-slate-700 z-10"
                 style={{ width: column.width }}
                 scope="col"
               >
