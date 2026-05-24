@@ -213,7 +213,7 @@ const Dashboard: React.FC = () => {
   ];
 
   // Merge real and mock alerts
-  const displayAlerts = alerts.length > 0
+  const displayAlerts: any[] = alerts.length > 0
     ? alerts.map((a: any) => ({
         id: a.id,
         title: a.title,
@@ -227,7 +227,7 @@ const Dashboard: React.FC = () => {
     : mockAlerts;
 
   // Merge real and mock face detections
-  const displayFaces = faces.length > 0
+  const displayFaces: any[] = faces.length > 0
     ? faces.map((f: any) => ({
         name: f.person_id ? `ID: ${f.person_id}` : 'Unknown Subject',
         role: f.person_id ? 'Employee' : 'Unknown',
