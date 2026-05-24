@@ -3,12 +3,12 @@
  * Handles visitor registration and check-in with badge generation
  */
 
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import Input from '@components/common/Input';
 import Button from '@components/common/Button';
 import FileUpload from '@components/common/FileUpload';
-import Card from '@components/common/Card';
 import Alert from '@components/common/Alert';
+import CameraCapture from '../common/CameraCapture';
 import { Visitor } from '@/types/management';
 
 interface VisitorCheckInFormProps {
@@ -46,6 +46,7 @@ const VisitorCheckInForm: React.FC<VisitorCheckInFormProps> = ({
 
   const [photo, setPhoto] = useState<File | null>(null);
   const [photoPreview, setPhotoPreview] = useState<string | null>(null);
+  const [photoSource, setPhotoSource] = useState<'upload' | 'camera'>('upload');
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [submitting, setSubmitting] = useState(false);
   const [successMessage, setSuccessMessage] = useState('');
@@ -187,7 +188,7 @@ const VisitorCheckInForm: React.FC<VisitorCheckInFormProps> = ({
 
   if (checkedInVisitor) {
     return (
-      <Card className="w-full">
+      <div className="w-full">
         <div className="space-y-6">
           <div className="text-center">
             <svg
@@ -266,12 +267,12 @@ const VisitorCheckInForm: React.FC<VisitorCheckInFormProps> = ({
             </Button>
           </div>
         </div>
-      </Card>
+      </div>
     );
   }
 
   return (
-    <Card className="w-full">
+    <div className="w-full">
       <form onSubmit={handleSubmit} className="space-y-6">
         <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
           Visitor Check-In
@@ -285,21 +286,75 @@ const VisitorCheckInForm: React.FC<VisitorCheckInFormProps> = ({
           />
         )}
 
-        {/* Photo Upload Section */}
+        {/* Photo Selection Tabs */}
         <div className="space-y-4">
-          <FileUpload
-            label="Visitor Photo"
-            accept="image/*"
-            maxSize={5 * 1024 * 1024}
-            onFileChange={handlePhotoChange}
-            error={errors.photo}
-          />
+          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+            Visitor Photo Source
+          </label>
+          <div className="flex gap-2 max-w-sm">
+            <button
+              type="button"
+              onClick={() => {
+                setPhotoSource('upload');
+                setPhoto(null);
+                setPhotoPreview(null);
+              }}
+              className={`flex-1 py-2 px-4 text-xs font-semibold rounded-lg border transition-all flex items-center justify-center gap-1.5 ${
+                photoSource === 'upload'
+                  ? 'bg-blue-600 border-blue-600 text-white shadow-md'
+                  : 'bg-white dark:bg-slate-800 border-gray-300 dark:border-slate-700 text-gray-700 dark:text-gray-300'
+              }`}
+            >
+              <span className="material-symbols-outlined text-[16px]">upload_file</span>
+              Upload File
+            </button>
+            <button
+              type="button"
+              onClick={() => {
+                setPhotoSource('camera');
+                setPhoto(null);
+                setPhotoPreview(null);
+              }}
+              className={`flex-1 py-2 px-4 text-xs font-semibold rounded-lg border transition-all flex items-center justify-center gap-1.5 ${
+                photoSource === 'camera'
+                  ? 'bg-blue-600 border-blue-600 text-white shadow-md'
+                  : 'bg-white dark:bg-slate-800 border-gray-300 dark:border-slate-700 text-gray-700 dark:text-gray-300'
+              }`}
+            >
+              <span className="material-symbols-outlined text-[16px]">photo_camera</span>
+              Use Camera
+            </button>
+          </div>
+
+          {photoSource === 'upload' ? (
+            <FileUpload
+              label="Visitor Photo"
+              accept="image/*"
+              maxSize={5 * 1024 * 1024}
+              onFileChange={handlePhotoChange}
+              error={errors.photo}
+            />
+          ) : (
+            <CameraCapture
+              onCapture={(file) => {
+                setPhoto(file);
+                if (file) {
+                  const url = URL.createObjectURL(file);
+                  setPhotoPreview(url);
+                } else {
+                  setPhotoPreview(null);
+                }
+              }}
+            />
+          )}
+
           {photoPreview && (
-            <div className="flex justify-center">
+            <div className="flex flex-col items-center gap-1 mt-2">
+              <span className="text-[10px] text-gray-400 font-mono uppercase">Photo Preview</span>
               <img
                 src={photoPreview}
                 alt="Preview"
-                className="w-32 h-32 rounded-lg object-cover border border-gray-200 dark:border-slate-600"
+                className="w-32 h-32 rounded-lg object-cover border border-gray-200 dark:border-slate-650"
               />
             </div>
           )}
@@ -407,7 +462,7 @@ const VisitorCheckInForm: React.FC<VisitorCheckInFormProps> = ({
           </Button>
         </div>
       </form>
-    </Card>
+    </div>
   );
 };
 

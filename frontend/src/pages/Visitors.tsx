@@ -3,7 +3,7 @@
  * Main page for managing visitor check-ins, check-outs, and tracking
  */
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useAppDispatch, useAppSelector } from '@store/store';
 import {
   fetchVisitorsStart,
@@ -32,6 +32,7 @@ import Alert from '@components/common/Alert';
 import Card from '@components/common/Card';
 import Tabs from '@components/common/Tabs';
 import Button from '@components/common/Button';
+import Modal from '@components/common/Modal';
 import { Visitor } from '@/types/management';
 
 const VisitorsPage: React.FC = () => {
@@ -42,7 +43,6 @@ const VisitorsPage: React.FC = () => {
     loading,
     error,
     success,
-    total,
     currentPage,
     pageSize,
     searchTerm,
@@ -51,39 +51,40 @@ const VisitorsPage: React.FC = () => {
 
   const [activeTab, setActiveTab] = useState('active');
   const [showModal, setShowModal] = useState(false);
+  const [showCheckInModal, setShowCheckInModal] = useState(false);
 
   // Fetch visitors on mount and when filters change
-  useEffect(() => {
-    const fetchVisitors = async () => {
-      dispatch(fetchVisitorsStart());
-      try {
-        const params = new URLSearchParams();
-        params.append('page', currentPage.toString());
-        params.append('page_size', pageSize.toString());
-        if (searchTerm) params.append('search', searchTerm);
-        if (statusFilter !== 'all') params.append('status', statusFilter);
+  const fetchVisitors = useCallback(async () => {
+    dispatch(fetchVisitorsStart());
+    try {
+      const params = new URLSearchParams();
+      params.append('page', currentPage.toString());
+      params.append('page_size', pageSize.toString());
+      if (searchTerm) params.append('search', searchTerm);
+      if (statusFilter !== 'all') params.append('status', statusFilter);
 
-        const response = await fetch(`/api/visitors?${params.toString()}`);
-        if (!response.ok) throw new Error('Failed to fetch visitors');
+      const response = await fetch(`/api/visitors?${params.toString()}`);
+      if (!response.ok) throw new Error('Failed to fetch visitors');
 
-        const data = await response.json();
-        dispatch(
-          fetchVisitorsSuccess({
-            visitors: data.items || [],
-            total: data.total || 0,
-          })
-        );
-      } catch (err) {
-        dispatch(
-          fetchVisitorsError(
-            err instanceof Error ? err.message : 'Error fetching visitors'
-          )
-        );
-      }
-    };
-
-    fetchVisitors();
+      const data = await response.json();
+      dispatch(
+        fetchVisitorsSuccess({
+          visitors: data.items || [],
+          total: data.total || 0,
+        })
+      );
+    } catch (err) {
+      dispatch(
+        fetchVisitorsError(
+          err instanceof Error ? err.message : 'Error fetching visitors'
+        )
+      );
+    }
   }, [dispatch, currentPage, pageSize, searchTerm, statusFilter]);
+
+  useEffect(() => {
+    fetchVisitors();
+  }, [fetchVisitors]);
 
   // Auto-dismiss messages
   useEffect(() => {
@@ -194,7 +195,6 @@ const VisitorsPage: React.FC = () => {
 
   const tabs = [
     { id: 'active', label: `Active Visitors (${stats.checkedIn})` },
-    { id: 'checkin', label: 'Check-In' },
     { id: 'history', label: `History (${stats.checkedOut + stats.expired})` },
   ];
 
@@ -210,11 +210,9 @@ const VisitorsPage: React.FC = () => {
             Manage visitor check-ins, check-outs, and track movements
           </p>
         </div>
-        {activeTab !== 'checkin' && (
-          <Button variant="primary" onClick={() => setActiveTab('checkin')}>
-            + Tambah Tamu (Check-In)
-          </Button>
-        )}
+        <Button variant="primary" onClick={() => setShowCheckInModal(true)}>
+          + Tambah Tamu (Check-In)
+        </Button>
       </div>
 
       {/* Stats */}
@@ -302,15 +300,7 @@ const VisitorsPage: React.FC = () => {
         />
       )}
 
-      {activeTab === 'checkin' && (
-        <VisitorCheckInForm
-          onSubmit={handleCheckInVisitor}
-          isLoading={loading}
-          onSuccess={() => {
-            setActiveTab('active');
-          }}
-        />
-      )}
+
 
       {activeTab === 'history' && (
         <VisitorList
@@ -344,6 +334,24 @@ const VisitorsPage: React.FC = () => {
         onExtend={handleExtendVisit}
         isLoading={loading}
       />
+
+      {/* Visitor Check-In Modal */}
+      <Modal
+        isOpen={showCheckInModal}
+        onClose={() => setShowCheckInModal(false)}
+        size="lg"
+        title="Tambah Tamu (Check-In)"
+      >
+        <VisitorCheckInForm
+          onSubmit={handleCheckInVisitor}
+          isLoading={loading}
+          onCancel={() => setShowCheckInModal(false)}
+          onSuccess={() => {
+            setShowCheckInModal(false);
+            fetchVisitors();
+          }}
+        />
+      </Modal>
     </div>
   );
 };
