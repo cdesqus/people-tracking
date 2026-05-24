@@ -279,7 +279,7 @@ const Dashboard: React.FC = () => {
       `}} />
 
       {/* Control Sub-Header */}
-      <div className="flex justify-between items-center px-6 py-4 bg-slate-900 border-b border-slate-800 sticky top-16 z-20">
+      <div className="flex justify-between items-center px-6 py-4 bg-slate-900 border-b border-slate-800">
         <div className="flex items-center gap-2">
           <div className="flex bg-slate-950 rounded-lg p-1 border border-slate-800">
             <button
