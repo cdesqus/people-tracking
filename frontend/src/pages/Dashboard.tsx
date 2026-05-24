@@ -71,7 +71,7 @@ const Dashboard: React.FC = () => {
     dispatch(acknowledgeAlertStart());
     try {
       const response = await fetch(`/api/alerts/${alertId}/acknowledge`, {
-        method: 'POST',
+        method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
       });
 
