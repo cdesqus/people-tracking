@@ -1,6 +1,31 @@
 // API Configuration
-export const API_BASE_URL = process.env.REACT_APP_API_BASE_URL || 'http://localhost:8000/api';
-export const WS_URL = process.env.REACT_APP_WS_URL || 'ws://localhost:8000/ws';
+const getApiBaseUrl = () => {
+  if (process.env.REACT_APP_API_BASE_URL) {
+    return process.env.REACT_APP_API_BASE_URL;
+  }
+  if (typeof window !== 'undefined' && window.location) {
+    if (window.location.hostname !== 'localhost' && window.location.hostname !== '127.0.0.1') {
+      return `${window.location.protocol}//${window.location.host}/api`;
+    }
+  }
+  return 'http://localhost:8000/api';
+};
+
+const getWsUrl = () => {
+  if (process.env.REACT_APP_WS_URL) {
+    return process.env.REACT_APP_WS_URL;
+  }
+  if (typeof window !== 'undefined' && window.location) {
+    if (window.location.hostname !== 'localhost' && window.location.hostname !== '127.0.0.1') {
+      const wsProtocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+      return `${wsProtocol}//${window.location.host}/ws`;
+    }
+  }
+  return 'ws://localhost:8000/ws';
+};
+
+export const API_BASE_URL = getApiBaseUrl();
+export const WS_URL = getWsUrl();
 
 // Alert Types
 export const ALERT_TYPES = {
