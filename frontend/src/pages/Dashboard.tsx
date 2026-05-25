@@ -278,7 +278,7 @@ const Dashboard: React.FC = () => {
     });
   }, [selectedBranch, cameras, alerts, faces, filteredCameras, filteredAlerts, filteredFaces]);
 
-  // Automatically select camera belonging to the filtered branch
+  // Automatically select camera belonging to the filtered branch when branch changes
   useEffect(() => {
     if (selectedBranch !== 'all') {
       const firstCamInBranch = filteredCameras.find((c: any) => c.status === 'active');
@@ -293,7 +293,8 @@ const Dashboard: React.FC = () => {
     } else {
       setSelectedCamera('CAM-01');
     }
-  }, [selectedBranch, filteredCameras]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [selectedBranch]);
 
   const activeFocusedCamera = filteredCameras.find((c: any) => c.id === selectedCamera) || filteredCameras.find((c: any) => c.status === 'active') || filteredCameras[0];
 
@@ -303,18 +304,18 @@ const Dashboard: React.FC = () => {
     if (activeTab === 'monitor') {
       document.body.classList.add('hide-footer');
       if (mainElement) {
-        mainElement.style.overflow = 'hidden';
+        mainElement.style.overflow = 'auto';
       }
     } else {
       document.body.classList.remove('hide-footer');
       if (mainElement) {
-        mainElement.style.overflow = '';
+        mainElement.style.overflow = 'auto';
       }
     }
     return () => {
       document.body.classList.remove('hide-footer');
       if (mainElement) {
-        mainElement.style.overflow = '';
+        mainElement.style.overflow = 'auto';
       }
     };
   }, [activeTab]);
@@ -656,7 +657,7 @@ const Dashboard: React.FC = () => {
         </div>
       ) : (
         /* ==================== TAB 2: LIVE MONITOR FEED ==================== */
-        <div className="flex flex-1 flex-col lg:flex-row overflow-hidden w-full bg-slate-950">
+        <div className="flex flex-1 flex-col lg:flex-row w-full bg-slate-950">
           
           {/* Left Panel: Identification Log (Scrollable) */}
           <aside className="w-full lg:w-[340px] border-b lg:border-b-0 lg:border-r border-slate-850 flex flex-col overflow-hidden bg-slate-900/40">
@@ -704,10 +705,10 @@ const Dashboard: React.FC = () => {
           </aside>
 
           {/* Right Area: Focus Stream, Sidebar Selectors & Bottom Alert Center */}
-          <section className="flex-1 flex flex-col p-4 bg-slate-950 overflow-hidden min-h-0">
+          <section className="flex-1 flex flex-col p-4 bg-slate-950 min-h-0">
             
             {/* Main Area: Split between Large Player (left) and Camera Grid (right) */}
-            <div className="flex-1 flex flex-col lg:flex-row gap-4 min-h-0 overflow-hidden mb-4">
+            <div className="flex-1 flex flex-col lg:flex-row gap-4 min-h-0 mb-4">
               
               {/* Large Focused Camera Player */}
               <div className="flex-[7] flex flex-col bg-slate-900 border border-slate-800 rounded-xl overflow-hidden relative shadow-2xl">
