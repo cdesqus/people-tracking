@@ -6,6 +6,7 @@ export interface Camera {
   stream_url: string;
   resolution: string;
   fps: number;
+  branch?: string;
   created_at: string;
   updated_at: string;
 }

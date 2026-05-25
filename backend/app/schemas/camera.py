@@ -9,6 +9,7 @@ class CameraBase(BaseModel):
     stream_url: str
     resolution: Optional[str] = None
     fps: Optional[int] = 30
+    branch: Optional[str] = "br-hq"
 
 
 class CameraCreate(CameraBase):
@@ -21,6 +22,7 @@ class CameraUpdate(BaseModel):
     stream_url: Optional[str] = None
     resolution: Optional[str] = None
     fps: Optional[int] = None
+    branch: Optional[str] = None
 
 
 class CameraResponse(CameraBase):

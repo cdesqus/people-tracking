@@ -83,3 +83,19 @@ export const CHART_COLORS = {
   danger: '#ef4444',
   secondary: '#64748b',
 } as const;
+
+// Branch Master Data
+export interface Branch {
+  id: string;
+  name: string;
+  city: string;
+  code: string;
+}
+
+export const MASTER_BRANCHES: Branch[] = [
+  { id: 'br-hq', name: 'Headquarters (Jakarta)', city: 'Jakarta', code: 'JKT-HQ' },
+  { id: 'br-bdg', name: 'Bandung Branch', city: 'Bandung', code: 'BDG-01' },
+  { id: 'br-sby', name: 'Surabaya Branch', city: 'Surabaya', code: 'SBY-02' },
+  { id: 'br-mdn', name: 'Medan Branch', city: 'Medan', code: 'MDN-03' },
+  { id: 'br-ygk', name: 'Yogyakarta Branch', city: 'Yogyakarta', code: 'YGK-04' },
+];

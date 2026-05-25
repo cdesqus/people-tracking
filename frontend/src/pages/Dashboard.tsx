@@ -1,19 +1,15 @@
-/**
- * Main Dashboard Page
- * Redesigned to match high-fidelity security dashboard specifications.
- * Supports toggling between Bento Overview and Live Security Monitor.
- */
-
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { useAppDispatch, useAppSelector } from '@store/store';
+import { useAppDispatch } from '@store/store';
 import { useDashboardData } from '@hooks/useDashboardData';
 import { acknowledgeAlertStart, acknowledgeAlertSuccess } from '@store/slices/alertSlice';
+import { MASTER_BRANCHES } from '@utils/constants';
 
 const Dashboard: React.FC = () => {
   const dispatch = useAppDispatch();
   const [activeTab, setActiveTab] = useState<'overview' | 'monitor'>('overview');
   const [selectedCamera, setSelectedCamera] = useState<string>('CAM-01');
+  const [selectedBranch, setSelectedBranch] = useState<string>('all');
   const [kpiStats, setKpiStats] = useState({
     occupancy: 0,
     activeCameras: 0,
@@ -23,7 +19,7 @@ const Dashboard: React.FC = () => {
   });
 
   // Load real-time data from custom hook
-  const { cameras, alerts, faces, isConnected, sendMessage } = useDashboardData({
+  const { cameras, alerts, faces, isConnected } = useDashboardData({
     autoConnect: true,
   });
 
@@ -44,27 +40,6 @@ const Dashboard: React.FC = () => {
       document.head.removeChild(linkFonts);
     };
   }, []);
-
-  // Update KPI stats dynamically from actual arrays, fallback to mock details if empty
-  useEffect(() => {
-    const activeCameraCount = cameras.filter(
-      (c: any) => c.status === 'active' || c.isOnline === true
-    ).length;
-    const activeAlertCount = alerts.filter((a: any) => !a.acknowledged).length;
-    const knownPersons = new Set(
-      faces
-        .filter((f: any) => f.person_id)
-        .map((f: any) => f.person_id)
-    ).size;
-
-    setKpiStats({
-      occupancy: faces.length || 18,
-      activeCameras: activeCameraCount || 5,
-      totalCameras: cameras.length || 6,
-      activeAlerts: activeAlertCount || 3,
-      currentVisitors: knownPersons || 142,
-    });
-  }, [cameras, alerts, faces]);
 
   // Handle alert acknowledgment via API
   const handleAcknowledgeAlert = async (alertId: string) => {
@@ -97,7 +72,8 @@ const Dashboard: React.FC = () => {
       image: 'https://lh3.googleusercontent.com/aida-public/AB6AXuDGKgiK22EIf-8E6f-CdqTK52BxWS0K46E1_7K_jfvWFNN7_MlK3w7LLai_orj24Pxtd36E01qfVJ1gjivR2_iRUD7lKUN1NfPwhOXUfRo4k_L7OKxUOVMwPn3loh2tDqK5MlH3M-K3_IBHpZtitjt4ysSpmFIAji3tG3NJ3P0yuVGHNxkJg9iocpkkTi6P0awSEGbx7L5Z4o6J0-QYURiSqR_tpfBSCwjZ4eFuDlfL9ZYpTCz6-JviCL78O9UqwksGzfV4hK7eI5p0',
       time: '14:22:04',
       location: 'Entrance A',
-      status: 'verified'
+      status: 'verified',
+      branch: 'br-hq'
     },
     {
       name: 'S. Chen',
@@ -106,7 +82,8 @@ const Dashboard: React.FC = () => {
       image: 'https://lh3.googleusercontent.com/aida-public/AB6AXuBE2XcnWd3mq9eHpQMBgo1i67eW-mQbxpEgHqDMVcm1KMsftl4p13S5kgPkVXbE9sZPtWxj-0MjRBrAK3JvomPLKMrwDO_8K5-9zA_NSmzHL25GiF4ZYKmH08nJVSygtdpN0_XgZJBIC0upNGE1PRWDf4ZaOids-AJXGWGbbkzCM5YKcBPbGuAFavdzMYM1Ujgzi7fZXC9Tth9Grkx7ht001laWFGuoLmnWZ3PoJiKsdx8ZCj6B6SYlfr0gvHVUI9uRzT-tc88odsw8',
       time: '14:21:55',
       location: 'Elevator Bank 2',
-      status: 'verified'
+      status: 'verified',
+      branch: 'br-hq'
     },
     {
       name: 'Unknown Subject',
@@ -115,7 +92,8 @@ const Dashboard: React.FC = () => {
       image: 'https://lh3.googleusercontent.com/aida-public/AB6AXuDjFgVkH9axMERLGYP_VOmpOpSJs087rwWE35hTKEmSaHavkXnAcTMbfTmVeam1Cl4AtVD-KxXjLUNzhl7TGgV4789W6Usk_55GgypHf9YoF49cJHG_-pYv5Aiid1GfqU0RZJ2222B1XJdE3MeWi3ng-W9BP6rJcDLj_IXq-i71-Two5zyDQvlhVp2uuELB7sDpKupOp2x-b_YTq_d8wxMZaHalJssVNuSzlJt97fdUdamgEfIFYPtnbXniYXB-ygDQjeVqd3s4AvEE',
       time: '14:21:10',
       location: 'Loading Dock',
-      status: 'unrecognized'
+      status: 'unrecognized',
+      branch: 'br-sby'
     },
     {
       name: 'A. Jenkins',
@@ -124,7 +102,8 @@ const Dashboard: React.FC = () => {
       image: 'https://lh3.googleusercontent.com/aida-public/AB6AXuAtgHrRRJm2ZetZ40-4Tg49JMyhEDNyXFTHzH0CzFeYo7DoLoxy7mYdg52BMUUpIO6kiNW1xeKobNBVotIdqTMSs_ndxo8cyUkdxwb1LFIYZVHZiaX-vHRYNC5jDCrgt5x1jhe03WpUAlvthBkTUS7tJvzdAjUcCUzxnX3HXJroZW_sZbu4RM5uTO1d0ikW8fTijsrKoZ9ZJMcExPE6sMaV0YyVydO0iD_6VSfRcpoDsPgMzatvycmF4Q3X0lQxuf-Vz2CGQxdKEFbM',
       time: '14:19:55',
       location: 'Main Office',
-      status: 'verified'
+      status: 'verified',
+      branch: 'br-hq'
     },
     {
       name: 'J. Doe',
@@ -133,7 +112,8 @@ const Dashboard: React.FC = () => {
       image: 'https://lh3.googleusercontent.com/aida-public/AB6AXuAPQ4pwWRpndD4-CuwQIIZMQmS-7zuizef4Q1WJc2BCjKXmQZPZ1XN-lx0j-YpdMXjikQh78NZfAHNtDxA-00BZn7T9KTQGXI1h-qBRqeTtE7slEkVxbGKS9tnsul2pN-mkCW466uHJxG_LB07lU_y8vXYsbiH9k4IquxPbWxUhp_MvioTtsMj2A5CtftKeraS8yv8nOWU8Tgjlq2gtmXw9aDweD6_hq1MYk5EKahFTjvKzsIyoG12TH6QAtbM858LLXeIiIea-rjBB',
       time: '14:15:30',
       location: 'Server Room',
-      status: 'verified'
+      status: 'verified',
+      branch: 'br-mdn'
     }
   ];
 
@@ -145,7 +125,8 @@ const Dashboard: React.FC = () => {
       location: 'Loading Dock (CAM-03)',
       time: '14:22:01',
       severity: 'critical',
-      type: 'unknown_face'
+      type: 'unknown_face',
+      branch: 'br-sby'
     },
     {
       id: 'alert-2',
@@ -154,7 +135,8 @@ const Dashboard: React.FC = () => {
       location: 'Level 2 Parking (CAM-02)',
       time: '14:19:55',
       severity: 'high',
-      type: 'suspicious_activity'
+      type: 'suspicious_activity',
+      branch: 'br-bdg'
     },
     {
       id: 'alert-3',
@@ -163,7 +145,8 @@ const Dashboard: React.FC = () => {
       location: 'Server Room 01 (CAM-05)',
       time: '14:05:12',
       severity: 'medium',
-      type: 'system_error'
+      type: 'system_error',
+      branch: 'br-mdn'
     }
   ];
 
@@ -173,44 +156,64 @@ const Dashboard: React.FC = () => {
       name: 'MAIN LOBBY',
       status: 'active',
       type: 'rec',
-      image: 'https://lh3.googleusercontent.com/aida-public/AB6AXuDHi9scnA5eEXqAQR1PXYOzk8x0tpr1peS2gAeFoYhtv8Dt_0pTFHr037Hy4_VFUKt2QhMYYkSPjWZUjjx8G9UAFQ6x9_aJeDGW0Yoixw0I_GmGRlJTGcgx4FlApuzP8dsSQMTITELmp3s6VmKNjveTr5O37EaeuxtHUSA9EaZ8ZDF49SK5S59UEb43zCovGd0F5egbJvnBjz6wMTYNK1K5ikicbm5EkgHwVLz1HQ9GWx2YAHZM5Utn0ycsGae87rfNTJkH8QyUc18D'
+      image: 'https://lh3.googleusercontent.com/aida-public/AB6AXuDHi9scnA5eEXqAQR1PXYOzk8x0tpr1peS2gAeFoYhtv8Dt_0pTFHr037Hy4_VFUKt2QhMYYkSPjWZUjjx8G9UAFQ6x9_aJeDGW0Yoixw0I_GmGRlJTGcgx4FlApuzP8dsSQMTITELmp3s6VmKNjveTr5O37EaeuxtHUSA9EaZ8ZDF49SK5S59UEb43zCovGd0F5egbJvnBjz6wMTYNK1K5ikicbm5EkgHwVLz1HQ9GWx2YAHZM5Utn0ycsGae87rfNTJkH8QyUc18D',
+      branch: 'br-hq'
     },
     {
       id: 'CAM-02',
       name: 'BOARDROOM',
       status: 'active',
       type: 'live',
-      image: 'https://lh3.googleusercontent.com/aida-public/AB6AXuCr6BOBCZ5idG1hyXwkXbtCJZtyKAncjSTClxk5e24G_EuK70T3TvkwMDpPGHt5VmLg04X0Dgfd3kNd1lSayZz4ZHh4qYKgf-aNOAVYl21VjsI2uXqkXOmBiR00gn_l1I-C1PUNxitva972Ufw2cUhvWEokX9J3nmam_hxd8rZOIAxqJNJgW1E9YXNE72YdhQddnrdK-hCXNRhRp8p5h5AF8b8Mb4-UFgRxj658VKxg2JvnoVH_uOdlaTqbDtm06KVe_py27jhqIWH0'
+      image: 'https://lh3.googleusercontent.com/aida-public/AB6AXuCr6BOBCZ5idG1hyXwkXbtCJZtyKAncjSTClxk5e24G_EuK70T3TvkwMDpPGHt5VmLg04X0Dgfd3kNd1lSayZz4ZHh4qYKgf-aNOAVYl21VjsI2uXqkXOmBiR00gn_l1I-C1PUNxitva972Ufw2cUhvWEokX9J3nmam_hxd8rZOIAxqJNJgW1E9YXNE72YdhQddnrdK-hCXNRhRp8p5h5AF8b8Mb4-UFgRxj658VKxg2JvnoVH_uOdlaTqbDtm06KVe_py27jhqIWH0',
+      branch: 'br-bdg'
     },
     {
       id: 'CAM-03',
       name: 'LOADING DOCK',
       status: 'active',
       type: 'live',
-      image: 'https://lh3.googleusercontent.com/aida-public/AB6AXuCj43HqurmA2AySCICMcg-RK-D0kWWjLqpTFi1LRj7aB2dNQaKWM36D52H4yAfceUa7R9vfDPZy3ZQxT7EHw0GrVsq3bhU8u6Eg2PZdlUvTQXlkN4CqLCpv3cpRpdDtVQ31JPdGfdTvFJ6itg2CqCf_538BH9uOBJNB6wTh-Wsww807MOqVlif_ghrNvqOTgVK1J40N30fbgDzpstoI6L-Gwah9hM00N823pTdf9pm5-Tg1in_JDH3OhbiSN-uCgjlxP6e2wudkDSqh'
+      image: 'https://lh3.googleusercontent.com/aida-public/AB6AXuCj43HqurmA2AySCICMcg-RK-D0kWWjLqpTFi1LRj7aB2dNQaKWM36D52H4yAfceUa7R9vfDPZy3ZQxT7EHw0GrVsq3bhU8u6Eg2PZdlUvTQXlkN4CqLCpv3cpRpdDtVQ31JPdGfdTvFJ6itg2CqCf_538BH9uOBJNB6wTh-Wsww807MOqVlif_ghrNvqOTgVK1J40N30fbgDzpstoI6L-Gwah9hM00N823pTdf9pm5-Tg1in_JDH3OhbiSN-uCgjlxP6e2wudkDSqh',
+      branch: 'br-sby'
     },
     {
       id: 'CAM-04',
       name: 'PERIMETER S',
       status: 'active',
       type: 'live',
-      image: 'https://lh3.googleusercontent.com/aida-public/AB6AXuABjP8ZIjDu3evIA7o0sNA1mjIfZ4_GKKHYXRL05cu8d28K4FKZ3PIGiuxkFy8POdztBKyLY7aa1fXpRthSoQI5FyMcgjQApjGJZ660VFmi4OrZrA1VSv2OPs2FpXbd2W63Nt0HPAaRHpOg2ZWyGDqyszrvM_-UtnwrUVLMjCds1cJBOVw8UMNCLG42KzZj1lu8MtjSJMk0iChsQHk3H6gb3BVG0XDbWBpTw11gcbxnH59aCzCTXZJx1sjlOw1cQ5xllpPBMkFl-ZQl'
+      image: 'https://lh3.googleusercontent.com/aida-public/AB6AXuABjP8ZIjDu3evIA7o0sNA1mjIfZ4_GKKHYXRL05cu8d28K4FKZ3PIGiuxkFy8POdztBKyLY7aa1fXpRthSoQI5FyMcgjQApjGJZ660VFmi4OrZrA1VSv2OPs2FpXbd2W63Nt0HPAaRHpOg2ZWyGDqyszrvM_-UtnwrUVLMjCds1cJBOVw8UMNCLG42KzZj1lu8MtjSJMk0iChsQHk3H6gb3BVG0XDbWBpTw11gcbxnH59aCzCTXZJx1sjlOw1cQ5xllpPBMkFl-ZQl',
+      branch: 'br-hq'
     },
     {
       id: 'CAM-05',
       name: 'DATA CENTER',
       status: 'active',
       type: 'live',
-      image: 'https://lh3.googleusercontent.com/aida-public/AB6AXuAWUPx-TmsYp4kmKm_xVRs5fmxzaoZY3ieD4YT61aMZHejTbEV6iTLfpIxwc_S4Z0rvIrSs1T_AV-tq6gvV0oJErSf34f90f4vUKT_MntTGc-HkEbaCKLsDRyYBysRinLW8LkxNq1S-005dYKmvpXRhuCRvmo6GE5yZoAKTlnCbz_iBUXvX12GhI1YXo4y8CVeN2FE-RDyAPaJNXSFn8KCAiclTX0Bs9KP8EG3lWH13JCh58pRHmyEHM40uHxWJzbXxo3NZZKODpFWb'
+      image: 'https://lh3.googleusercontent.com/aida-public/AB6AXuAWUPx-TmsYp4kmKm_xVRs5fmxzaoZY3ieD4YT61aMZHejTbEV6iTLfpIxwc_S4Z0rvIrSs1T_AV-tq6gvV0oJErSf34f90f4vUKT_MntTGc-HkEbaCKLsDRyYBysRinLW8LkxNq1S-005dYKmvpXRhuCRvmo6GE5yZoAKTlnCbz_iBUXvX12GhI1YXo4y8CVeN2FE-RDyAPaJNXSFn8KCAiclTX0Bs9KP8EG3lWH13JCh58pRHmyEHM40uHxWJzbXxo3NZZKODpFWb',
+      branch: 'br-mdn'
     },
     {
       id: 'CAM-06',
       name: 'PARKING G1',
       status: 'inactive',
       type: 'lost',
-      image: ''
+      image: '',
+      branch: 'br-ygk'
     }
   ];
+
+  // Merge real and mock cameras
+  const displayCameras: any[] = cameras.length > 0
+    ? cameras.map((c: any) => ({
+        id: c.id,
+        name: c.name,
+        status: c.status || 'active',
+        type: 'live' as const,
+        image: c.status === 'active'
+          ? 'https://lh3.googleusercontent.com/aida-public/AB6AXuDHi9scnA5eEXqAQR1PXYOzk8x0tpr1peS2gAeFoYhtv8Dt_0pTFHr037Hy4_VFUKt2QhMYYkSPjWZUjjx8G9UAFQ6x9_aJeDGW0Yoixw0I_GmGRlJTGcgx4FlApuzP8dsSQMTITELmp3s6VmKNjveTr5O37EaeuxtHUSA9EaZ8ZDF49SK5S59UEb43zCovGd0F5egbJvnBjz6wMTYNK1K5ikicbm5EkgHwVLz1HQ9GWx2YAHZM5Utn0ycsGae87rfNTJkH8QyUc18D'
+          : '',
+        branch: c.branch || 'br-hq'
+      }))
+    : mockCameras;
 
   // Merge real and mock alerts
   const displayAlerts: any[] = alerts.length > 0
@@ -222,7 +225,8 @@ const Dashboard: React.FC = () => {
         time: new Date(a.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' }),
         severity: a.severity || 'high',
         type: a.type,
-        acknowledged: a.acknowledged
+        acknowledged: a.acknowledged,
+        branch: a.branch || 'br-hq'
       })).filter(a => !a.acknowledged)
     : mockAlerts;
 
@@ -235,12 +239,86 @@ const Dashboard: React.FC = () => {
         image: f.image_url,
         time: new Date(f.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' }),
         location: f.camera_id ? `Camera ${f.camera_id}` : 'General',
-        status: f.person_id ? 'verified' : 'unrecognized'
+        status: f.person_id ? 'verified' : 'unrecognized',
+        branch: f.branch || 'br-hq'
       }))
     : mockFaces;
 
+  // Filter lists based on selected branch
+  const filteredCameras = displayCameras.filter(
+    (c: any) => selectedBranch === 'all' || c.branch === selectedBranch
+  );
+
+  const filteredAlerts = displayAlerts.filter(
+    (a: any) => selectedBranch === 'all' || a.branch === selectedBranch
+  );
+
+  const filteredFaces = displayFaces.filter(
+    (f: any) => selectedBranch === 'all' || f.branch === selectedBranch
+  );
+
+  // Update KPI stats dynamically from actual arrays
+  useEffect(() => {
+    const activeCameraCount = filteredCameras.filter(
+      (c: any) => c.status === 'active' || c.isOnline === true
+    ).length;
+    const activeAlertCount = filteredAlerts.length;
+    const knownPersons = new Set(
+      filteredFaces
+        .filter((f: any) => f.role !== 'Unknown' && f.status === 'verified')
+        .map((f: any) => f.name)
+    ).size;
+
+    setKpiStats({
+      occupancy: filteredFaces.length || (selectedBranch === 'all' ? 18 : selectedBranch === 'br-hq' ? 10 : 4),
+      activeCameras: activeCameraCount || (selectedBranch === 'all' ? 5 : selectedBranch === 'br-hq' ? 2 : 1),
+      totalCameras: filteredCameras.length || (selectedBranch === 'all' ? 6 : selectedBranch === 'br-hq' ? 2 : 1),
+      activeAlerts: activeAlertCount,
+      currentVisitors: knownPersons || (selectedBranch === 'all' ? 142 : selectedBranch === 'br-hq' ? 84 : selectedBranch === 'br-bdg' ? 34 : 12),
+    });
+  }, [selectedBranch, cameras, alerts, faces, filteredCameras, filteredAlerts, filteredFaces]);
+
+  // Automatically select camera belonging to the filtered branch
+  useEffect(() => {
+    if (selectedBranch !== 'all') {
+      const firstCamInBranch = filteredCameras.find((c: any) => c.status === 'active');
+      if (firstCamInBranch) {
+        setSelectedCamera(firstCamInBranch.id);
+      } else {
+        const anyCamInBranch = filteredCameras[0];
+        if (anyCamInBranch) {
+          setSelectedCamera(anyCamInBranch.id);
+        }
+      }
+    } else {
+      setSelectedCamera('CAM-01');
+    }
+  }, [selectedBranch, filteredCameras]);
+
+  // Manage layout scrolling and footer visibility for Live Monitor tab
+  useEffect(() => {
+    const mainElement = document.getElementById('main-content');
+    if (activeTab === 'monitor') {
+      document.body.classList.add('hide-footer');
+      if (mainElement) {
+        mainElement.style.overflow = 'hidden';
+      }
+    } else {
+      document.body.classList.remove('hide-footer');
+      if (mainElement) {
+        mainElement.style.overflow = '';
+      }
+    }
+    return () => {
+      document.body.classList.remove('hide-footer');
+      if (mainElement) {
+        mainElement.style.overflow = '';
+      }
+    };
+  }, [activeTab]);
+
   return (
-    <div className="flex-1 flex flex-col bg-slate-950 text-gray-100 min-h-screen">
+    <div className="flex-1 flex flex-col bg-slate-950 text-gray-100">
       {/* Dynamic Styles Injection */}
       <style dangerouslySetInnerHTML={{__html: `
         .scanning-line {
@@ -279,8 +357,8 @@ const Dashboard: React.FC = () => {
       `}} />
 
       {/* Control Sub-Header */}
-      <div className="flex justify-between items-center px-6 py-4 bg-slate-900 border-b border-slate-800">
-        <div className="flex items-center gap-2">
+      <div className="flex flex-col sm:flex-row justify-between items-center px-6 py-4 bg-slate-900 border-b border-slate-800 gap-4">
+        <div className="flex items-center gap-2 w-full sm:w-auto justify-between sm:justify-start">
           <div className="flex bg-slate-950 rounded-lg p-1 border border-slate-800">
             <button
               onClick={() => setActiveTab('overview')}
@@ -307,12 +385,36 @@ const Dashboard: React.FC = () => {
           </div>
         </div>
 
-        {/* Real-time Connection Status */}
-        <div className="flex items-center gap-2 px-3 py-1.5 bg-slate-950 rounded-full border border-slate-850">
-          <div className={`w-2.5 h-2.5 rounded-full ${isConnected ? 'bg-emerald-500 animate-ping' : 'bg-red-500'}`} />
-          <span className="text-xs font-mono font-medium text-gray-300">
-            {isConnected ? 'LIVE FEED CONNECTED' : 'RECONNECTING FEED...'}
-          </span>
+        {/* Branch Selector and Real-time Connection Status */}
+        <div className="flex items-center gap-3 w-full sm:w-auto justify-between sm:justify-end">
+          {/* Branch Dropdown */}
+          <div className="relative">
+            <select
+              value={selectedBranch}
+              onChange={(e) => setSelectedBranch(e.target.value)}
+              className="appearance-none pl-9 pr-8 py-1.5 bg-slate-950 border border-slate-800 rounded-lg text-xs font-mono font-bold text-gray-300 focus:outline-none focus:border-blue-500 cursor-pointer"
+            >
+              <option value="all">ALL BRANCHES (GLOBAL)</option>
+              {MASTER_BRANCHES.map((b) => (
+                <option key={b.id} value={b.id}>
+                  {b.name.toUpperCase()} ({b.code})
+                </option>
+              ))}
+            </select>
+            <span className="material-symbols-outlined absolute left-2.5 top-1/2 -translate-y-1/2 text-gray-500 text-[16px] pointer-events-none">
+              location_on
+            </span>
+            <span className="material-symbols-outlined absolute right-2.5 top-1/2 -translate-y-1/2 text-gray-500 text-[16px] pointer-events-none">
+              keyboard_arrow_down
+            </span>
+          </div>
+
+          <div className="flex items-center gap-2 px-3 py-1.5 bg-slate-950 rounded-full border border-slate-850">
+            <div className={`w-2 h-2 rounded-full ${isConnected ? 'bg-emerald-500 animate-ping' : 'bg-red-500'}`} />
+            <span className="text-[10px] font-mono font-medium text-gray-300">
+              {isConnected ? 'LIVE FEED CONNECTED' : 'RECONNECTING FEED...'}
+            </span>
+          </div>
         </div>
       </div>
 
@@ -413,13 +515,13 @@ const Dashboard: React.FC = () => {
                   Active Alerts
                 </h3>
                 <span className="bg-red-600 text-white px-2 py-0.5 rounded-full font-mono text-[10px] font-bold">
-                  {displayAlerts.length} Active
+                  {filteredAlerts.length} Active
                 </span>
               </div>
 
               {/* Alert List Container */}
               <div className="p-4 space-y-3 overflow-y-auto max-h-[400px] flex-1">
-                {displayAlerts.map((alert) => (
+                {filteredAlerts.map((alert) => (
                   <div 
                     key={alert.id}
                     onClick={() => handleAcknowledgeAlert(alert.id)}
@@ -472,7 +574,7 @@ const Dashboard: React.FC = () => {
 
             {/* Face Cards Grid */}
             <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4 p-6">
-              {displayFaces.slice(0, 5).map((face, index) => (
+              {filteredFaces.slice(0, 5).map((face, index) => (
                 <div 
                   key={index}
                   className="group relative aspect-square rounded-xl overflow-hidden bg-slate-950 border border-slate-800/80 transition-all hover:border-blue-500/80 hover:shadow-lg"
@@ -515,7 +617,7 @@ const Dashboard: React.FC = () => {
         </div>
       ) : (
         /* ==================== TAB 2: LIVE MONITOR FEED ==================== */
-        <div className="flex flex-1 flex-col lg:flex-row overflow-hidden w-full h-[calc(100vh-128px)] bg-slate-950">
+        <div className="flex flex-1 flex-col lg:flex-row overflow-hidden w-full bg-slate-950">
           
           {/* Left Panel: Identification Log (Scrollable) */}
           <aside className="w-full lg:w-[340px] border-b lg:border-b-0 lg:border-r border-slate-850 flex flex-col overflow-hidden bg-slate-900/40">
@@ -528,7 +630,7 @@ const Dashboard: React.FC = () => {
             </div>
             
             <div className="flex-1 overflow-y-auto p-4 space-y-3.5 no-scrollbar">
-              {displayFaces.map((face, index) => (
+              {filteredFaces.map((face, index) => (
                 <div 
                   key={index}
                   className={`flex items-center gap-3.5 p-2.5 bg-slate-900 border rounded-lg transition-colors cursor-pointer group ${
@@ -567,7 +669,7 @@ const Dashboard: React.FC = () => {
             
             {/* Grid of 6 Camera feeds */}
             <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 flex-1 overflow-y-auto pr-1 no-scrollbar min-h-0">
-              {mockCameras.map((camera) => {
+              {filteredCameras.map((camera: any) => {
                 const isSelected = selectedCamera === camera.id;
                 
                 return (
@@ -640,7 +742,7 @@ const Dashboard: React.FC = () => {
                   <span className="material-symbols-outlined text-red-500">warning</span>
                   <h3 className="text-xs font-bold text-white uppercase tracking-wider">Active Security Alerts</h3>
                   <span className="bg-red-600 text-white px-2 py-0.5 rounded-full text-[9px] font-extrabold font-mono animate-pulse">
-                    {displayAlerts.filter(a => a.severity === 'critical').length} CRITICAL
+                    {filteredAlerts.filter(a => a.severity === 'critical').length} CRITICAL
                   </span>
                 </div>
                 <Link to="/alerts" className="text-blue-500 font-mono text-[10px] uppercase font-bold hover:underline">
@@ -650,7 +752,7 @@ const Dashboard: React.FC = () => {
 
               {/* Alert list rows */}
               <div className="space-y-2 max-h-[140px] overflow-y-auto pr-1 no-scrollbar">
-                {displayAlerts.slice(0, 2).map((alert) => (
+                {filteredAlerts.slice(0, 2).map((alert) => (
                   <div 
                     key={alert.id}
                     className={`flex items-center justify-between gap-4 p-3 rounded-lg border-l-4 ${

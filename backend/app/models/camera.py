@@ -21,6 +21,7 @@ class Camera(Base):
     stream_url = Column(String(500), nullable=False)
     resolution = Column(String(50))
     fps = Column(Integer, default=30)
+    branch = Column(String(100), nullable=True, default="br-hq")
     created_at = Column(DateTime(timezone=True), server_default=func.now(), nullable=False)
     updated_at = Column(
         DateTime(timezone=True),

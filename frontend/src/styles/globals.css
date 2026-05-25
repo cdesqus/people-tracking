@@ -121,3 +121,9 @@ img {
   height: auto;
   display: block;
 }
+
+/* Hide global footer wrapper when live monitoring is active */
+body.hide-footer footer {
+  display: none !important;
+}
+

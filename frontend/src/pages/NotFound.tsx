@@ -3,14 +3,20 @@ import { Link } from 'react-router-dom';
 
 const NotFound: React.FC = () => {
   return (
-    <div className="flex flex-col items-center justify-center min-h-screen">
-      <div className="text-center">
-        <h1 className="text-6xl font-bold text-gray-900 mb-4">404</h1>
-        <p className="text-2xl text-gray-600 mb-8">Page Not Found</p>
-        <p className="text-gray-500 mb-8">The page you are looking for does not exist.</p>
+    <div className="flex-1 flex flex-col items-center justify-center p-6 bg-gray-50 dark:bg-slate-950 transition-colors duration-200">
+      <div className="text-center max-w-md">
+        <h1 className="text-8xl font-black text-blue-600 dark:text-blue-500 mb-4 animate-bounce">
+          404
+        </h1>
+        <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-2">
+          Page Not Found
+        </h2>
+        <p className="text-gray-600 dark:text-gray-400 mb-8">
+          The requested section or resource could not be found. Please check the URL or return to the main dashboard.
+        </p>
         <Link
           to="/"
-          className="bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700 inline-block"
+          className="bg-blue-600 text-white font-semibold px-6 py-3 rounded-lg hover:bg-blue-700 active:scale-95 transition-all inline-block shadow-md hover:shadow-lg"
         >
           Back to Dashboard
         </Link>

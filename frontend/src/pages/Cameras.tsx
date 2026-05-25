@@ -16,6 +16,7 @@ import {
 import { Card, Table, Button, Modal, Input, Badge, Pagination } from '@components/common';
 import { Camera } from '@/types/index';
 import apiClient from '@services/api';
+import { MASTER_BRANCHES } from '@utils/constants';
 
 interface CameraFormData {
   name: string;
@@ -24,6 +25,7 @@ interface CameraFormData {
   resolution: string;
   fps: string;
   status: 'active' | 'inactive' | 'error';
+  branch: string;
 }
 
 const CamerasPage: React.FC = () => {
@@ -32,13 +34,13 @@ const CamerasPage: React.FC = () => {
     cameras,
     selectedCamera,
     loading,
-    total,
     currentPage,
     pageSize,
   } = useAppSelector((state) => state.cameras);
 
   const [showModal, setShowModal] = useState(false);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [selectedBranchFilter, setSelectedBranchFilter] = useState<string>('all');
   const [formData, setFormData] = useState<CameraFormData>({
     name: '',
     location: '',
@@ -46,6 +48,7 @@ const CamerasPage: React.FC = () => {
     resolution: '1920x1080',
     fps: '30',
     status: 'inactive',
+    branch: 'br-hq',
   });
   const [errors, setErrors] = useState<Record<string, string>>({});
 
@@ -79,6 +82,7 @@ const CamerasPage: React.FC = () => {
               stream_url: 'rtsp://192.168.18.204:8554/live/main_lobby',
               resolution: '1920x1080',
               fps: 30,
+              branch: 'br-hq',
               created_at: new Date().toISOString(),
               updated_at: new Date().toISOString(),
             },
@@ -90,6 +94,7 @@ const CamerasPage: React.FC = () => {
               stream_url: 'rtsp://192.168.18.204:8554/live/parking_exit',
               resolution: '1920x1080',
               fps: 15,
+              branch: 'br-bdg',
               created_at: new Date().toISOString(),
               updated_at: new Date().toISOString(),
             },
@@ -101,6 +106,7 @@ const CamerasPage: React.FC = () => {
               stream_url: 'rtsp://192.168.18.204:8554/live/server_room',
               resolution: '1280x720',
               fps: 30,
+              branch: 'br-sby',
               created_at: new Date().toISOString(),
               updated_at: new Date().toISOString(),
             }
@@ -139,6 +145,7 @@ const CamerasPage: React.FC = () => {
       resolution: '1920x1080',
       fps: '30',
       status: 'active',
+      branch: 'br-hq',
     });
     setErrors({});
     dispatch(selectCamera(null));
@@ -153,6 +160,7 @@ const CamerasPage: React.FC = () => {
       resolution: camera.resolution || '1920x1080',
       fps: camera.fps?.toString() || '30',
       status: camera.status || 'inactive',
+      branch: camera.branch || 'br-hq',
     });
     setErrors({});
     dispatch(selectCamera(camera));
@@ -179,6 +187,7 @@ const CamerasPage: React.FC = () => {
       resolution: formData.resolution,
       fps: parseInt(formData.fps) || 30,
       status: formData.status,
+      branch: formData.branch,
     };
 
     if (selectedCamera) {
@@ -262,6 +271,19 @@ const CamerasPage: React.FC = () => {
       ),
     },
     {
+      key: 'branch',
+      label: 'Branch Location',
+      sortable: true,
+      render: (value: string) => {
+        const branchObj = MASTER_BRANCHES.find(b => b.id === value);
+        return (
+          <span className="text-xs font-semibold text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-900/30 px-2.5 py-1 rounded-full border border-blue-100 dark:border-blue-800/40">
+            {branchObj ? `${branchObj.name} (${branchObj.code})` : 'Headquarters'}
+          </span>
+        );
+      }
+    },
+    {
       key: 'location',
       label: 'Location',
       sortable: true,
@@ -321,6 +343,10 @@ const CamerasPage: React.FC = () => {
     },
   ];
 
+  const filteredCameras = cameras.filter(
+    (c) => selectedBranchFilter === 'all' || c.branch === selectedBranchFilter
+  );
+
   return (
     <div className="p-6 max-w-7xl mx-auto w-full space-y-6">
       {/* Header */}
@@ -338,11 +364,43 @@ const CamerasPage: React.FC = () => {
         </Button>
       </div>
 
+      {/* Branch Filters */}
+      <div className="flex flex-col sm:flex-row gap-3 items-start sm:items-center justify-between bg-white dark:bg-slate-900 p-4 rounded-xl border border-gray-200 dark:border-slate-800 shadow-sm">
+        <div className="text-sm font-semibold text-gray-700 dark:text-gray-300">
+          Filter by Branch Location:
+        </div>
+        <div className="flex gap-2 flex-wrap">
+          <button
+            onClick={() => setSelectedBranchFilter('all')}
+            className={`px-3 py-1.5 rounded-lg text-xs font-semibold tracking-wide uppercase transition-all ${
+              selectedBranchFilter === 'all'
+                ? 'bg-blue-600 text-white'
+                : 'bg-gray-100 dark:bg-slate-800 text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white'
+            }`}
+          >
+            All Branches
+          </button>
+          {MASTER_BRANCHES.map((b) => (
+            <button
+              key={b.id}
+              onClick={() => setSelectedBranchFilter(b.id)}
+              className={`px-3 py-1.5 rounded-lg text-xs font-semibold tracking-wide uppercase transition-all ${
+                selectedBranchFilter === b.id
+                  ? 'bg-blue-600 text-white'
+                  : 'bg-gray-100 dark:bg-slate-800 text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white'
+              }`}
+            >
+              {b.code}
+            </button>
+          ))}
+        </div>
+      </div>
+
       {/* Main Card with Camera List */}
       <Card>
         <Table
           columns={columns}
-          data={cameras}
+          data={filteredCameras}
           isLoading={loading}
           emptyMessage="No cameras configured"
           striped
@@ -351,12 +409,12 @@ const CamerasPage: React.FC = () => {
       </Card>
 
       {/* Pagination */}
-      {total > pageSize && (
+      {filteredCameras.length > pageSize && (
         <Card className="p-4">
           <Pagination
             currentPage={currentPage}
-            totalPages={Math.ceil(total / pageSize)}
-            totalItems={total}
+            totalPages={Math.ceil(filteredCameras.length / pageSize)}
+            totalItems={filteredCameras.length}
             pageSize={pageSize}
             onPageChange={(page) => dispatch(setCurrentPage(page))}
           />
@@ -423,6 +481,24 @@ const CamerasPage: React.FC = () => {
               min="1"
               max="120"
             />
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">
+              Branch Location
+            </label>
+            <select
+              name="branch"
+              value={formData.branch}
+              onChange={handleInputChange}
+              className="w-full px-3 py-2 border border-gray-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-800 text-gray-900 dark:text-white mb-4"
+            >
+              {MASTER_BRANCHES.map((b) => (
+                <option key={b.id} value={b.id}>
+                  {b.name} ({b.code})
+                </option>
+              ))}
+            </select>
           </div>
 
           <div>

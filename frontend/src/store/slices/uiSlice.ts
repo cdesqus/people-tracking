@@ -14,7 +14,7 @@ interface UIState {
 
 const initialState: UIState = {
   sidebarOpen: true,
-  theme: 'light',
+  theme: 'dark',
   notificationsEnabled: true,
   soundEnabled: true,
   showNotification: {
