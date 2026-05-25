@@ -10,6 +10,31 @@ if not hasattr(bcrypt, "__about__"):
         __version__ = bcrypt.__version__
     bcrypt.__about__ = BcryptAbout()
 
+# Patch bcrypt.hashpw and checkpw to truncate passwords > 72 bytes (compatibility with bcrypt 4.0.0+)
+_original_hashpw = bcrypt.hashpw
+_original_checkpw = bcrypt.checkpw
+
+def _safe_hashpw(password, salt):
+    if isinstance(password, bytes) and len(password) > 72:
+        password = password[:72]
+    elif isinstance(password, str):
+        password_bytes = password.encode('utf-8')
+        if len(password_bytes) > 72:
+            password = password_bytes[:72]
+    return _original_hashpw(password, salt)
+
+def _safe_checkpw(password, hashed_password):
+    if isinstance(password, bytes) and len(password) > 72:
+        password = password[:72]
+    elif isinstance(password, str):
+        password_bytes = password.encode('utf-8')
+        if len(password_bytes) > 72:
+            password = password_bytes[:72]
+    return _original_checkpw(password, hashed_password)
+
+bcrypt.hashpw = _safe_hashpw
+bcrypt.checkpw = _safe_checkpw
+
 from passlib.context import CryptContext
 from fastapi import Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordBearer
