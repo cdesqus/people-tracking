@@ -2,6 +2,14 @@ from datetime import datetime, timedelta
 from typing import Union, Any
 import enum
 from jose import jwt, JWTError
+
+import bcrypt
+# Monkey-patch bcrypt for passlib compatibility
+if not hasattr(bcrypt, "__about__"):
+    class BcryptAbout:
+        __version__ = bcrypt.__version__
+    bcrypt.__about__ = BcryptAbout()
+
 from passlib.context import CryptContext
 from fastapi import Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordBearer
