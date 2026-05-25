@@ -10,6 +10,7 @@ import Employees from '@pages/Employees';
 import Visitors from '@pages/Visitors';
 import NotFound from '@pages/NotFound';
 import Branches from '@pages/Branches';
+import ReportsPage from '@pages/ReportsPage';
 
 const App: React.FC = () => {
   return (
@@ -24,6 +25,7 @@ const App: React.FC = () => {
           <Route path="/employees" element={<Employees />} />
           <Route path="/visitors" element={<Visitors />} />
           <Route path="/settings" element={<Settings />} />
+          <Route path="/reports" element={<ReportsPage />} />
           <Route path="/404" element={<NotFound />} />
           <Route path="*" element={<Navigate to="/404" replace />} />
         </Route>
