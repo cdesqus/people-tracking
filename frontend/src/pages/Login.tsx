@@ -126,7 +126,7 @@ const Login: React.FC = () => {
                   required
                   value={emailOrUsername}
                   onChange={(e) => setEmailOrUsername(e.target.value)}
-                  placeholder="e.g. admin@cctv.local"
+                  placeholder="Username or email"
                   className="w-full pl-11 pr-4 py-3 bg-slate-950/80 border border-slate-800 focus:border-blue-500 rounded-xl text-white placeholder-slate-600 focus:outline-none focus:ring-1 focus:ring-blue-500/30 transition-all font-medium text-sm"
                 />
               </div>
@@ -195,13 +195,6 @@ const Login: React.FC = () => {
               )}
             </button>
           </form>
-
-          {/* Test Credentials Guide */}
-          <div className="mt-8 pt-6 border-t border-slate-800/80 text-center">
-            <span className="text-xs text-slate-500 font-medium">
-              Demo access: <code className="text-blue-400 font-mono">admin</code> / <code className="text-blue-400 font-mono">adminpassword</code>
-            </span>
-          </div>
 
         </div>
       </div>
