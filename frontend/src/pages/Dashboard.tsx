@@ -295,6 +295,8 @@ const Dashboard: React.FC = () => {
     }
   }, [selectedBranch, filteredCameras]);
 
+  const activeFocusedCamera = filteredCameras.find((c: any) => c.id === selectedCamera) || filteredCameras.find((c: any) => c.status === 'active') || filteredCameras[0];
+
   // Manage layout scrolling and footer visibility for Live Monitor tab
   useEffect(() => {
     const mainElement = document.getElementById('main-content');
@@ -701,75 +703,119 @@ const Dashboard: React.FC = () => {
             </div>
           </aside>
 
-          {/* Right Area: Cameras Grid & Bottom Alert Center */}
-          <section className="flex-1 flex flex-col p-4 bg-slate-950 overflow-hidden">
+          {/* Right Area: Focus Stream, Sidebar Selectors & Bottom Alert Center */}
+          <section className="flex-1 flex flex-col p-4 bg-slate-950 overflow-hidden min-h-0">
             
-            {/* Grid of 6 Camera feeds */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 flex-1 overflow-y-auto pr-1 no-scrollbar min-h-0">
-              {filteredCameras.map((camera: any) => {
-                const isSelected = selectedCamera === camera.id;
-                
-                return (
-                  <div 
-                    key={camera.id}
-                    onClick={() => camera.status === 'active' && setSelectedCamera(camera.id)}
-                    className={`group relative bg-slate-900 rounded-xl overflow-hidden transition-all duration-200 cursor-pointer aspect-video flex flex-col ${
-                      camera.status === 'inactive' 
-                        ? 'border border-slate-900 opacity-60' 
-                        : isSelected 
-                        ? 'border-2 border-blue-500 shadow-lg shadow-blue-500/10' 
-                        : 'border border-slate-850 hover:border-slate-700'
-                    }`}
-                  >
-                    {camera.status === 'active' ? (
-                      <>
-                        <img 
-                          alt={camera.name} 
-                          className="w-full h-full object-cover opacity-70 group-hover:opacity-100 transition-opacity duration-300"
-                          src={camera.image} 
-                        />
-                        
-                        {/* Scanline Overlay */}
-                        <div className="scanline pointer-events-none" />
-
-                        {/* Top Info Bar */}
-                        <div className="absolute top-2 left-2 flex items-center gap-2 z-10">
-                          <div className={`w-2 h-2 rounded-full pulse-dot ${camera.type === 'rec' ? 'bg-red-500' : 'bg-emerald-500'}`} />
-                          <span className="font-mono text-white text-[9px] bg-slate-950/80 px-2 py-0.5 rounded backdrop-blur border border-slate-800">
-                            {camera.id} • {camera.name}
-                          </span>
-                        </div>
-
-                        {/* AI Active Indicator */}
-                        <div className="absolute top-2 right-2 z-10">
-                          <span className="font-mono text-emerald-400 text-[8px] bg-slate-950/80 px-2 py-0.5 rounded backdrop-blur border border-slate-800/80 font-bold">
-                            AI ACTIVE
-                          </span>
-                        </div>
-
-                        {/* Bottom Live stamp */}
-                        <div className="absolute bottom-2 left-2 z-10 font-mono text-gray-400 text-[9px] bg-slate-950/40 px-1 rounded">
-                          {new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })} {camera.type === 'rec' ? 'REC' : 'LIVE'}
-                        </div>
-                      </>
-                    ) : (
-                      /* Signal Lost Block */
-                      <div className="w-full h-full flex flex-col items-center justify-center bg-slate-950/50">
-                        <span className="material-symbols-outlined text-3xl text-gray-600 mb-2">videocam_off</span>
-                        <p className="font-mono text-gray-500 text-[10px] tracking-widest font-bold">SIGNAL LOST</p>
-                        
-                        {/* Camera details */}
-                        <div className="absolute top-2 left-2 flex items-center gap-2 z-10">
-                          <div className="w-2 h-2 rounded-full bg-slate-700" />
-                          <span className="font-mono text-gray-500 text-[9px] bg-slate-950/80 px-2 py-0.5 rounded border border-slate-900">
-                            {camera.id} • {camera.name}
-                          </span>
-                        </div>
+            {/* Main Area: Split between Large Player (left) and Camera Grid (right) */}
+            <div className="flex-1 flex flex-col lg:flex-row gap-4 min-h-0 overflow-hidden mb-4">
+              
+              {/* Large Focused Camera Player */}
+              <div className="flex-[7] flex flex-col bg-slate-900 border border-slate-800 rounded-xl overflow-hidden relative shadow-2xl">
+                {activeFocusedCamera ? (
+                  <div className="flex-1 flex flex-col min-h-0">
+                    {/* Header bar of Focused Player */}
+                    <div className="p-3 bg-slate-900 border-b border-slate-850 flex justify-between items-center">
+                      <div className="flex items-center gap-2">
+                        <div className={`w-2.5 h-2.5 rounded-full ${activeFocusedCamera.status === 'active' ? 'bg-red-500 animate-pulse' : 'bg-slate-600'}`} />
+                        <span className="font-mono text-white text-xs font-bold">
+                          {activeFocusedCamera.id} • {activeFocusedCamera.name.toUpperCase()} (FOCUSED FEED)
+                        </span>
                       </div>
-                    )}
+                      <div className="flex items-center gap-2">
+                        <span className="text-[9px] font-mono px-2 py-0.5 bg-slate-950 rounded border border-slate-800 text-emerald-400 font-bold">
+                          {activeFocusedCamera.status === 'active' ? '1080P @ 30FPS' : 'OFFLINE'}
+                        </span>
+                        <span className="text-[9px] font-mono px-2 py-0.5 bg-blue-600/10 text-blue-400 rounded border border-blue-500/20 font-bold">
+                          LATENCY: 34ms
+                        </span>
+                      </div>
+                    </div>
+
+                    {/* Stream display */}
+                    <div className="flex-1 bg-slate-950 relative flex items-center justify-center overflow-hidden aspect-video lg:aspect-auto">
+                      {activeFocusedCamera.status === 'active' ? (
+                        <>
+                          <img 
+                            alt={activeFocusedCamera.name} 
+                            className="w-full h-full object-contain"
+                            src={activeFocusedCamera.image} 
+                          />
+                          {/* Targeting Reticle/Biometric Grid HUD */}
+                          <div className="absolute inset-0 pointer-events-none border border-blue-500/10">
+                            <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-48 h-48 border border-blue-500/20 rounded-full flex items-center justify-center">
+                              <div className="w-2 h-2 bg-blue-500 rounded-full" />
+                            </div>
+                            <div className="scanline" />
+                          </div>
+                        </>
+                      ) : (
+                        <div className="flex flex-col items-center justify-center text-center p-6">
+                          <span className="material-symbols-outlined text-5xl text-gray-700 mb-2">videocam_off</span>
+                          <h3 className="font-mono text-gray-500 text-sm tracking-widest font-bold">FEED SIGNAL LOST</h3>
+                          <p className="text-xs text-gray-600 mt-2 font-sans max-w-xs">The camera node is currently offline or unreachable. Check local hardware connection.</p>
+                        </div>
+                      )}
+                    </div>
                   </div>
-                );
-              })}
+                ) : (
+                  <div className="flex-1 flex items-center justify-center text-gray-500">
+                    No camera selected
+                  </div>
+                )}
+              </div>
+
+              {/* Small Sidebar Camera Selectors */}
+              <div className="flex-[3] flex flex-col bg-slate-900 border border-slate-800 rounded-xl overflow-hidden min-h-0">
+                <div className="p-3 bg-slate-900 border-b border-slate-850">
+                  <h3 className="text-xs font-bold text-white uppercase tracking-wider">Select Stream</h3>
+                </div>
+                
+                {/* Scrollable list of other camera thumbnails */}
+                <div className="flex-1 overflow-y-auto p-3 space-y-3 no-scrollbar">
+                  {filteredCameras.map((camera: any) => {
+                    const isSelected = selectedCamera === camera.id;
+                    return (
+                      <div 
+                        key={camera.id}
+                        onClick={() => setSelectedCamera(camera.id)}
+                        className={`group relative rounded-lg overflow-hidden transition-all duration-200 cursor-pointer aspect-video flex flex-col border ${
+                          isSelected 
+                            ? 'border-blue-500 shadow-md shadow-blue-500/10 bg-slate-950' 
+                            : 'border-slate-800 bg-slate-950/60 hover:border-slate-700'
+                        }`}
+                      >
+                        {camera.status === 'active' ? (
+                          <>
+                            <img 
+                              alt={camera.name} 
+                              className="w-full h-full object-cover opacity-65 group-hover:opacity-100 transition-opacity"
+                              src={camera.image} 
+                            />
+                            <div className="absolute inset-0 bg-slate-950/40" />
+                            
+                            {/* Small Tag overlay */}
+                            <div className="absolute top-1.5 left-1.5 z-10 font-mono text-[8px] bg-slate-950/80 px-1.5 py-0.5 rounded border border-slate-800 text-gray-300">
+                              {camera.id}
+                            </div>
+                            <div className="absolute bottom-1.5 left-1.5 z-10 font-mono text-[8px] text-gray-400 truncate max-w-[80%]">
+                              {camera.name}
+                            </div>
+                            {isSelected && (
+                              <div className="absolute inset-0 border-2 border-blue-500 rounded-lg pointer-events-none" />
+                            )}
+                          </>
+                        ) : (
+                          <div className="w-full h-full flex flex-col items-center justify-center py-2 bg-slate-950/80 text-gray-700">
+                            <span className="material-symbols-outlined text-lg mb-0.5">videocam_off</span>
+                            <span className="text-[7px] font-mono font-bold tracking-wider">{camera.id} OFFLINE</span>
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+
             </div>
 
             {/* Bottom Panel: Live Alert Center */}
