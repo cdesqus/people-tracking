@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, status, Request
 from fastapi.security import OAuth2PasswordRequestForm
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.future import select
@@ -26,26 +26,38 @@ class RefreshRequest(BaseModel):
 
 @router.post("/login")
 async def login(
-    login_data: UserLogin = None,
-    form_data: OAuth2PasswordRequestForm = Depends(None),
+    request: Request,
     db: AsyncSession = Depends(get_db)
 ):
     """
     User login endpoint. Supports both JSON body and OAuth2 form-data formats.
     """
+    content_type = request.headers.get("content-type", "")
     username = None
     password = None
 
-    if login_data:
-        username = login_data.email
-        password = login_data.password
-    elif form_data:
-        username = form_data.username
-        password = form_data.password
+    if "application/json" in content_type:
+        try:
+            body = await request.json()
+            username = body.get("email") or body.get("username")
+            password = body.get("password")
+        except Exception:
+            raise HTTPException(
+                status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+                detail="Invalid JSON format"
+            )
     else:
+        try:
+            form = await request.form()
+            username = form.get("username")
+            password = form.get("password")
+        except Exception:
+            pass
+
+    if not username or not password:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Login credentials must be provided via JSON body or Form data"
+            detail="Login credentials must be provided (username/email and password)"
         )
 
     # Query user by username or email

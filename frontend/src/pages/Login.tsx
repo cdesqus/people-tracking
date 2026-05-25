@@ -56,7 +56,17 @@ const Login: React.FC = () => {
         toast.error(response.data.message || 'Login failed');
       }
     } catch (err: any) {
-      const errMsg = err.response?.data?.detail || 'Invalid email or password';
+      let errMsg = 'Invalid email or password';
+      if (err.response?.data?.detail) {
+        const detail = err.response.data.detail;
+        if (typeof detail === 'string') {
+          errMsg = detail;
+        } else if (Array.isArray(detail)) {
+          errMsg = detail.map((d: any) => `${d.loc?.join('.') || 'error'}: ${d.msg}`).join(', ');
+        } else if (typeof detail === 'object') {
+          errMsg = JSON.stringify(detail);
+        }
+      }
       dispatch(setAuthError(errMsg));
       toast.error(errMsg);
     } finally {
