@@ -458,52 +458,89 @@ const Dashboard: React.FC = () => {
           {/* Bento Mid Grid */}
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-4">
             
-            {/* Live Occupancy Heatmap Floor Plan (Col span 8) */}
-            <section className="lg:col-span-8 bg-slate-900 border border-slate-800 shadow-md rounded-xl overflow-hidden relative group">
+            {/* Live Camera Surveillance Wall (Col span 8) */}
+            <section className="lg:col-span-8 bg-slate-900 border border-slate-800 shadow-md rounded-xl overflow-hidden relative flex flex-col justify-between group">
               <div className="p-4 border-b border-slate-800 flex justify-between items-center bg-slate-900/80 backdrop-blur">
                 <h3 className="text-sm font-semibold flex items-center gap-2 text-white">
-                  <span className="material-symbols-outlined text-blue-500">layers</span>
-                  Live Occupancy Heatmap
+                  <span className="material-symbols-outlined text-blue-500">grid_view</span>
+                  Live Camera Surveillance Wall
                 </h3>
-                <div className="flex gap-2">
-                  <span className="text-[10px] font-mono px-2 py-1 bg-slate-950 rounded border border-slate-800 text-gray-400">Level 04</span>
+                <div className="flex items-center gap-2">
+                  <span className="text-[10px] font-mono px-2 py-1 bg-slate-950 rounded border border-slate-800 text-gray-400">
+                    {filteredCameras.filter((c: any) => c.status === 'active').length} Channels Online
+                  </span>
                   <span className="text-[10px] font-mono px-2 py-1 bg-blue-600 text-white rounded font-bold animate-pulse">LIVE</span>
                 </div>
               </div>
 
-              {/* Heatmap Area */}
-              <div className="relative h-[400px] md:h-[480px] bg-slate-950 flex items-center justify-center overflow-hidden">
-                <img 
-                  alt="Building Floor Plan" 
-                  className="w-full h-full object-cover opacity-40 mix-blend-screen"
-                  src="https://lh3.googleusercontent.com/aida-public/AB6AXuDJA2_aA7nP1fNTKaiXKmWu5ozuU2kormt0rY4hStowPKElge6nLovDXXssok93kfTVMMCTf7vKl-RLetcIEYZGJBZI38zmmEN4JX8dVBN3VBN7sFta65lXR5uZHIOvkVrqwRkNuzUc1Q_fu_IWb2KWJ-8Uv-aAVjQNjDwEFkkvuGxYQTGe4RieFUzRIK5RrqjSANRCXQ8YtzwETcCE8XPEV02g8qpkvd6blSWLb2dgbOQ20QdrVcSL_dzdlHRcBG4cwRW22RRdUwlG"
-                />
-                
-                {/* Heatmap Overlays */}
-                <div className="absolute inset-0 pointer-events-none">
-                  <div className="absolute top-[20%] left-[30%] w-32 h-32 bg-red-600/35 rounded-full blur-3xl animate-pulse" />
-                  <div className="absolute bottom-[25%] right-[20%] w-48 h-48 bg-amber-500/25 rounded-full blur-3xl animate-pulse delay-700" />
-                  <div className="absolute top-[50%] left-[10%] w-24 h-24 bg-yellow-400/20 rounded-full blur-3xl animate-pulse delay-1000" />
-                </div>
+              {/* Grid of Active Cameras */}
+              <div className="p-4 bg-slate-950 grid grid-cols-1 md:grid-cols-2 gap-4 h-[400px] md:h-[480px] overflow-y-auto no-scrollbar">
+                {filteredCameras.slice(0, 4).map((camera) => (
+                  <div 
+                    key={camera.id}
+                    onClick={() => {
+                      if (camera.status === 'active') {
+                        setSelectedCamera(camera.id);
+                        setActiveTab('monitor');
+                      }
+                    }}
+                    className="relative aspect-video bg-slate-900 rounded-lg overflow-hidden border border-slate-850 hover:border-blue-500/50 transition-all cursor-pointer group/cam"
+                  >
+                    {camera.status === 'active' ? (
+                      <>
+                        <img 
+                          alt={camera.name} 
+                          className="w-full h-full object-cover opacity-75 group-hover/cam:opacity-100 transition-opacity duration-300"
+                          src={camera.image} 
+                        />
+                        
+                        {/* Scanline Overlay */}
+                        <div className="scanline pointer-events-none" />
 
-                {/* Animated Scanline Overlay */}
-                <div className="scanning-line" />
+                        {/* Top Info Bar */}
+                        <div className="absolute top-2 left-2 flex items-center gap-1.5 z-10">
+                          <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+                          <span className="font-mono text-white text-[8px] bg-slate-950/85 px-1.5 py-0.5 rounded border border-slate-800 backdrop-blur-sm">
+                            {camera.id} • {camera.name}
+                          </span>
+                        </div>
+
+                        {/* Status Badge */}
+                        <div className="absolute bottom-2 right-2 z-10 flex items-center gap-1">
+                          <span className="font-mono text-emerald-400 text-[8px] bg-slate-950/85 px-1.5 py-0.5 rounded border border-slate-800/80 font-bold backdrop-blur-sm">
+                            AI ACTIVE
+                          </span>
+                        </div>
+                      </>
+                    ) : (
+                      <div className="w-full h-full flex flex-col items-center justify-center bg-slate-950/40">
+                        <span className="material-symbols-outlined text-2xl text-gray-700 mb-1">videocam_off</span>
+                        <p className="font-mono text-gray-600 text-[9px] tracking-wider font-bold">SIGNAL LOST</p>
+                        
+                        {/* Camera details */}
+                        <div className="absolute top-2 left-2 flex items-center gap-2 z-10">
+                          <div className="w-1.5 h-1.5 rounded-full bg-slate-700" />
+                          <span className="font-mono text-gray-600 text-[8px] bg-slate-950/80 px-1.5 py-0.5 rounded border border-slate-900">
+                            {camera.id} • {camera.name}
+                          </span>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                ))}
               </div>
 
-              {/* Floor Plan Footer */}
-              <div className="p-4 flex gap-6 overflow-x-auto no-scrollbar bg-slate-950/80 border-t border-slate-800">
-                <div className="flex items-center gap-2 whitespace-nowrap text-xs">
-                  <div className="w-2.5 h-2.5 bg-red-600 rounded-full" />
-                  <span className="font-mono text-gray-400">High Density</span>
-                </div>
-                <div className="flex items-center gap-2 whitespace-nowrap text-xs">
-                  <div className="w-2.5 h-2.5 bg-amber-500 rounded-full" />
-                  <span className="font-mono text-gray-400">Moderate Activity</span>
-                </div>
-                <div className="flex items-center gap-2 whitespace-nowrap text-xs">
-                  <div className="w-2.5 h-2.5 bg-yellow-400 rounded-full" />
-                  <span className="font-mono text-gray-400">Low Activity</span>
-                </div>
+              {/* Surveillance Footer */}
+              <div className="p-4 flex justify-between items-center bg-slate-950/80 border-t border-slate-800">
+                <span className="text-xs text-gray-400 font-mono">
+                  Showing active system nodes for branch: <strong className="text-blue-400 uppercase">{selectedBranch === 'all' ? 'All Branches' : selectedBranch}</strong>
+                </span>
+                <button 
+                  onClick={() => setActiveTab('monitor')}
+                  className="text-xs text-blue-500 font-bold hover:underline flex items-center gap-1"
+                >
+                  Configure Camera Grid &rarr;
+                </button>
               </div>
             </section>
 
