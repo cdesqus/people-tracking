@@ -9,6 +9,7 @@ import Settings from '@pages/Settings';
 import Employees from '@pages/Employees';
 import Visitors from '@pages/Visitors';
 import NotFound from '@pages/NotFound';
+import Branches from '@pages/Branches';
 
 const App: React.FC = () => {
   return (
@@ -17,6 +18,7 @@ const App: React.FC = () => {
         <Route element={<Layout />}>
           <Route path="/" element={<Dashboard />} />
           <Route path="/cameras" element={<Cameras />} />
+          <Route path="/branches" element={<Branches />} />
           <Route path="/alerts" element={<Alerts />} />
           <Route path="/analytics" element={<Analytics />} />
           <Route path="/employees" element={<Employees />} />

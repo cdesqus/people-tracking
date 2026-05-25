@@ -82,7 +82,7 @@ const Table: React.FC<TableProps> = ({
   }
 
   return (
-    <div className="overflow-x-auto max-h-[calc(100vh-325px)] rounded-lg border border-gray-200 dark:border-slate-700 relative">
+    <div className="overflow-auto max-h-[calc(100vh-220px)] rounded-lg border border-gray-200 dark:border-slate-700 relative">
       <table
         className={`w-full text-sm text-gray-900 dark:text-white ${className}`}
         role="grid"

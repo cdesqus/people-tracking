@@ -4,6 +4,7 @@
  */
 
 import React, { useState } from 'react';
+import { Upload, Camera } from 'lucide-react';
 import Input from '@components/common/Input';
 import Button from '@components/common/Button';
 import FileUpload from '@components/common/FileUpload';
@@ -305,7 +306,7 @@ const VisitorCheckInForm: React.FC<VisitorCheckInFormProps> = ({
                   : 'bg-white dark:bg-slate-800 border-gray-300 dark:border-slate-700 text-gray-700 dark:text-gray-300'
               }`}
             >
-              <span className="material-symbols-outlined text-[16px]">upload_file</span>
+              <Upload className="w-4 h-4" />
               Upload File
             </button>
             <button
@@ -321,7 +322,7 @@ const VisitorCheckInForm: React.FC<VisitorCheckInFormProps> = ({
                   : 'bg-white dark:bg-slate-800 border-gray-300 dark:border-slate-700 text-gray-700 dark:text-gray-300'
               }`}
             >
-              <span className="material-symbols-outlined text-[16px]">photo_camera</span>
+              <Camera className="w-4 h-4" />
               Use Camera
             </button>
           </div>

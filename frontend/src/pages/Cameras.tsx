@@ -16,7 +16,6 @@ import {
 import { Card, Table, Button, Modal, Input, Badge, Pagination } from '@components/common';
 import { Camera } from '@/types/index';
 import apiClient from '@services/api';
-import { MASTER_BRANCHES } from '@utils/constants';
 
 interface CameraFormData {
   name: string;
@@ -30,6 +29,7 @@ interface CameraFormData {
 
 const CamerasPage: React.FC = () => {
   const dispatch = useAppDispatch();
+  const branches = useAppSelector((state) => state.branches.branches);
   const {
     cameras,
     selectedCamera,
@@ -275,7 +275,7 @@ const CamerasPage: React.FC = () => {
       label: 'Branch Location',
       sortable: true,
       render: (value: string) => {
-        const branchObj = MASTER_BRANCHES.find(b => b.id === value);
+        const branchObj = branches.find(b => b.id === value);
         return (
           <span className="text-xs font-semibold text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-900/30 px-2.5 py-1 rounded-full border border-blue-100 dark:border-blue-800/40">
             {branchObj ? `${branchObj.name} (${branchObj.code})` : 'Headquarters'}
@@ -380,7 +380,7 @@ const CamerasPage: React.FC = () => {
           >
             All Branches
           </button>
-          {MASTER_BRANCHES.map((b) => (
+          {branches.map((b) => (
             <button
               key={b.id}
               onClick={() => setSelectedBranchFilter(b.id)}
@@ -493,7 +493,7 @@ const CamerasPage: React.FC = () => {
               onChange={handleInputChange}
               className="w-full px-3 py-2 border border-gray-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-800 text-gray-900 dark:text-white mb-4"
             >
-              {MASTER_BRANCHES.map((b) => (
+              {branches.map((b) => (
                 <option key={b.id} value={b.id}>
                   {b.name} ({b.code})
                 </option>

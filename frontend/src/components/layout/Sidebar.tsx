@@ -3,6 +3,7 @@ import { Link, useLocation } from 'react-router-dom';
 import {
   LayoutDashboard,
   Camera,
+  Building,
   AlertCircle,
   BarChart3,
   Settings,
@@ -46,6 +47,13 @@ const Sidebar: React.FC = () => {
       path: '/cameras',
       id: 'cameras',
       roles: ['admin', 'manager', 'operator', 'security'],
+    },
+    {
+      icon: Building,
+      label: 'Branches',
+      path: '/branches',
+      id: 'branches',
+      roles: ['admin', 'manager'],
     },
     {
       icon: Users,

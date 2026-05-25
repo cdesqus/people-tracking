@@ -1,4 +1,5 @@
 import React, { useRef, useState, useEffect } from 'react';
+import { Camera, VideoOff, RotateCcw } from 'lucide-react';
 import Button from './Button';
 
 interface CameraCaptureProps {
@@ -81,7 +82,7 @@ const CameraCapture: React.FC<CameraCaptureProps> = ({ onCapture, onClose }) => 
     <div className="flex flex-col items-center gap-4 bg-slate-50 dark:bg-slate-900/50 p-4 rounded-xl border border-slate-200 dark:border-slate-800 w-full">
       {error ? (
         <div className="text-sm text-red-500 text-center py-6">
-          <span className="material-symbols-outlined text-4xl block mb-2">videocam_off</span>
+          <VideoOff className="w-10 h-10 mx-auto mb-2 text-red-500" />
           {error}
           <Button variant="secondary" onClick={startCamera} className="mt-4 mx-auto block text-xs">
             Try Again
@@ -121,13 +122,13 @@ const CameraCapture: React.FC<CameraCaptureProps> = ({ onCapture, onClose }) => 
       <div className="flex gap-2 justify-center w-full">
         {!captured && stream && (
           <Button type="button" variant="primary" onClick={capturePhoto} className="flex items-center gap-1 text-xs">
-            <span className="material-symbols-outlined text-[16px]">photo_camera</span>
+            <Camera className="w-4 h-4" />
             Ambil Foto
           </Button>
         )}
         {captured && (
           <Button type="button" variant="secondary" onClick={handleRetake} className="flex items-center gap-1 text-xs">
-            <span className="material-symbols-outlined text-[16px]">replay</span>
+            <RotateCcw className="w-4 h-4" />
             Foto Ulang
           </Button>
         )}

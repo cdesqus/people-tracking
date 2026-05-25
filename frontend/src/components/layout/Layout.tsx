@@ -51,7 +51,7 @@ const Layout: React.FC = () => {
         <main className="flex-1 overflow-auto pb-20 lg:pb-0" id="main-content">
           <div className="min-h-full flex flex-col">
             {/* Page Content */}
-            <div className="flex-1">
+            <div className="flex-1 pb-16">
               <Outlet />
             </div>
 

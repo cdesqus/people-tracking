@@ -1,12 +1,12 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { useAppDispatch } from '@store/store';
+import { useAppDispatch, useAppSelector } from '@store/store';
 import { useDashboardData } from '@hooks/useDashboardData';
 import { acknowledgeAlertStart, acknowledgeAlertSuccess } from '@store/slices/alertSlice';
-import { MASTER_BRANCHES } from '@utils/constants';
 
 const Dashboard: React.FC = () => {
   const dispatch = useAppDispatch();
+  const branches = useAppSelector((state) => state.branches.branches);
   const [activeTab, setActiveTab] = useState<'overview' | 'monitor'>('overview');
   const [selectedCamera, setSelectedCamera] = useState<string>('CAM-01');
   const [selectedBranch, setSelectedBranch] = useState<string>('all');
@@ -395,7 +395,7 @@ const Dashboard: React.FC = () => {
               className="appearance-none pl-9 pr-8 py-1.5 bg-slate-950 border border-slate-800 rounded-lg text-xs font-mono font-bold text-gray-300 focus:outline-none focus:border-blue-500 cursor-pointer"
             >
               <option value="all">ALL BRANCHES (GLOBAL)</option>
-              {MASTER_BRANCHES.map((b) => (
+              {branches.map((b) => (
                 <option key={b.id} value={b.id}>
                   {b.name.toUpperCase()} ({b.code})
                 </option>

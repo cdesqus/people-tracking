@@ -55,7 +55,7 @@ export const useDashboardData = (options: UseDashboardDataOptions = {}) => {
     try {
       // Fetch cameras
       dispatch(fetchCamerasStart());
-      const camerasRes = await fetch('/api/cameras');
+      const camerasRes = await fetch('/api/cameras/');
       if (camerasRes.ok) {
         const data = await camerasRes.json();
         dispatch(fetchCamerasSuccess({
@@ -68,7 +68,7 @@ export const useDashboardData = (options: UseDashboardDataOptions = {}) => {
 
       // Fetch alerts
       dispatch(fetchAlertsStart());
-      const alertsRes = await fetch('/api/alerts?limit=20');
+      const alertsRes = await fetch('/api/alerts/?limit=20');
       if (alertsRes.ok) {
         const data = await alertsRes.json();
         dispatch(fetchAlertsSuccess({
@@ -81,7 +81,7 @@ export const useDashboardData = (options: UseDashboardDataOptions = {}) => {
 
       // Fetch recent detections
       dispatch(fetchFacesStart());
-      const detectionsRes = await fetch('/api/detections?limit=20');
+      const detectionsRes = await fetch('/api/detections/?limit=20');
       if (detectionsRes.ok) {
         const data = await detectionsRes.json();
         dispatch(fetchFacesSuccess({

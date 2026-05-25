@@ -10,6 +10,7 @@ import employeeReducer from './slices/employeeSlice';
 import visitorReducer from './slices/visitorSlice';
 import reportReducer from './slices/reportSlice';
 import settingsReducer from './slices/settingsSlice';
+import branchReducer from './slices/branchSlice';
 
 export const store = configureStore({
   reducer: {
@@ -23,6 +24,7 @@ export const store = configureStore({
     visitors: visitorReducer,
     reports: reportReducer,
     settings: settingsReducer,
+    branches: branchReducer,
   },
 });
 
