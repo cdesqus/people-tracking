@@ -22,6 +22,7 @@ import AttendanceReport from '@components/reports/AttendanceReport';
 import VisitorReport from '@components/reports/VisitorReport';
 import CameraUptimeReport from '@components/reports/CameraUptimeReport';
 import SecurityReport from '@components/reports/SecurityReport';
+import ConsolidatedReport from '@components/reports/ConsolidatedReport';
 
 const ReportsPage: React.FC = () => {
   const dispatch = useAppDispatch();
@@ -57,10 +58,11 @@ const ReportsPage: React.FC = () => {
     { id: 'visitors', label: 'Visitor Report' },
     { id: 'camera_uptime', label: 'Camera Uptime' },
     { id: 'security_incidents', label: 'Security Incidents' },
+    { id: 'consolidated', label: 'Consolidated Summary' },
   ];
 
   const handleTabChange = (tabId: string) => {
-    const reportType = tabId as 'attendance' | 'visitors' | 'camera_uptime' | 'security_incidents';
+    const reportType = tabId as 'attendance' | 'visitors' | 'camera_uptime' | 'security_incidents' | 'consolidated';
     setActiveTab(reportType);
     dispatch(setReportType(reportType));
   };
@@ -112,6 +114,7 @@ const ReportsPage: React.FC = () => {
       {activeTab === 'visitors' && <VisitorReport />}
       {activeTab === 'camera_uptime' && <CameraUptimeReport />}
       {activeTab === 'security_incidents' && <SecurityReport />}
+      {activeTab === 'consolidated' && <ConsolidatedReport />}
     </div>
   );
 };

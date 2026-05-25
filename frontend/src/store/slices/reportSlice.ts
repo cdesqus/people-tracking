@@ -40,15 +40,14 @@ export interface SecurityIncident {
 }
 
 export interface ReportData {
-  type: 'attendance' | 'visitors' | 'camera_uptime' | 'security_incidents';
+  type: 'attendance' | 'visitors' | 'camera_uptime' | 'security_incidents' | 'consolidated';
   fromDate: string;
   toDate: string;
   summary: Record<string, number>;
   details: any[];
 }
-
 interface ReportState {
-  selectedType: 'attendance' | 'visitors' | 'camera_uptime' | 'security_incidents';
+  selectedType: 'attendance' | 'visitors' | 'camera_uptime' | 'security_incidents' | 'consolidated';
   fromDate: Date | null;
   toDate: Date | null;
   reportData: ReportData | null;
@@ -88,9 +87,9 @@ interface ReportState {
     warnings: number;
     info: number;
   };
+  consolidatedData: any | null;
   reportView: 'daily' | 'weekly' | 'monthly';
 }
-
 const initialState: ReportState = {
   selectedType: 'attendance',
   fromDate: null,
@@ -126,6 +125,7 @@ const initialState: ReportState = {
     warnings: 0,
     info: 0,
   },
+  consolidatedData: null,
   reportView: 'daily',
 };
 
@@ -135,7 +135,7 @@ const reportSlice = createSlice({
   reducers: {
     setReportType: (
       state,
-      action: PayloadAction<'attendance' | 'visitors' | 'camera_uptime' | 'security_incidents'>
+      action: PayloadAction<'attendance' | 'visitors' | 'camera_uptime' | 'security_incidents' | 'consolidated'>
     ) => {
       state.selectedType = action.payload;
     },
@@ -257,6 +257,19 @@ const reportSlice = createSlice({
       state.loading = false;
       state.error = action.payload;
     },
+    // Consolidated Report
+    fetchConsolidatedStart: (state) => {
+      state.loading = true;
+      state.error = null;
+    },
+    fetchConsolidatedSuccess: (state, action: PayloadAction<any>) => {
+      state.loading = false;
+      state.consolidatedData = action.payload;
+    },
+    fetchConsolidatedError: (state, action: PayloadAction<string>) => {
+      state.loading = false;
+      state.error = action.payload;
+    },
     // Export
     exportReportStart: (state) => {
       state.loading = true;
@@ -297,6 +310,9 @@ export const {
   fetchSecurityStart,
   fetchSecuritySuccess,
   fetchSecurityError,
+  fetchConsolidatedStart,
+  fetchConsolidatedSuccess,
+  fetchConsolidatedError,
   exportReportStart,
   exportReportSuccess,
   exportReportError,

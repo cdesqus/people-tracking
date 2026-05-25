@@ -22,6 +22,9 @@ import {
   fetchSecurityStart,
   fetchSecuritySuccess,
   fetchSecurityError,
+  fetchConsolidatedStart,
+  fetchConsolidatedSuccess,
+  fetchConsolidatedError,
   exportReportStart,
   exportReportSuccess,
   exportReportError,
@@ -53,6 +56,7 @@ const ReportGenerator: React.FC = () => {
     { value: 'visitors', label: 'Visitor Report' },
     { value: 'camera_uptime', label: 'Camera Uptime Report' },
     { value: 'security_incidents', label: 'Security Incidents Report' },
+    { value: 'consolidated', label: 'Consolidated Branch Report' },
   ];
 
   const handleGenerateReport = async () => {
@@ -118,6 +122,14 @@ const ReportGenerator: React.FC = () => {
           }));
           break;
         }
+        case 'consolidated': {
+          dispatch(fetchConsolidatedStart());
+          const response = await fetch(`/api/reports/consolidated?${params}`);
+          if (!response.ok) throw new Error('Failed to fetch consolidated report');
+          const data = await response.json();
+          dispatch(fetchConsolidatedSuccess(data));
+          break;
+        }
         default:
           break;
       }
@@ -135,6 +147,9 @@ const ReportGenerator: React.FC = () => {
           break;
         case 'security_incidents':
           dispatch(fetchSecurityError(message));
+          break;
+        case 'consolidated':
+          dispatch(fetchConsolidatedError(message));
           break;
         default:
           break;
@@ -192,7 +207,7 @@ const ReportGenerator: React.FC = () => {
             onChange={(value) =>
               dispatch(
                 setReportType(
-                  value as 'attendance' | 'visitors' | 'camera_uptime' | 'security_incidents'
+                  value as 'attendance' | 'visitors' | 'camera_uptime' | 'security_incidents' | 'consolidated'
                 )
               )
             }
