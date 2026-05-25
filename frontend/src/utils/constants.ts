@@ -1,25 +1,25 @@
 // API Configuration
 const getApiBaseUrl = () => {
-  if (process.env.REACT_APP_API_BASE_URL) {
-    return process.env.REACT_APP_API_BASE_URL;
-  }
   if (typeof window !== 'undefined' && window.location) {
     if (window.location.hostname !== 'localhost' && window.location.hostname !== '127.0.0.1') {
       return `${window.location.protocol}//${window.location.host}/api`;
     }
   }
+  if (process.env.REACT_APP_API_BASE_URL) {
+    return process.env.REACT_APP_API_BASE_URL;
+  }
   return 'http://localhost:8000/api';
 };
 
 const getWsUrl = () => {
-  if (process.env.REACT_APP_WS_URL) {
-    return process.env.REACT_APP_WS_URL;
-  }
   if (typeof window !== 'undefined' && window.location) {
     if (window.location.hostname !== 'localhost' && window.location.hostname !== '127.0.0.1') {
       const wsProtocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
       return `${wsProtocol}//${window.location.host}/ws`;
     }
+  }
+  if (process.env.REACT_APP_WS_URL) {
+    return process.env.REACT_APP_WS_URL;
   }
   return 'ws://localhost:8000/ws';
 };
