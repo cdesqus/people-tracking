@@ -2,7 +2,7 @@ from app.schemas.camera import CameraCreate, CameraUpdate, CameraResponse
 from app.schemas.face import FaceCreate, FaceResponse
 from app.schemas.person import PersonCreate, PersonUpdate, PersonResponse
 from app.schemas.alert import AlertCreate, AlertResponse
-from app.schemas.user import UserCreate, UserResponse
+from app.schemas.user import UserCreate, UserResponse, UserLogin
 
 __all__ = [
     'CameraCreate',
@@ -17,4 +17,5 @@ __all__ = [
     'AlertResponse',
     'UserCreate',
     'UserResponse',
+    'UserLogin',
 ]

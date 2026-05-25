@@ -7,7 +7,7 @@ CREATE EXTENSION IF NOT EXISTS "pg_trgm";
 CREATE EXTENSION IF NOT EXISTS "btree_gin";
 
 -- Create enum types
-CREATE TYPE user_role_enum AS ENUM ('admin', 'manager', 'employee', 'receptionist');
+CREATE TYPE user_role_enum AS ENUM ('admin', 'manager', 'operator', 'security', 'receptionist', 'viewer');
 CREATE TYPE detection_status_enum AS ENUM ('verified', 'pending', 'rejected', 'in_progress');
 CREATE TYPE visitor_status_enum AS ENUM ('checked_in', 'checked_out', 'flagged');
 

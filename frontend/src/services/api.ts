@@ -14,13 +14,31 @@ class ApiClient {
       },
     });
 
+    // Add request interceptor to attach bearer token
+    this.client.interceptors.request.use(
+      (config) => {
+        const token = localStorage.getItem('access_token');
+        if (token) {
+          config.headers.Authorization = `Bearer ${token}`;
+        }
+        return config;
+      },
+      (error) => {
+        return Promise.reject(error);
+      }
+    );
+
     // Add response interceptor for error handling
     this.client.interceptors.response.use(
       (response) => response,
       (error: AxiosError) => {
         if (error.response?.status === 401) {
-          // Handle unauthorized - redirect to login or refresh token
-          console.error('Unauthorized access');
+          console.error('Unauthorized access - clearing tokens and redirecting');
+          localStorage.removeItem('access_token');
+          localStorage.removeItem('refresh_token');
+          if (window.location.pathname !== '/login') {
+            window.location.href = '/login';
+          }
         }
         return Promise.reject(error);
       }
@@ -127,6 +145,21 @@ class ApiClient {
     return this.client.get<ApiResponse<any>>(
       `/analytics?start_date=${startDate}&end_date=${endDate}`
     );
+  }
+
+  // Authentication
+  async login(data: any) {
+    return this.client.post<ApiResponse<any>>('/auth/login', data);
+  }
+
+  async getCurrentUser() {
+    return this.client.get<ApiResponse<any>>('/auth/me');
+  }
+
+  async refreshToken(refreshToken: string) {
+    return this.client.post<ApiResponse<any>>('/auth/refresh-token', {
+      refresh_token: refreshToken,
+    });
   }
 
   // System

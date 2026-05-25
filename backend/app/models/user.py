@@ -7,7 +7,10 @@ from app.database import Base
 
 class UserRole(str, enum.Enum):
     ADMIN = "admin"
+    MANAGER = "manager"
     OPERATOR = "operator"
+    SECURITY = "security"
+    RECEPTIONIST = "receptionist"
     VIEWER = "viewer"
 
 

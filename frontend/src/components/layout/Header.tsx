@@ -1,4 +1,7 @@
 import React from 'react';
+import { useNavigate } from 'react-router-dom';
+import { useAppDispatch } from '@store/store';
+import { logout } from '@store/slices/authSlice';
 import { FiMenu, FiBell, FiSettings, FiLogOut } from 'react-icons/fi';
 
 interface HeaderProps {
@@ -6,6 +9,14 @@ interface HeaderProps {
 }
 
 const Header: React.FC<HeaderProps> = ({ onToggleSidebar }) => {
+  const navigate = useNavigate();
+  const dispatch = useAppDispatch();
+
+  const handleLogout = () => {
+    dispatch(logout());
+    navigate('/login');
+  };
+
   return (
     <header className="bg-white shadow-sm border-b border-gray-200">
       <div className="flex items-center justify-between px-6 py-4">
@@ -26,7 +37,11 @@ const Header: React.FC<HeaderProps> = ({ onToggleSidebar }) => {
           <button className="p-2 rounded-lg hover:bg-gray-100 text-gray-600">
             <FiSettings size={24} />
           </button>
-          <button className="p-2 rounded-lg hover:bg-gray-100 text-gray-600">
+          <button 
+            onClick={handleLogout}
+            className="p-2 rounded-lg hover:bg-gray-100 text-gray-600"
+            title="Log Out"
+          >
             <FiLogOut size={24} />
           </button>
           <div className="w-10 h-10 rounded-full bg-blue-500 flex items-center justify-center text-white font-bold">
@@ -39,3 +54,4 @@ const Header: React.FC<HeaderProps> = ({ onToggleSidebar }) => {
 };
 
 export default Header;
+

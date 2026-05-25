@@ -9,15 +9,8 @@ interface AuthState {
 }
 
 const initialState: AuthState = {
-  user: {
-    id: '1',
-    email: 'admin@cctv.local',
-    username: 'admin',
-    full_name: 'Administrator',
-    role: 'admin',
-    created_at: new Date().toISOString(),
-  },
-  isAuthenticated: true,
+  user: null,
+  isAuthenticated: false,
   isLoading: false,
   error: null,
 };
@@ -44,6 +37,8 @@ const authSlice = createSlice({
       state.user = null;
       state.isAuthenticated = false;
       state.error = null;
+      localStorage.removeItem('access_token');
+      localStorage.removeItem('refresh_token');
     },
 
     clearError: (state) => {

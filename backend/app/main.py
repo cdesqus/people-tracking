@@ -2,7 +2,7 @@ from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 from contextlib import asynccontextmanager
 from app.config import settings
-from app.database import init_db, close_db
+from app.database import init_db, close_db, seed_users
 from app.api import api_router
 
 
@@ -12,10 +12,15 @@ async def lifespan(app: FastAPI):
     # Startup
     print("Starting up application...")
     await init_db()
+    try:
+        await seed_users()
+    except Exception as e:
+        print(f"Error seeding database: {e}")
     yield
     # Shutdown
     print("Shutting down application...")
     await close_db()
+
 
 
 # Create FastAPI app
