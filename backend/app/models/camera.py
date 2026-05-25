@@ -1,4 +1,4 @@
-from sqlalchemy import Column, String, Integer, Float, DateTime, Enum
+from sqlalchemy import Column, String, Integer, Float, DateTime, Enum, Boolean
 from sqlalchemy.sql import func
 from datetime import datetime
 import enum
@@ -22,6 +22,20 @@ class Camera(Base):
     resolution = Column(String(50))
     fps = Column(Integer, default=30)
     branch = Column(String(100), nullable=True, default="br-hq")
+    
+    # RTSP Configuration fields
+    brand = Column(String(50), nullable=True, default="generic")  # hikvision, dahua, uniview, axis, tp-link, reolink, generic
+    rtsp_ip = Column(String(50), nullable=True)  # Camera IP address
+    rtsp_port = Column(Integer, nullable=True, default=554)  # RTSP port
+    rtsp_username = Column(String(255), nullable=True)  # RTSP username
+    rtsp_password = Column(String(255), nullable=True)  # RTSP password (should be encrypted in production)
+    rtsp_channel = Column(String(50), nullable=True, default="1")  # Channel/stream number
+    rtsp_stream_path = Column(String(255), nullable=True)  # Stream path for generic RTSP
+    
+    # Status tracking
+    last_status_check = Column(DateTime(timezone=True), nullable=True)
+    connection_error = Column(String(500), nullable=True)  # Last connection error message
+    
     created_at = Column(DateTime(timezone=True), server_default=func.now(), nullable=False)
     updated_at = Column(
         DateTime(timezone=True),
@@ -31,4 +45,4 @@ class Camera(Base):
     )
 
     def __repr__(self):
-        return f"<Camera(id={self.id}, name={self.name}, status={self.status})>"
+        return f"<Camera(id={self.id}, name={self.name}, brand={self.brand}, status={self.status})>"
