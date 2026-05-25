@@ -33,8 +33,8 @@ FROM node:18-alpine
 
 WORKDIR /app
 
-# Install serve to run the application
-RUN npm install -g serve
+# Install serve and curl for healthcheck
+RUN npm install -g serve && apk add --no-cache curl
 
 # Copy built application from builder
 COPY --from=builder /app/build ./build
