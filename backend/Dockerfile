@@ -2,16 +2,10 @@ FROM python:3.10-slim
 
 WORKDIR /app
 
-# Install system dependencies for OpenCV and other tools
+# Install system dependencies (minimal for headless OpenCV)
 RUN apt-get update && apt-get install -y \
     gcc \
     postgresql-client \
-    libglib2.0-0 \
-    libsm6 \
-    libxext6 \
-    libxrender-dev \
-    libgl1-mesa-glx \
-    libgomp1 \
     && rm -rf /var/lib/apt/lists/*
 
 # Copy requirements and install Python dependencies
