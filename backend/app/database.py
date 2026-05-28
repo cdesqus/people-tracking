@@ -3,12 +3,21 @@ from sqlalchemy.orm import declarative_base, sessionmaker
 from app.config import settings
 
 # Create async engine
-engine = create_async_engine(
-    settings.get_database_url(),
-    echo=settings.echo_sql,
-    future=True,
-    pool_pre_ping=True,
-)
+db_url = settings.get_database_url()
+if db_url.startswith("sqlite"):
+    engine = create_async_engine(
+        db_url,
+        echo=settings.echo_sql,
+        future=True,
+    )
+else:
+    engine = create_async_engine(
+        db_url,
+        echo=settings.echo_sql,
+        future=True,
+        pool_pre_ping=True,
+    )
+
 
 # Create async session factory
 async_session = sessionmaker(
