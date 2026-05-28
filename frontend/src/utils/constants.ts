@@ -2,7 +2,9 @@
 const getApiBaseUrl = () => {
   if (typeof window !== 'undefined' && window.location) {
     if (window.location.hostname !== 'localhost' && window.location.hostname !== '127.0.0.1') {
-      return `${window.location.protocol}//${window.location.host}/api`;
+      const port = window.location.port === '3000' ? '8000' : window.location.port;
+      const host = port ? `${window.location.hostname}:${port}` : window.location.hostname;
+      return `${window.location.protocol}//${host}/api`;
     }
   }
   if (process.env.REACT_APP_API_BASE_URL) {
@@ -15,7 +17,9 @@ const getWsUrl = () => {
   if (typeof window !== 'undefined' && window.location) {
     if (window.location.hostname !== 'localhost' && window.location.hostname !== '127.0.0.1') {
       const wsProtocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
-      return `${wsProtocol}//${window.location.host}/ws`;
+      const port = window.location.port === '3000' ? '8000' : window.location.port;
+      const host = port ? `${window.location.hostname}:${port}` : window.location.hostname;
+      return `${wsProtocol}//${host}/ws`;
     }
   }
   if (process.env.REACT_APP_WS_URL) {
