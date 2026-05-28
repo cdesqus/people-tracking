@@ -100,3 +100,26 @@ class BrandInfoResponse(BaseModel):
     description: str
     example_url: str
 
+
+class CameraListResponse(BaseModel):
+    items: list[CameraResponse]
+    total: int
+
+
+class CameraListEnvelope(BaseModel):
+    success: bool = True
+    data: CameraListResponse
+    message: Optional[str] = None
+
+
+class CameraEnvelope(BaseModel):
+    success: bool = True
+    data: CameraResponse
+    message: Optional[str] = None
+
+
+class EmptyEnvelope(BaseModel):
+    success: bool = True
+    message: Optional[str] = None
+
+

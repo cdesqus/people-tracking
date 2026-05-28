@@ -58,9 +58,11 @@ export const useDashboardData = (options: UseDashboardDataOptions = {}) => {
       const camerasRes = await fetch('/api/cameras/');
       if (camerasRes.ok) {
         const data = await camerasRes.json();
+        const camerasList = data.success && data.data ? (data.data.items || data.data) : (data.items || data);
+        const totalCount = data.success && data.data ? (data.data.total ?? (Array.isArray(camerasList) ? camerasList.length : 0)) : (data.total ?? (Array.isArray(data) ? data.length : 0));
         dispatch(fetchCamerasSuccess({
-          cameras: data.items || data,
-          total: data.total || (Array.isArray(data) ? data.length : 0),
+          cameras: Array.isArray(camerasList) ? camerasList : [],
+          total: totalCount,
         }));
       } else {
         dispatch(fetchCamerasError('Failed to fetch cameras'));

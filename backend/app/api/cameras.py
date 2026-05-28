@@ -7,7 +7,10 @@ from app.schemas.camera import (
     CameraResponse,
     RTSPTestRequest,
     RTSPTestResponse,
-    BrandInfoResponse
+    BrandInfoResponse,
+    CameraListEnvelope,
+    CameraEnvelope,
+    EmptyEnvelope
 )
 from app.services.camera_service import CameraService
 from app.services.rtsp_service import RTSPService
@@ -102,7 +105,7 @@ async def test_rtsp_connection(request: RTSPTestRequest):
     )
 
 
-@router.get("/", response_model=list[CameraResponse])
+@router.get("/", response_model=CameraListEnvelope)
 async def list_cameras(
     db: AsyncSession = Depends(get_db),
     branch: str = Query(None),
@@ -110,10 +113,16 @@ async def list_cameras(
 ):
     """List all cameras with optional filtering by branch or status"""
     cameras = await CameraService.list_cameras(db, branch=branch, status=status)
-    return cameras
+    return {
+        "success": True,
+        "data": {
+            "items": cameras,
+            "total": len(cameras)
+        }
+    }
 
 
-@router.post("/", response_model=CameraResponse, status_code=201)
+@router.post("/", response_model=CameraEnvelope, status_code=201)
 async def create_camera(
     camera: CameraCreate,
     db: AsyncSession = Depends(get_db)
@@ -121,23 +130,29 @@ async def create_camera(
     """Create a new camera with RTSP configuration"""
     try:
         new_camera = await CameraService.create_camera(db, camera)
-        return new_camera
+        return {
+            "success": True,
+            "data": new_camera
+        }
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Error creating camera: {str(e)}")
 
 
-@router.get("/{camera_id}", response_model=CameraResponse)
+@router.get("/{camera_id}", response_model=CameraEnvelope)
 async def get_camera(camera_id: str, db: AsyncSession = Depends(get_db)):
     """Get camera by ID"""
     camera = await CameraService.get_camera(db, camera_id)
     if not camera:
         raise HTTPException(status_code=404, detail="Camera not found")
-    return camera
+    return {
+        "success": True,
+        "data": camera
+    }
 
 
-@router.put("/{camera_id}", response_model=CameraResponse)
+@router.put("/{camera_id}", response_model=CameraEnvelope)
 async def update_camera(
     camera_id: str,
     camera_update: CameraUpdate,
@@ -148,19 +163,26 @@ async def update_camera(
         updated_camera = await CameraService.update_camera(db, camera_id, camera_update)
         if not updated_camera:
             raise HTTPException(status_code=404, detail="Camera not found")
-        return updated_camera
+        return {
+            "success": True,
+            "data": updated_camera
+        }
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Error updating camera: {str(e)}")
 
 
-@router.delete("/{camera_id}", status_code=204)
+@router.delete("/{camera_id}", response_model=EmptyEnvelope)
 async def delete_camera(camera_id: str, db: AsyncSession = Depends(get_db)):
     """Delete a camera"""
     success = await CameraService.delete_camera(db, camera_id)
     if not success:
         raise HTTPException(status_code=404, detail="Camera not found")
+    return {
+        "success": True,
+        "message": "Camera deleted successfully"
+    }
 
 
 @router.post("/{camera_id}/test-connection")
