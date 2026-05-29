@@ -102,9 +102,12 @@ class RTSPService:
             
             cap = cv2.VideoCapture(rtsp_url)
             
-            # Set connection timeout
-            cap.set(cv2.CAP_PROP_OPEN_TIMEOUT_MSECS, timeout * 1000)
-            cap.set(cv2.CAP_PROP_READ_TIMEOUT_MSECS, timeout * 1000)
+            # Set connection timeout (not available in all OpenCV builds)
+            try:
+                cap.set(cv2.CAP_PROP_OPEN_TIMEOUT_MSECS, timeout * 1000)
+                cap.set(cv2.CAP_PROP_READ_TIMEOUT_MSECS, timeout * 1000)
+            except AttributeError:
+                logger.warning("OpenCV build does not support timeout properties, skipping")
             
             # Try to read first frame
             ret, frame = cap.read()
