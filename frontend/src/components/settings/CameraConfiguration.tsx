@@ -109,7 +109,7 @@ const CameraConfiguration: React.FC = () => {
 
     setTestingConnection(true);
     try {
-      const response = await fetch(`/api/cameras/${selectedCamera.id}/test`, {
+      const response = await fetch(`/api/cameras/${selectedCamera.id}/test-connection`, {
         method: 'POST',
       });
 

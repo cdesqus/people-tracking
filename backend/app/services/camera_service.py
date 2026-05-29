@@ -82,6 +82,13 @@ class CameraService:
         await db.commit()
         await db.refresh(camera)
         
+        # Test connection immediately to set initial active/error status
+        try:
+            await CameraService.test_rtsp_connection(db, camera.id)
+            await db.refresh(camera)
+        except Exception as e:
+            logger.error(f"Error testing connection for new camera: {e}")
+        
         logger.info(f"Created camera: {camera.name} ({camera.id})")
         return camera
 
@@ -156,6 +163,13 @@ class CameraService:
         camera.updated_at = datetime.utcnow()
         await db.commit()
         await db.refresh(camera)
+        
+        # Test connection immediately after update to refresh status
+        try:
+            await CameraService.test_rtsp_connection(db, camera.id)
+            await db.refresh(camera)
+        except Exception as e:
+            logger.error(f"Error testing connection for updated camera: {e}")
         
         logger.info(f"Updated camera: {camera.name} ({camera.id})")
         return camera
