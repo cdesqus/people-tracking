@@ -157,9 +157,10 @@ export const useDashboardData = (options: UseDashboardDataOptions = {}) => {
         break;
       case 'new_alert':
         dispatch(addAlert(data as Alert));
+        fetchInitialData();
         break;
       case 'new_detection':
-        // Could add this to faces if needed
+        fetchInitialData();
         break;
       case 'kpi_update':
         // KPIs handled separately, just log
@@ -168,7 +169,7 @@ export const useDashboardData = (options: UseDashboardDataOptions = {}) => {
       default:
         console.log('Unknown message type:', type);
     }
-  }, [dispatch]);
+  }, [dispatch, fetchInitialData]);
 
   /**
    * Disconnect WebSocket

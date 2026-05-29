@@ -234,12 +234,12 @@ const Dashboard: React.FC = () => {
   // Merge real and mock face detections
   const displayFaces: any[] = faces.length > 0
     ? faces.map((f: any) => ({
-        name: f.person_id ? `ID: ${f.person_id}` : 'Unknown Subject',
+        name: f.person_name || (f.person_id ? `ID: ${f.person_id}` : 'Unknown Subject'),
         role: f.person_id ? 'Employee' : 'Unknown',
-        confidence: f.confidence,
+        confidence: f.confidence <= 1.0 ? f.confidence * 100 : f.confidence,
         image: f.image_url,
         time: new Date(f.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' }),
-        location: f.camera_id ? `Camera ${f.camera_id}` : 'General',
+        location: f.location || (f.camera_id ? `Camera ${f.camera_id}` : 'General'),
         status: f.person_id ? 'verified' : 'unrecognized',
         branch: f.branch || 'br-hq'
       }))
