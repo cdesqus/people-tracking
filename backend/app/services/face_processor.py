@@ -23,6 +23,39 @@ async def start_face_processor():
     # Wait a few seconds for database and services to settle
     await asyncio.sleep(5)
 
+    # Auto-index any employees who have photo_data but no face_id (e.g. registered before AWS was configured)
+    try:
+        async with async_session() as session:
+            stmt = select(Employee).where(
+                Employee.face_id == None,
+                Employee.photo_data != None,
+                Employee.deleted_at == None
+            )
+            res = await session.execute(stmt)
+            unindexed_employees = res.scalars().all()
+            
+            if unindexed_employees:
+                logger.info(f"Found {len(unindexed_employees)} unindexed employee(s). Attempting AWS Rekognition indexing...")
+                collection_id = os.getenv("REKOGNITION_EMPLOYEES_COLLECTION", "employees")
+                for emp in unindexed_employees:
+                    try:
+                        logger.info(f"Indexing face for employee: {emp.name} ({emp.id})")
+                        face_id = await rekognition_service.index_face(
+                            collection_id=collection_id,
+                            image_bytes=emp.photo_data,
+                            external_id=emp.id
+                        )
+                        if face_id:
+                            emp.face_id = face_id
+                            logger.info(f"Successfully indexed face for {emp.name}. FaceId: {face_id}")
+                        else:
+                            logger.warning(f"Could not index face for {emp.name} (no face detected in profile photo)")
+                    except Exception as index_err:
+                        logger.error(f"Error indexing face for {emp.name}: {index_err}")
+                await session.commit()
+    except Exception as sync_err:
+        logger.error(f"Error during auto-indexing startup check: {sync_err}")
+
     while True:
         try:
             # 1. Fetch active cameras and registered employees

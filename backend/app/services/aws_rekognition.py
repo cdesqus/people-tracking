@@ -83,11 +83,18 @@ class RekognitionService:
             )
             return response.get('FaceMatches', [])
         except Exception as e:
-            error_str = str(e).lower()
-            if "invalidparameterexception" in error_str and "no faces in the image" in error_str:
+            error_code = ""
+            error_message = ""
+            if hasattr(e, "response") and isinstance(e.response, dict) and "Error" in e.response:
+                error_code = e.response["Error"].get("Code", "")
+                error_message = e.response["Error"].get("Message", "")
+            
+            error_str = f"{error_code} {error_message} {str(e)}".lower()
+            
+            if "invalidparameterexception" in error_str and "no faces" in error_str:
                 raise NoFacesException("No faces in the image")
             print(f"Error searching faces: {e}")
-            return []
+            raise e
 
     async def index_face(
         self,
