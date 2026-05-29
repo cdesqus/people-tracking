@@ -1,4 +1,5 @@
 from fastapi import APIRouter, Depends, HTTPException, Query
+from fastapi.responses import StreamingResponse
 from sqlalchemy.ext.asyncio import AsyncSession
 from app.database import get_db
 from app.schemas.camera import (
@@ -183,6 +184,35 @@ async def delete_camera(camera_id: str, db: AsyncSession = Depends(get_db)):
         "success": True,
         "message": "Camera deleted successfully"
     }
+
+
+@router.get("/{camera_id}/stream")
+async def stream_camera(
+    camera_id: str,
+    db: AsyncSession = Depends(get_db)
+):
+    """
+    Stream live MJPEG feed from a camera's RTSP source.
+    
+    The browser can consume this with a simple <img src="..."> tag.
+    """
+    camera = await CameraService.get_camera(db, camera_id)
+    if not camera:
+        raise HTTPException(status_code=404, detail="Camera not found")
+    
+    if not camera.stream_url:
+        raise HTTPException(status_code=400, detail="Camera has no stream URL configured")
+    
+    return StreamingResponse(
+        RTSPService.generate_mjpeg_stream(camera.stream_url),
+        media_type="multipart/x-mixed-replace; boundary=frame",
+        headers={
+            "Cache-Control": "no-cache, no-store, must-revalidate",
+            "Pragma": "no-cache",
+            "Expires": "0",
+            "Access-Control-Allow-Origin": "*",
+        }
+    )
 
 
 @router.post("/{camera_id}/test-connection")

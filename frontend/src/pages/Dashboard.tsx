@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import { useAppDispatch, useAppSelector } from '@store/store';
 import { useDashboardData } from '@hooks/useDashboardData';
 import { acknowledgeAlertStart, acknowledgeAlertSuccess } from '@store/slices/alertSlice';
+import { API_BASE_URL } from '@/utils/constants';
 
 const Dashboard: React.FC = () => {
   const dispatch = useAppDispatch();
@@ -209,7 +210,7 @@ const Dashboard: React.FC = () => {
         status: c.status || 'active',
         type: 'live' as const,
         image: c.status === 'active'
-          ? 'https://lh3.googleusercontent.com/aida-public/AB6AXuDHi9scnA5eEXqAQR1PXYOzk8x0tpr1peS2gAeFoYhtv8Dt_0pTFHr037Hy4_VFUKt2QhMYYkSPjWZUjjx8G9UAFQ6x9_aJeDGW0Yoixw0I_GmGRlJTGcgx4FlApuzP8dsSQMTITELmp3s6VmKNjveTr5O37EaeuxtHUSA9EaZ8ZDF49SK5S59UEb43zCovGd0F5egbJvnBjz6wMTYNK1K5ikicbm5EkgHwVLz1HQ9GWx2YAHZM5Utn0ycsGae87rfNTJkH8QyUc18D'
+          ? `${API_BASE_URL}/cameras/${c.id}/stream`
           : '',
         branch: c.branch || 'br-hq'
       }))

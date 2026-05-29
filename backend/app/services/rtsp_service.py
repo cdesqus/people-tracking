@@ -5,7 +5,8 @@ RTSP Service - Handle RTSP stream management, URL generation, and connection tes
 import cv2
 import asyncio
 import logging
-from typing import Optional, Dict, Any
+import time
+from typing import Optional, Dict, Any, Generator
 from urllib.parse import quote, unquote
 from app.utils.rtsp_config import get_brand_config, RTSP_FORMATS
 
@@ -148,6 +149,58 @@ class RTSPService:
                 cap.release()
             except:
                 pass
+
+    @staticmethod
+    def generate_mjpeg_stream(
+        rtsp_url: str,
+        fps_limit: int = 10,
+        jpeg_quality: int = 70,
+    ) -> Generator[bytes, None, None]:
+        """
+        Generate MJPEG frames from an RTSP stream for browser display.
+
+        Yields multipart boundary-delimited JPEG frames that can be
+        consumed by an <img> tag with a StreamingResponse.
+
+        Args:
+            rtsp_url: Complete RTSP URL
+            fps_limit: Max frames per second to send (default 10)
+            jpeg_quality: JPEG encoding quality 1-100 (default 70)
+        """
+        cap = cv2.VideoCapture(rtsp_url)
+        frame_interval = 1.0 / fps_limit
+
+        try:
+            while cap.isOpened():
+                start = time.monotonic()
+                ret, frame = cap.read()
+                if not ret:
+                    # Try to reconnect once
+                    cap.release()
+                    cap = cv2.VideoCapture(rtsp_url)
+                    ret, frame = cap.read()
+                    if not ret:
+                        break
+
+                _, buffer = cv2.imencode(
+                    '.jpg', frame,
+                    [cv2.IMWRITE_JPEG_QUALITY, jpeg_quality]
+                )
+                yield (
+                    b'--frame\r\n'
+                    b'Content-Type: image/jpeg\r\n\r\n'
+                    + buffer.tobytes()
+                    + b'\r\n'
+                )
+
+                # Throttle to fps_limit
+                elapsed = time.monotonic() - start
+                if elapsed < frame_interval:
+                    time.sleep(frame_interval - elapsed)
+        except GeneratorExit:
+            logger.info("MJPEG stream client disconnected")
+        finally:
+            cap.release()
 
     @staticmethod
     def validate_rtsp_params(
