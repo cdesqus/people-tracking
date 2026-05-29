@@ -277,6 +277,22 @@ async def start_face_processor():
 
                                         await session.commit()
 
+                                        # Update last detections cache for live stream overlay
+                                        from app.services.rtsp_service import RTSPService
+                                        if camera.id not in RTSPService.last_detections:
+                                            RTSPService.last_detections[camera.id] = []
+                                        
+                                        now = datetime.utcnow()
+                                        RTSPService.last_detections[camera.id] = [
+                                            d for d in RTSPService.last_detections[camera.id]
+                                            if (now - d["timestamp"]).total_seconds() < 5.0
+                                        ]
+                                        RTSPService.last_detections[camera.id].append({
+                                            "name": employee.name,
+                                            "box": bounding_box,
+                                            "timestamp": now
+                                        })
+
                                         # Broadcast new detection
                                         await ws_manager.broadcast(
                                             {
@@ -372,6 +388,22 @@ async def start_face_processor():
                                 await session.flush()
                                 session.add(db_alert)
                                 await session.commit()
+
+                                # Update last detections cache for live stream overlay
+                                from app.services.rtsp_service import RTSPService
+                                if camera.id not in RTSPService.last_detections:
+                                    RTSPService.last_detections[camera.id] = []
+                                
+                                now = datetime.utcnow()
+                                RTSPService.last_detections[camera.id] = [
+                                    d for d in RTSPService.last_detections[camera.id]
+                                    if (now - d["timestamp"]).total_seconds() < 5.0
+                                ]
+                                RTSPService.last_detections[camera.id].append({
+                                    "name": "Unknown Subject",
+                                    "box": bounding_box,
+                                    "timestamp": now
+                                })
 
                             # Broadcast detection
                             await ws_manager.broadcast(

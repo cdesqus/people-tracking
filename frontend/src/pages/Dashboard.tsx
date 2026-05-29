@@ -11,6 +11,7 @@ const Dashboard: React.FC = () => {
   const [activeTab, setActiveTab] = useState<'overview' | 'monitor'>('overview');
   const [selectedCamera, setSelectedCamera] = useState<string>('CAM-01');
   const [selectedBranch, setSelectedBranch] = useState<string>('all');
+  const [previewImage, setPreviewImage] = useState<{ src: string, title: string, subtitle: string } | null>(null);
   const [kpiStats, setKpiStats] = useState({
     occupancy: 0,
     activeCameras: 0,
@@ -618,7 +619,12 @@ const Dashboard: React.FC = () => {
               {filteredFaces.slice(0, 5).map((face, index) => (
                 <div 
                   key={index}
-                  className="group relative aspect-square rounded-xl overflow-hidden bg-slate-950 border border-slate-800/80 transition-all hover:border-blue-500/80 hover:shadow-lg"
+                  onClick={() => setPreviewImage({
+                    src: face.image,
+                    title: face.name,
+                    subtitle: `${face.location} • ${face.time} (${face.role})`
+                  })}
+                  className="group relative aspect-square rounded-xl overflow-hidden bg-slate-950 border border-slate-800/80 transition-all hover:border-blue-500/80 hover:shadow-lg cursor-pointer"
                 >
                   {/* Image with scanner effects */}
                   <img 
@@ -658,10 +664,10 @@ const Dashboard: React.FC = () => {
         </div>
       ) : (
         /* ==================== TAB 2: LIVE MONITOR FEED ==================== */
-        <div className="flex flex-1 flex-col lg:flex-row w-full bg-slate-950">
+        <div className="flex flex-1 flex-col-reverse lg:flex-row w-full bg-slate-950">
           
           {/* Left Panel: Identification Log (Scrollable) */}
-          <aside className="w-full lg:w-[340px] border-b lg:border-b-0 lg:border-r border-slate-850 flex flex-col overflow-hidden bg-slate-900/40">
+          <aside className="w-full h-[350px] lg:h-full lg:w-[340px] border-t lg:border-t-0 lg:border-r border-slate-850 flex flex-col overflow-hidden bg-slate-900/40">
             <div className="p-4 border-b border-slate-850 bg-slate-900">
               <h2 className="text-sm font-semibold flex items-center gap-2 text-white">
                 <span className="material-symbols-outlined text-blue-500">face</span>
@@ -674,6 +680,11 @@ const Dashboard: React.FC = () => {
               {filteredFaces.map((face, index) => (
                 <div 
                   key={index}
+                  onClick={() => setPreviewImage({
+                    src: face.image,
+                    title: face.name,
+                    subtitle: `${face.location} • ${face.time} (${face.role})`
+                  })}
                   className={`flex items-center gap-3.5 p-2.5 bg-slate-900 border rounded-lg transition-colors cursor-pointer group ${
                     face.status === 'unrecognized' 
                       ? 'border-red-500/40 hover:border-red-500 bg-red-500/5' 
@@ -868,6 +879,51 @@ const Dashboard: React.FC = () => {
             </div>
 
           </section>
+        </div>
+      )}
+
+      {/* Face Capture Preview Modal */}
+      {previewImage && (
+        <div 
+          className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/80 backdrop-blur-sm p-4"
+          onClick={() => setPreviewImage(null)}
+        >
+          <div 
+            className="relative bg-slate-900 border border-slate-800 rounded-2xl max-w-md w-full overflow-hidden shadow-2xl transition-all"
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* Modal Header */}
+            <div className="flex justify-between items-center px-6 py-4 border-b border-slate-800 bg-slate-900/80 backdrop-blur">
+              <h3 className="text-sm font-bold text-white flex items-center gap-2">
+                <span className="material-symbols-outlined text-blue-500 text-lg">visibility</span>
+                Face Capture Preview
+              </h3>
+              <button 
+                onClick={() => setPreviewImage(null)}
+                className="text-gray-400 hover:text-white transition-colors focus:outline-none"
+              >
+                <span className="material-symbols-outlined text-lg">close</span>
+              </button>
+            </div>
+            {/* Modal Content */}
+            <div className="p-6 flex flex-col items-center">
+              <div className="relative w-full aspect-square rounded-xl overflow-hidden bg-slate-950 border border-slate-850 flex items-center justify-center shadow-inner group">
+                <img 
+                  src={previewImage.src} 
+                  alt={previewImage.title}
+                  className="w-full h-full object-contain max-h-[300px]"
+                  onError={(e) => {
+                    (e.target as HTMLImageElement).src = 'https://lh3.googleusercontent.com/aida-public/AB6AXuDjFgVkH9axMERLGYP_VOmpOpSJs087rwWE35hTKEmSaHavkXnAcTMbfTmVeam1Cl4AtVD-KxXjLUNzhl7TGgV4789W6Usk_55GgypHf9YoF49cJHG_-pYv5Aiid1GfqU0RZJ2222B1XJdE3MeWi3ng-W9BP6rJcDLj_IXq-i71-Two5zyDQvlhVp2uuELB7sDpKupOp2x-b_YTq_d8wxMZaHalJssVNuSzlJt97fdUdamgEfIFYPtnbXniYXB-ygDQjeVqd3s4AvEE';
+                  }}
+                />
+              </div>
+              
+              <div className="w-full mt-4 text-center">
+                <h4 className="text-base font-bold text-white tracking-wide">{previewImage.title}</h4>
+                <p className="text-[11px] font-mono text-gray-400 mt-1 uppercase tracking-wider">{previewImage.subtitle}</p>
+              </div>
+            </div>
+          </div>
         </div>
       )}
     </div>

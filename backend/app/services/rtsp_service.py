@@ -15,6 +15,8 @@ logger = logging.getLogger(__name__)
 
 class RTSPService:
     """Service for managing RTSP streams and connections"""
+    
+    last_detections = {}
 
     @staticmethod
     def generate_rtsp_url(
@@ -155,6 +157,7 @@ class RTSPService:
         rtsp_url: str,
         fps_limit: int = 10,
         jpeg_quality: int = 70,
+        camera_id: Optional[str] = None,
     ) -> Generator[bytes, None, None]:
         """
         Generate MJPEG frames from an RTSP stream for browser display.
@@ -166,6 +169,7 @@ class RTSPService:
             rtsp_url: Complete RTSP URL
             fps_limit: Max frames per second to send (default 10)
             jpeg_quality: JPEG encoding quality 1-100 (default 70)
+            camera_id: Unique camera ID for drawing face bounding boxes (optional)
         """
         cap = cv2.VideoCapture(rtsp_url)
         frame_interval = 1.0 / fps_limit
@@ -181,6 +185,40 @@ class RTSPService:
                     ret, frame = cap.read()
                     if not ret:
                         break
+
+                # Draw face bounding boxes and names if active detections exist
+                if camera_id and camera_id in RTSPService.last_detections:
+                    from datetime import datetime
+                    now = datetime.utcnow()
+                    detections = RTSPService.last_detections[camera_id]
+                    active_detections = [
+                        d for d in detections 
+                        if (now - d["timestamp"]).total_seconds() < 4.0
+                    ]
+                    
+                    for d in active_detections:
+                        name = d["name"]
+                        box = d["box"]
+                        
+                        h, w, _ = frame.shape
+                        left = int(box.get("left", 0.0) * w)
+                        top = int(box.get("top", 0.0) * h)
+                        width = int(box.get("width", 0.0) * w)
+                        height = int(box.get("height", 0.0) * h)
+                        
+                        right = min(w, left + width)
+                        bottom = min(h, top + height)
+                        
+                        color = (0, 255, 0) if name != "Unknown Subject" else (0, 0, 255)
+                        
+                        cv2.rectangle(frame, (left, top), (right, bottom), color, 2)
+                        
+                        label = name
+                        label_size, _ = cv2.getTextSize(label, cv2.FONT_HERSHEY_SIMPLEX, 0.5, 1)
+                        lw, lh = label_size
+                        
+                        cv2.rectangle(frame, (left, top - lh - 10), (left + lw + 10, top), color, cv2.FILLED)
+                        cv2.putText(frame, label, (left + 5, top - 5), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (255, 255, 255), 1, cv2.LINE_AA)
 
                 _, buffer = cv2.imencode(
                     '.jpg', frame,
