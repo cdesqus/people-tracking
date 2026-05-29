@@ -6,6 +6,11 @@ from typing import List, Dict, Any, Optional
 from app.config import settings
 
 
+class NoFacesException(Exception):
+    """Exception raised when no faces are detected in the image"""
+    pass
+
+
 class RekognitionService:
     """Service for AWS Rekognition operations"""
 
@@ -78,6 +83,9 @@ class RekognitionService:
             )
             return response.get('FaceMatches', [])
         except Exception as e:
+            error_str = str(e).lower()
+            if "invalidparameterexception" in error_str and "no faces in the image" in error_str:
+                raise NoFacesException("No faces in the image")
             print(f"Error searching faces: {e}")
             return []
 

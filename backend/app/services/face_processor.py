@@ -10,7 +10,7 @@ from app.models.camera import Camera, CameraStatus
 from app.models.employee import Employee
 from app.models.face import Face
 from app.models.alert import Alert, AlertSeverity, AlertType
-from app.services.aws_rekognition import rekognition_service
+from app.services.aws_rekognition import rekognition_service, NoFacesException
 from app.utils.websocket_manager import ws_manager
 
 logger = logging.getLogger(__name__)
@@ -160,80 +160,78 @@ async def start_face_processor():
                     logger.debug(
                         f"Searching face in AWS Rekognition collection: {collection_id}"
                     )
-                    matches = await rekognition_service.search_faces_by_image(
-                        collection_id=collection_id,
-                        image_bytes=frame_bytes,
-                        threshold=0.6,
-                    )
-
-                    if matches:
-                        for match in matches:
-                            similarity = match.get("Similarity", 0.0)
-                            face_details = match.get("Face", {})
-                            external_id = face_details.get("ExternalImageId")
-                            face_match_id = face_details.get("FaceId")
-
-                            logger.info(
-                                f"AWS Match Found! ID: {external_id}, Similarity: {similarity}%"
-                            )
-
-                            async with async_session() as session:
-                                # Retrieve employee
-                                emp_stmt = select(Employee).where(
-                                    Employee.id == external_id,
-                                    Employee.deleted_at == None,
-                                )
-                                emp_res = await session.execute(emp_stmt)
-                                employee = emp_res.scalar_one_or_none()
-
-                                if employee:
-                                    face_id = str(uuid.uuid4())
-                                    db_face = Face(
-                                        id=face_id,
-                                        camera_id=camera.id,
-                                        person_id=employee.id,
-                                        confidence=similarity / 100.0,
-                                        face_match=face_match_id,
-                                        boundingbox={
-                                            "top": 0.2,
-                                            "left": 0.3,
-                                            "width": 0.4,
-                                            "height": 0.4,
-                                        },
-                                        timestamp=datetime.utcnow(),
-                                    )
-                                    session.add(db_face)
-
-                                    # Update employee last seen
-                                    employee.last_detected = datetime.utcnow()
-                                    employee.current_location = camera.name
-
-                                    await session.commit()
-
-                                    # Broadcast new detection
-                                    await ws_manager.broadcast(
-                                        {
-                                            "type": "new_detection",
-                                            "data": {
-                                                "id": face_id,
-                                                "camera_id": camera.id,
-                                                "person_id": employee.id,
-                                                "person_name": employee.name,
-                                                "confidence": similarity,
-                                                "timestamp": db_face.timestamp.isoformat(),
-                                                "image_url": employee.photo_url,
-                                                "location": camera.name,
-                                            },
-                                        }
-                                    )
-                    else:
-                        # If no registered match, check if ANY face is present to register an alert
-                        faces_found = await rekognition_service.detect_faces(
-                            frame_bytes
+                    try:
+                        matches = await rekognition_service.search_faces_by_image(
+                            collection_id=collection_id,
+                            image_bytes=frame_bytes,
+                            threshold=0.6,
                         )
-                        if faces_found:
+
+                        if matches:
+                            for match in matches:
+                                similarity = match.get("Similarity", 0.0)
+                                face_details = match.get("Face", {})
+                                external_id = face_details.get("ExternalImageId")
+                                face_match_id = face_details.get("FaceId")
+
+                                logger.info(
+                                    f"AWS Match Found! ID: {external_id}, Similarity: {similarity}%"
+                                )
+
+                                async with async_session() as session:
+                                    # Retrieve employee
+                                    emp_stmt = select(Employee).where(
+                                        Employee.id == external_id,
+                                        Employee.deleted_at == None,
+                                    )
+                                    emp_res = await session.execute(emp_stmt)
+                                    employee = emp_res.scalar_one_or_none()
+
+                                    if employee:
+                                        face_id = str(uuid.uuid4())
+                                        db_face = Face(
+                                            id=face_id,
+                                            camera_id=camera.id,
+                                            person_id=employee.id,
+                                            confidence=similarity / 100.0,
+                                            face_match=face_match_id,
+                                            boundingbox={
+                                                "top": 0.2,
+                                                "left": 0.3,
+                                                "width": 0.4,
+                                                "height": 0.4,
+                                            },
+                                            timestamp=datetime.utcnow(),
+                                        )
+                                        session.add(db_face)
+
+                                        # Update employee last seen
+                                        employee.last_detected = datetime.utcnow()
+                                        employee.current_location = camera.name
+
+                                        await session.commit()
+
+                                        # Broadcast new detection
+                                        await ws_manager.broadcast(
+                                            {
+                                                "type": "new_detection",
+                                                "data": {
+                                                    "id": face_id,
+                                                    "camera_id": camera.id,
+                                                    "person_id": employee.id,
+                                                    "person_name": employee.name,
+                                                    "confidence": similarity,
+                                                    "timestamp": db_face.timestamp.isoformat(),
+                                                    "image_url": employee.photo_url,
+                                                    "location": camera.name,
+                                                },
+                                            }
+                                        )
+                        else:
+                            # If no registered match, but we didn't raise NoFacesException,
+                            # a face is indeed present in the frame but unrecognized.
                             logger.info("Unknown face detected! Creating alert.")
-                            confidence = faces_found[0].get("Confidence", 90.0)
+                            confidence = 90.0
 
                             face_id = str(uuid.uuid4())
                             db_face = Face(
@@ -299,6 +297,8 @@ async def start_face_processor():
                                     },
                                 }
                             )
+                    except NoFacesException:
+                        logger.debug(f"No faces detected on camera {camera.name}")
 
                 except Exception as cam_err:
                     logger.error(
