@@ -303,22 +303,32 @@ const Dashboard: React.FC = () => {
   // Manage layout scrolling and footer visibility for Live Monitor tab
   useEffect(() => {
     const mainElement = document.getElementById('main-content');
-    if (activeTab === 'monitor') {
-      document.body.classList.add('hide-footer');
-      if (mainElement) {
-        mainElement.style.overflow = 'auto';
+    const handleLayout = () => {
+      if (activeTab === 'monitor') {
+        document.body.classList.add('hide-footer');
+        if (mainElement) {
+          if (window.innerWidth >= 1024) {
+            mainElement.style.overflow = 'hidden';
+          } else {
+            mainElement.style.overflow = 'auto';
+          }
+        }
+      } else {
+        document.body.classList.remove('hide-footer');
+        if (mainElement) {
+          mainElement.style.overflow = 'auto';
+        }
       }
-    } else {
-      document.body.classList.remove('hide-footer');
-      if (mainElement) {
-        mainElement.style.overflow = 'auto';
-      }
-    }
+    };
+
+    handleLayout();
+    window.addEventListener('resize', handleLayout);
     return () => {
       document.body.classList.remove('hide-footer');
       if (mainElement) {
         mainElement.style.overflow = 'auto';
       }
+      window.removeEventListener('resize', handleLayout);
     };
   }, [activeTab]);
 
@@ -664,10 +674,10 @@ const Dashboard: React.FC = () => {
         </div>
       ) : (
         /* ==================== TAB 2: LIVE MONITOR FEED ==================== */
-        <div className="flex flex-1 flex-col-reverse lg:flex-row w-full bg-slate-950">
+        <div className="flex flex-1 flex-col lg:flex-row w-full bg-slate-950">
           
           {/* Left Panel: Identification Log (Scrollable) */}
-          <aside className="w-full h-[350px] lg:h-full lg:w-[340px] border-t lg:border-t-0 lg:border-r border-slate-850 flex flex-col overflow-hidden bg-slate-900/40">
+          <aside className="w-full h-[350px] lg:h-full lg:w-[340px] border-t lg:border-t-0 lg:border-r border-slate-850 flex flex-col overflow-hidden bg-slate-900/40 order-last lg:order-none">
             <div className="p-4 border-b border-slate-850 bg-slate-900">
               <h2 className="text-sm font-semibold flex items-center gap-2 text-white">
                 <span className="material-symbols-outlined text-blue-500">face</span>
@@ -717,7 +727,7 @@ const Dashboard: React.FC = () => {
           </aside>
 
           {/* Right Area: Focus Stream, Sidebar Selectors & Bottom Alert Center */}
-          <section className="flex-1 flex flex-col p-4 bg-slate-950 min-h-0">
+          <section className="flex-1 flex flex-col p-4 bg-slate-950 min-h-0 order-first lg:order-none">
             
             {/* Main Area: Split between Large Player (left) and Camera Grid (right) */}
             <div className="flex-1 flex flex-col lg:flex-row gap-4 min-h-0 mb-4">
@@ -745,7 +755,7 @@ const Dashboard: React.FC = () => {
                     </div>
 
                     {/* Stream display */}
-                    <div className="flex-1 bg-slate-950 relative flex items-center justify-center overflow-hidden aspect-video lg:aspect-auto">
+                    <div className="flex-1 bg-slate-950 relative flex items-center justify-center overflow-hidden aspect-video">
                       {activeFocusedCamera.status === 'active' ? (
                         <>
                           <img 
