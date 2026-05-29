@@ -264,6 +264,7 @@ async def start_face_processor():
 
                             async with async_session() as session:
                                 session.add(db_face)
+                                await session.flush()
                                 session.add(db_alert)
                                 await session.commit()
 

@@ -17,6 +17,21 @@ class RekognitionService:
             aws_secret_access_key=settings.aws_secret_access_key,
         )
 
+    def ensure_collection_exists(self, collection_id: str):
+        """Ensure the AWS Rekognition collection exists, create it if not"""
+        try:
+            self.client.describe_collection(CollectionId=collection_id)
+        except Exception as e:
+            error_str = str(e)
+            if "ResourceNotFoundException" in error_str:
+                try:
+                    print(f"Creating AWS Rekognition collection: {collection_id}")
+                    self.client.create_collection(CollectionId=collection_id)
+                except Exception as create_err:
+                    print(f"Error creating collection {collection_id}: {create_err}")
+            else:
+                print(f"Error describing collection {collection_id}: {e}")
+
     async def detect_faces(self, image_bytes: bytes) -> List[Dict[str, Any]]:
         """
         Detect faces in an image using AWS Rekognition
@@ -54,6 +69,7 @@ class RekognitionService:
         Returns:
             List of matched faces from the collection
         """
+        self.ensure_collection_exists(collection_id)
         try:
             response = self.client.search_faces_by_image(
                 CollectionId=collection_id,
@@ -82,6 +98,7 @@ class RekognitionService:
         Returns:
             Face ID if successful, None otherwise
         """
+        self.ensure_collection_exists(collection_id)
         try:
             response = self.client.index_faces(
                 CollectionId=collection_id,
