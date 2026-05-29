@@ -15,6 +15,7 @@ class Face(Base):
     boundingbox = Column(JSON, nullable=False)
     timestamp = Column(DateTime(timezone=True), nullable=False, index=True)
     image_url = Column(String(500), nullable=True)
+    image_data = Column(LargeBinary, nullable=True)
     created_at = Column(DateTime(timezone=True), server_default=func.now(), nullable=False)
     updated_at = Column(
         DateTime(timezone=True),

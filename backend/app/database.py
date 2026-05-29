@@ -45,6 +45,22 @@ async def init_db():
     """Initialize database tables"""
     async with engine.begin() as conn:
         await conn.run_sync(Base.metadata.create_all)
+        
+    # Manual migration to add image_data column to faces if not exists
+    from sqlalchemy import text
+    async with async_session() as session:
+        try:
+            db_dialect = session.bind.dialect.name
+            if db_dialect == "postgresql":
+                await session.execute(text("ALTER TABLE faces ADD COLUMN IF NOT EXISTS image_data BYTEA;"))
+            elif db_dialect == "sqlite":
+                try:
+                    await session.execute(text("ALTER TABLE faces ADD COLUMN image_data BLOB;"))
+                except Exception:
+                    pass
+            await session.commit()
+        except Exception as e:
+            print(f"Migration warning: Could not add image_data column: {e}")
 
 
 async def seed_users():

@@ -1,6 +1,6 @@
 import uuid
 from datetime import datetime
-from fastapi import APIRouter, Depends, HTTPException, Query
+from fastapi import APIRouter, Depends, HTTPException, Query, Response
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
 from typing import Optional
@@ -34,6 +34,8 @@ async def list_faces(
         person_name = "Unknown Subject"
         location_name = f"Camera {f.camera_id}"
         image_url = f.image_url
+        if f.image_data:
+            image_url = f"/api/detections/{f.id}/image"
 
         # Fetch employee name if recognized
         if f.person_id:
@@ -99,4 +101,18 @@ async def get_face(face_id: str, db: AsyncSession = Depends(get_db)):
     face = result.scalar_one_or_none()
     if not face:
         raise HTTPException(status_code=404, detail="Face detection not found")
+    if face.image_data and not face.image_url:
+        face.image_url = f"/api/detections/{face.id}/image"
     return face
+
+
+@router.get("/{face_id}/image")
+async def get_face_image(face_id: str, db: AsyncSession = Depends(get_db)):
+    """Retrieve raw face detection captured image from database"""
+    result = await db.execute(select(Face).where(Face.id == face_id))
+    face = result.scalar_one_or_none()
+    if not face or not face.image_data:
+        raise HTTPException(
+            status_code=404, detail="Face detection captured image not found"
+        )
+    return Response(content=face.image_data, media_type="image/jpeg")

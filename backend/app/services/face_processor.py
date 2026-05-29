@@ -211,6 +211,43 @@ async def start_face_processor():
                                     f"AWS Match Found! ID: {external_id}, Similarity: {similarity}%"
                                 )
 
+                                # Crop the recognized face from the frame using bounding box
+                                crop_bytes = None
+                                bounding_box = {
+                                    "top": 0.2,
+                                    "left": 0.3,
+                                    "width": 0.4,
+                                    "height": 0.4,
+                                }
+                                try:
+                                    box = face_details.get("BoundingBox", {})
+                                    bounding_box = {
+                                        "top": box.get("Top", 0.2),
+                                        "left": box.get("Left", 0.3),
+                                        "width": box.get("Width", 0.4),
+                                        "height": box.get("Height", 0.4),
+                                    }
+                                    h, w, _ = frame.shape
+                                    left = int(box.get("Left", 0.0) * w)
+                                    top = int(box.get("Top", 0.0) * h)
+                                    width = int(box.get("Width", 1.0) * w)
+                                    height = int(box.get("Height", 1.0) * h)
+
+                                    left = max(0, left)
+                                    top = max(0, top)
+                                    right = min(w, left + width)
+                                    bottom = min(h, top + height)
+
+                                    if right > left and bottom > top:
+                                        face_crop = frame[top:bottom, left:right]
+                                        _, crop_buffer = cv2.imencode(".jpg", face_crop)
+                                        crop_bytes = crop_buffer.tobytes()
+                                except Exception as crop_err:
+                                    logger.error(f"Error cropping recognized face: {crop_err}")
+
+                                if crop_bytes is None:
+                                    crop_bytes = frame_bytes
+
                                 async with async_session() as session:
                                     # Retrieve employee
                                     emp_stmt = select(Employee).where(
@@ -228,13 +265,9 @@ async def start_face_processor():
                                             person_id=employee.id,
                                             confidence=similarity / 100.0,
                                             face_match=face_match_id,
-                                            boundingbox={
-                                                "top": 0.2,
-                                                "left": 0.3,
-                                                "width": 0.4,
-                                                "height": 0.4,
-                                            },
+                                            boundingbox=bounding_box,
                                             timestamp=datetime.utcnow(),
+                                            image_data=crop_bytes,
                                         )
                                         session.add(db_face)
 
@@ -255,7 +288,7 @@ async def start_face_processor():
                                                     "person_name": employee.name,
                                                     "confidence": similarity,
                                                     "timestamp": db_face.timestamp.isoformat(),
-                                                    "image_url": employee.photo_url,
+                                                    "image_url": f"/api/detections/{face_id}/image",
                                                     "location": camera.name,
                                                 },
                                             }
@@ -265,6 +298,51 @@ async def start_face_processor():
                             # a face is indeed present in the frame but unrecognized.
                             logger.info("Unknown face detected! Creating alert.")
                             confidence = 90.0
+                            bounding_box = {
+                                "top": 0.2,
+                                "left": 0.3,
+                                "width": 0.4,
+                                "height": 0.4,
+                            }
+                            crop_bytes = None
+
+                            try:
+                                # Call detect_faces to get actual bounding box of the unknown subject
+                                faces_found = await rekognition_service.detect_faces(
+                                    frame_bytes
+                                )
+                                if faces_found:
+                                    face_detail = faces_found[0]
+                                    confidence = face_detail.get("Confidence", 90.0)
+                                    box = face_detail.get("BoundingBox", {})
+                                    bounding_box = {
+                                        "top": box.get("Top", 0.2),
+                                        "left": box.get("Left", 0.3),
+                                        "width": box.get("Width", 0.4),
+                                        "height": box.get("Height", 0.4),
+                                    }
+                                    
+                                    # Crop the unrecognized face
+                                    h, w, _ = frame.shape
+                                    left = int(box.get("Left", 0.0) * w)
+                                    top = int(box.get("Top", 0.0) * h)
+                                    width = int(box.get("Width", 1.0) * w)
+                                    height = int(box.get("Height", 1.0) * h)
+
+                                    left = max(0, left)
+                                    top = max(0, top)
+                                    right = min(w, left + width)
+                                    bottom = min(h, top + height)
+
+                                    if right > left and bottom > top:
+                                        face_crop = frame[top:bottom, left:right]
+                                        _, crop_buffer = cv2.imencode(".jpg", face_crop)
+                                        crop_bytes = crop_buffer.tobytes()
+                            except Exception as crop_err:
+                                logger.error(f"Error cropping unrecognized face: {crop_err}")
+
+                            if crop_bytes is None:
+                                crop_bytes = frame_bytes
 
                             face_id = str(uuid.uuid4())
                             db_face = Face(
@@ -272,13 +350,9 @@ async def start_face_processor():
                                 camera_id=camera.id,
                                 person_id=None,
                                 confidence=confidence / 100.0,
-                                boundingbox={
-                                    "top": 0.2,
-                                    "left": 0.3,
-                                    "width": 0.4,
-                                    "height": 0.4,
-                                },
+                                boundingbox=bounding_box,
                                 timestamp=datetime.utcnow(),
+                                image_data=crop_bytes,
                             )
 
                             alert_id = str(uuid.uuid4())
@@ -310,7 +384,7 @@ async def start_face_processor():
                                         "person_name": "Unknown Subject",
                                         "confidence": confidence,
                                         "timestamp": db_face.timestamp.isoformat(),
-                                        "image_url": None,
+                                        "image_url": f"/api/detections/{face_id}/image",
                                         "location": camera.name,
                                     },
                                 }
