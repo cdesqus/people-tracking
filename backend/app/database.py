@@ -53,6 +53,19 @@ async def init_db():
             db_dialect = session.bind.dialect.name
             if db_dialect == "postgresql":
                 await session.execute(text("ALTER TABLE faces ADD COLUMN IF NOT EXISTS image_data BYTEA;"))
+                
+                # Correct foreign keys to point to employees instead of persons
+                try:
+                    await session.execute(text("ALTER TABLE faces DROP CONSTRAINT IF EXISTS faces_person_id_fkey;"))
+                    await session.execute(text("ALTER TABLE faces ADD CONSTRAINT faces_person_id_fkey FOREIGN KEY (person_id) REFERENCES employees(id) ON DELETE SET NULL;"))
+                except Exception as fk_err1:
+                    print(f"Migration warning faces FK: {fk_err1}")
+                    
+                try:
+                    await session.execute(text("ALTER TABLE alerts DROP CONSTRAINT IF EXISTS alerts_person_id_fkey;"))
+                    await session.execute(text("ALTER TABLE alerts ADD CONSTRAINT alerts_person_id_fkey FOREIGN KEY (person_id) REFERENCES employees(id) ON DELETE SET NULL;"))
+                except Exception as fk_err2:
+                    print(f"Migration warning alerts FK: {fk_err2}")
             elif db_dialect == "sqlite":
                 try:
                     await session.execute(text("ALTER TABLE faces ADD COLUMN image_data BLOB;"))
@@ -60,7 +73,7 @@ async def init_db():
                     pass
             await session.commit()
         except Exception as e:
-            print(f"Migration warning: Could not add image_data column: {e}")
+            print(f"Migration warning: Could not run migrations: {e}")
 
 
 async def seed_users():

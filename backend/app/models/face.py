@@ -9,7 +9,7 @@ class Face(Base):
 
     id = Column(String(36), primary_key=True, index=True)
     camera_id = Column(String(36), ForeignKey("cameras.id"), nullable=False, index=True)
-    person_id = Column(String(36), ForeignKey("persons.id"), nullable=True, index=True)
+    person_id = Column(String(36), ForeignKey("employees.id"), nullable=True, index=True)
     confidence = Column(Float, nullable=False)
     face_match = Column(String(255), nullable=True)
     boundingbox = Column(JSON, nullable=False)

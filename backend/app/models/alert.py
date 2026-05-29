@@ -28,7 +28,7 @@ class Alert(Base):
     title = Column(String(255), nullable=False)
     description = Column(String(1000), nullable=False)
     camera_id = Column(String(36), ForeignKey("cameras.id"), nullable=False, index=True)
-    person_id = Column(String(36), ForeignKey("persons.id"), nullable=True, index=True)
+    person_id = Column(String(36), ForeignKey("employees.id"), nullable=True, index=True)
     face_id = Column(String(36), ForeignKey("faces.id"), nullable=True)
     acknowledged = Column(Boolean, default=False, index=True)
     created_at = Column(DateTime(timezone=True), server_default=func.now(), nullable=False, index=True)
