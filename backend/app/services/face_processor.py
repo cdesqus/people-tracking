@@ -40,11 +40,10 @@ async def start_face_processor():
                 await asyncio.sleep(10)
                 continue
 
-            # Check if AWS credentials are set
-            is_aws_configured = (
-                os.getenv("AWS_ACCESS_KEY_ID") is not None
-                and os.getenv("AWS_SECRET_ACCESS_KEY") is not None
-            )
+            # Check if AWS credentials are set and not empty
+            aws_key = os.getenv("AWS_ACCESS_KEY_ID")
+            aws_secret = os.getenv("AWS_SECRET_ACCESS_KEY")
+            is_aws_configured = bool(aws_key and aws_key.strip()) and bool(aws_secret and aws_secret.strip())
 
             # --- MOCK SIMULATION MODE (If AWS is not configured or no employees registered) ---
             if not is_aws_configured or not employees:
