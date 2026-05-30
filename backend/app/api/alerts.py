@@ -1,41 +1,105 @@
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy import select, func
 from app.database import get_db
-from app.schemas.alert import AlertCreate, AlertResponse
+from app.schemas.alert import AlertCreate, AlertResponse, PaginatedAlertResponse
+from app.models.alert import Alert
+import uuid
 
 router = APIRouter()
 
 
-@router.get("/", response_model=list[AlertResponse])
-async def list_alerts(skip: int = 0, limit: int = 100, db: AsyncSession = Depends(get_db)):
-    """List all alerts"""
-    # TODO: Implement alert listing logic
-    return []
+@router.get("/", response_model=PaginatedAlertResponse)
+async def list_alerts(
+    page: int = 1,
+    page_size: int = 10,
+    skip: int = None,
+    limit: int = None,
+    db: AsyncSession = Depends(get_db)
+):
+    """List all alerts with pagination, ordered by created_at DESC"""
+    # Fallback to skip/limit if page/page_size are not specified
+    if skip is not None and limit is not None:
+        offset_val = skip
+        limit_val = limit
+    else:
+        offset_val = (page - 1) * page_size
+        limit_val = page_size
+
+    # Get total count
+    count_stmt = select(func.count()).select_from(Alert)
+    count_res = await db.execute(count_stmt)
+    total = count_res.scalar() or 0
+
+    # Get items
+    stmt = select(Alert).order_by(Alert.created_at.desc()).offset(offset_val).limit(limit_val)
+    res = await db.execute(stmt)
+    items = res.scalars().all()
+
+    return {
+        "items": items,
+        "total": total
+    }
 
 
 @router.post("/", response_model=AlertResponse)
 async def create_alert(alert: AlertCreate, db: AsyncSession = Depends(get_db)):
     """Create a new alert"""
-    # TODO: Implement alert creation logic
-    raise HTTPException(status_code=501, detail="Not implemented")
+    db_alert = Alert(
+        id=str(uuid.uuid4()),
+        type=alert.type,
+        severity=alert.severity,
+        title=alert.title,
+        description=alert.description,
+        camera_id=alert.camera_id,
+        person_id=alert.person_id,
+        face_id=alert.face_id,
+        acknowledged=False
+    )
+    db.add(db_alert)
+    await db.commit()
+    await db.refresh(db_alert)
+    return db_alert
 
 
 @router.get("/{alert_id}", response_model=AlertResponse)
 async def get_alert(alert_id: str, db: AsyncSession = Depends(get_db)):
     """Get alert by ID"""
-    # TODO: Implement get alert logic
-    raise HTTPException(status_code=404, detail="Alert not found")
+    stmt = select(Alert).where(Alert.id == alert_id)
+    res = await db.execute(stmt)
+    db_alert = res.scalar_one_or_none()
+
+    if not db_alert:
+        raise HTTPException(status_code=404, detail="Alert not found")
+    return db_alert
 
 
 @router.patch("/{alert_id}/acknowledge")
 async def acknowledge_alert(alert_id: str, db: AsyncSession = Depends(get_db)):
     """Acknowledge an alert"""
-    # TODO: Implement acknowledge logic
-    raise HTTPException(status_code=404, detail="Alert not found")
+    stmt = select(Alert).where(Alert.id == alert_id)
+    res = await db.execute(stmt)
+    db_alert = res.scalar_one_or_none()
+
+    if not db_alert:
+        raise HTTPException(status_code=404, detail="Alert not found")
+
+    db_alert.acknowledged = True
+    await db.commit()
+    await db.refresh(db_alert)
+    return db_alert
 
 
 @router.delete("/{alert_id}")
 async def delete_alert(alert_id: str, db: AsyncSession = Depends(get_db)):
     """Delete an alert"""
-    # TODO: Implement alert deletion logic
-    raise HTTPException(status_code=404, detail="Alert not found")
+    stmt = select(Alert).where(Alert.id == alert_id)
+    res = await db.execute(stmt)
+    db_alert = res.scalar_one_or_none()
+
+    if not db_alert:
+        raise HTTPException(status_code=404, detail="Alert not found")
+
+    await db.delete(db_alert)
+    await db.commit()
+    return {"status": "success", "message": "Alert deleted"}

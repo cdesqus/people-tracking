@@ -20,6 +20,9 @@ async def start_face_processor():
     """Background loop that processes active camera streams and performs face recognition"""
     logger.info("Initializing background face processor loop...")
 
+    obstructed_counts = {}  # camera_id -> count of consecutive obstructed frames
+    last_alert_sent = {}    # camera_id -> timestamp of last sent alert
+
     # Wait a few seconds for database and services to settle
     await asyncio.sleep(5)
 
@@ -180,6 +183,68 @@ async def start_face_processor():
                             f"Could not read frame from camera: {camera.name}"
                         )
                         continue
+
+                    # Check for camera obstruction (tampering)
+                    try:
+                        gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
+                        mean_val, std_val = cv2.meanStdDev(gray)
+                        mean = mean_val[0][0]
+                        std_dev = std_val[0][0]
+
+                        # Obstructed if too dark (mean < 12.0) or too flat/uniform (std_dev < 3.0)
+                        is_obstructed = (mean < 12.0) or (std_dev < 3.0)
+
+                        if is_obstructed:
+                            obstructed_counts[camera.id] = obstructed_counts.get(camera.id, 0) + 1
+                            logger.warning(
+                                f"Camera {camera.name} is possibly obstructed (Mean={mean:.2f}, StdDev={std_dev:.2f}). Count={obstructed_counts[camera.id]}"
+                            )
+
+                            # Trigger alert if consecutive count reaches 4 (approx 12-15 seconds of solid blockage)
+                            if obstructed_counts[camera.id] >= 4:
+                                now = datetime.utcnow()
+                                last_sent = last_alert_sent.get(camera.id)
+                                if not last_sent or (now - last_sent).total_seconds() > 60.0:
+                                    last_alert_sent[camera.id] = now
+
+                                    # Create critical suspicious activity alert
+                                    alert_id = str(uuid.uuid4())
+                                    db_alert = Alert(
+                                        id=alert_id,
+                                        type=AlertType.SUSPICIOUS_ACTIVITY,
+                                        severity=AlertSeverity.CRITICAL,
+                                        title="Camera Obstructed / Tampering Detected",
+                                        description=f"Camera {camera.name} is obstructed or covered (feed signal is too dark or flat).",
+                                        camera_id=camera.id,
+                                        person_id=None,
+                                        face_id=None,
+                                        acknowledged=False,
+                                    )
+
+                                    async with async_session() as session:
+                                        session.add(db_alert)
+                                        await session.commit()
+
+                                    # Broadcast alert via WebSocket
+                                    await ws_manager.broadcast({
+                                        "type": "new_alert",
+                                        "data": {
+                                            "id": alert_id,
+                                            "title": db_alert.title,
+                                            "description": db_alert.description,
+                                            "camera_id": camera.id,
+                                            "severity": "critical",
+                                            "created_at": now.isoformat(),
+                                        }
+                                    })
+                                    logger.error(f"CRITICAL: Camera {camera.name} is obstructed! Raised Alert {alert_id}")
+                        else:
+                            # Reset count if it is clear
+                            if obstructed_counts.get(camera.id, 0) > 0:
+                                logger.info(f"Camera {camera.name} obstruction cleared.")
+                            obstructed_counts[camera.id] = 0
+                    except Exception as tamper_err:
+                        logger.error(f"Error checking camera tampering for {camera.name}: {tamper_err}")
 
                     # Resize to keep bandwidth minimal and match AWS standard
                     resized = cv2.resize(frame, (640, 480))

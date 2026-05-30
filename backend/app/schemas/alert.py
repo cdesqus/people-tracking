@@ -26,3 +26,8 @@ class AlertResponse(AlertBase):
 
     class Config:
         from_attributes = True
+
+
+class PaginatedAlertResponse(BaseModel):
+    items: list[AlertResponse]
+    total: int
