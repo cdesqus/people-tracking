@@ -377,130 +377,133 @@ async def start_face_processor():
                         else:
                             # If no registered match, but we didn't raise NoFacesException,
                             # a face is indeed present in the frame but unrecognized.
-                            logger.info("Unknown face detected! Creating alert.")
-                            confidence = 90.0
-                            bounding_box = {
-                                "top": 0.2,
-                                "left": 0.3,
-                                "width": 0.4,
-                                "height": 0.4,
-                            }
-                            crop_bytes = None
+                            # Use detect_faces to find ALL faces in the frame.
+                            logger.info("Unknown face(s) detected! Scanning for all faces in frame.")
 
+                            faces_found = []
                             try:
-                                # Call detect_faces to get actual bounding box of the unknown subject
                                 faces_found = await rekognition_service.detect_faces(
                                     frame_bytes
                                 )
-                                if faces_found:
-                                    face_detail = faces_found[0]
-                                    confidence = face_detail.get("Confidence", 90.0)
-                                    box = face_detail.get("BoundingBox", {})
-                                    bounding_box = {
-                                        "top": box.get("Top", 0.2),
-                                        "left": box.get("Left", 0.3),
-                                        "width": box.get("Width", 0.4),
-                                        "height": box.get("Height", 0.4),
-                                    }
-                                    
-                                    # Crop the unrecognized face
+                            except Exception as detect_err:
+                                logger.error(f"Error detecting faces for multi-person scan: {detect_err}")
+
+                            if not faces_found:
+                                # Fallback: create a single unknown detection with default bounding box
+                                faces_found = [{"Confidence": 90.0, "BoundingBox": {"Top": 0.2, "Left": 0.3, "Width": 0.4, "Height": 0.4}}]
+
+                            logger.info(f"Found {len(faces_found)} face(s) in frame from camera {camera.name}")
+
+                            for face_detail in faces_found:
+                                confidence = face_detail.get("Confidence", 90.0)
+                                box = face_detail.get("BoundingBox", {})
+                                bounding_box = {
+                                    "top": box.get("Top", 0.2),
+                                    "left": box.get("Left", 0.3),
+                                    "width": box.get("Width", 0.4),
+                                    "height": box.get("Height", 0.4),
+                                }
+
+                                # Crop each individual face
+                                crop_bytes = None
+                                try:
                                     h, w, _ = frame.shape
-                                    left = int(box.get("Left", 0.0) * w)
-                                    top = int(box.get("Top", 0.0) * h)
-                                    width = int(box.get("Width", 1.0) * w)
-                                    height = int(box.get("Height", 1.0) * h)
+                                    f_left = int(box.get("Left", 0.0) * w)
+                                    f_top = int(box.get("Top", 0.0) * h)
+                                    f_width = int(box.get("Width", 1.0) * w)
+                                    f_height = int(box.get("Height", 1.0) * h)
 
-                                    left = max(0, left)
-                                    top = max(0, top)
-                                    right = min(w, left + width)
-                                    bottom = min(h, top + height)
+                                    f_left = max(0, f_left)
+                                    f_top = max(0, f_top)
+                                    f_right = min(w, f_left + f_width)
+                                    f_bottom = min(h, f_top + f_height)
 
-                                    if right > left and bottom > top:
-                                        face_crop = frame[top:bottom, left:right]
+                                    if f_right > f_left and f_bottom > f_top:
+                                        face_crop = frame[f_top:f_bottom, f_left:f_right]
                                         _, crop_buffer = cv2.imencode(".jpg", face_crop)
                                         crop_bytes = crop_buffer.tobytes()
-                            except Exception as crop_err:
-                                logger.error(f"Error cropping unrecognized face: {crop_err}")
+                                except Exception as crop_err:
+                                    logger.error(f"Error cropping unrecognized face: {crop_err}")
 
-                            if crop_bytes is None:
-                                crop_bytes = frame_bytes
+                                if crop_bytes is None:
+                                    crop_bytes = frame_bytes
 
-                            face_id = str(uuid.uuid4())
-                            db_face = Face(
-                                id=face_id,
-                                camera_id=camera.id,
-                                person_id=None,
-                                confidence=confidence / 100.0,
-                                boundingbox=bounding_box,
-                                timestamp=datetime.utcnow(),
-                                image_data=crop_bytes,
-                            )
+                                face_id = str(uuid.uuid4())
+                                db_face = Face(
+                                    id=face_id,
+                                    camera_id=camera.id,
+                                    person_id=None,
+                                    confidence=confidence / 100.0,
+                                    boundingbox=bounding_box,
+                                    timestamp=datetime.utcnow(),
+                                    image_data=crop_bytes,
+                                )
 
-                            alert_id = str(uuid.uuid4())
-                            db_alert = Alert(
-                                id=alert_id,
-                                type=AlertType.UNKNOWN_FACE,
-                                severity=AlertSeverity.CRITICAL,
-                                title="Unrecognized Subject Detected",
-                                description=f"An unrecognized individual was detected on camera {camera.name}.",
-                                camera_id=camera.id,
-                                face_id=face_id,
-                                acknowledged=False,
-                            )
+                                alert_id = str(uuid.uuid4())
+                                db_alert = Alert(
+                                    id=alert_id,
+                                    type=AlertType.UNKNOWN_FACE,
+                                    severity=AlertSeverity.CRITICAL,
+                                    title="Unrecognized Subject Detected",
+                                    description=f"An unrecognized individual was detected on camera {camera.name}.",
+                                    camera_id=camera.id,
+                                    face_id=face_id,
+                                    acknowledged=False,
+                                )
 
-                            async with async_session() as session:
-                                session.add(db_face)
-                                await session.flush()
-                                session.add(db_alert)
-                                await session.commit()
+                                async with async_session() as session:
+                                    session.add(db_face)
+                                    await session.flush()
+                                    session.add(db_alert)
+                                    await session.commit()
 
-                                # Update last detections cache for live stream overlay
-                                from app.services.rtsp_service import RTSPService
-                                if camera.id not in RTSPService.last_detections:
-                                    RTSPService.last_detections[camera.id] = []
-                                
-                                now = datetime.utcnow()
-                                RTSPService.last_detections[camera.id] = [
-                                    d for d in RTSPService.last_detections[camera.id]
-                                    if (now - d["timestamp"]).total_seconds() < 5.0
-                                ]
-                                RTSPService.last_detections[camera.id].append({
-                                    "name": "Unknown Subject",
-                                    "box": bounding_box,
-                                    "timestamp": now
-                                })
+                                    # Update last detections cache for live stream overlay
+                                    from app.services.rtsp_service import RTSPService
+                                    if camera.id not in RTSPService.last_detections:
+                                        RTSPService.last_detections[camera.id] = []
 
-                            # Broadcast detection
-                            await ws_manager.broadcast(
-                                {
-                                    "type": "new_detection",
-                                    "data": {
-                                        "id": face_id,
-                                        "camera_id": camera.id,
-                                        "person_id": None,
-                                        "person_name": "Unknown Subject",
-                                        "confidence": confidence,
-                                        "timestamp": db_face.timestamp.isoformat(),
-                                        "image_url": f"/api/detections/{face_id}/image",
-                                        "location": camera.name,
-                                    },
-                                }
-                            )
+                                    now = datetime.utcnow()
+                                    RTSPService.last_detections[camera.id] = [
+                                        d for d in RTSPService.last_detections[camera.id]
+                                        if (now - d["timestamp"]).total_seconds() < 5.0
+                                    ]
+                                    RTSPService.last_detections[camera.id].append({
+                                        "name": "Unknown Subject",
+                                        "box": bounding_box,
+                                        "timestamp": now
+                                    })
 
-                            # Broadcast alert
-                            await ws_manager.broadcast(
-                                {
-                                    "type": "new_alert",
-                                    "data": {
-                                        "id": alert_id,
-                                        "title": db_alert.title,
-                                        "description": db_alert.description,
-                                        "camera_id": camera.id,
-                                        "severity": "critical",
-                                        "created_at": datetime.utcnow().isoformat(),
-                                    },
-                                }
-                            )
+                                # Broadcast detection
+                                await ws_manager.broadcast(
+                                    {
+                                        "type": "new_detection",
+                                        "data": {
+                                            "id": face_id,
+                                            "camera_id": camera.id,
+                                            "person_id": None,
+                                            "person_name": "Unknown Subject",
+                                            "confidence": confidence,
+                                            "timestamp": db_face.timestamp.isoformat(),
+                                            "image_url": f"/api/detections/{face_id}/image",
+                                            "location": camera.name,
+                                        },
+                                    }
+                                )
+
+                                # Broadcast alert
+                                await ws_manager.broadcast(
+                                    {
+                                        "type": "new_alert",
+                                        "data": {
+                                            "id": alert_id,
+                                            "title": db_alert.title,
+                                            "description": db_alert.description,
+                                            "camera_id": camera.id,
+                                            "severity": "critical",
+                                            "created_at": datetime.utcnow().isoformat(),
+                                        },
+                                    }
+                                )
                     except NoFacesException:
                         logger.debug(f"No faces detected on camera {camera.name}")
 
