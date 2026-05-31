@@ -62,7 +62,7 @@ class RekognitionService:
         collection_id: str,
         image_bytes: bytes,
         threshold: float = 0.6
-    ) -> List[Dict[str, Any]]:
+    ) -> Dict[str, Any]:
         """
         Search for similar faces in a collection
 
@@ -72,7 +72,9 @@ class RekognitionService:
             threshold: Confidence threshold for matching
 
         Returns:
-            List of matched faces from the collection
+            Dict with 'matches' (list of matched faces) and
+            'searched_face_bounding_box' (bounding box of the face
+            detected in the query image — use this for cropping)
         """
         self.ensure_collection_exists(collection_id)
         try:
@@ -81,7 +83,10 @@ class RekognitionService:
                 Image={'Bytes': image_bytes},
                 FaceMatchThreshold=threshold * 100
             )
-            return response.get('FaceMatches', [])
+            return {
+                'matches': response.get('FaceMatches', []),
+                'searched_face_bounding_box': response.get('SearchedFaceBoundingBox', {}),
+            }
         except Exception as e:
             error_code = ""
             error_message = ""

@@ -5,6 +5,7 @@ RTSP Service - Handle RTSP stream management, URL generation, and connection tes
 import cv2
 import asyncio
 import logging
+import os
 import time
 from typing import Optional, Dict, Any, Generator
 from urllib.parse import quote, unquote
@@ -155,8 +156,8 @@ class RTSPService:
     @staticmethod
     def generate_mjpeg_stream(
         rtsp_url: str,
-        fps_limit: int = 10,
-        jpeg_quality: int = 70,
+        fps_limit: int = 15,
+        jpeg_quality: int = 60,
         camera_id: Optional[str] = None,
     ) -> Generator[bytes, None, None]:
         """
@@ -165,13 +166,28 @@ class RTSPService:
         Yields multipart boundary-delimited JPEG frames that can be
         consumed by an <img> tag with a StreamingResponse.
 
+        Optimized for local CCTV substreams with minimal latency:
+        - Uses FFMPEG backend with buffer size 1
+        - TCP transport for reliable local delivery
+        - Higher default FPS and lower JPEG quality for substreams
+
         Args:
             rtsp_url: Complete RTSP URL
-            fps_limit: Max frames per second to send (default 10)
-            jpeg_quality: JPEG encoding quality 1-100 (default 70)
+            fps_limit: Max frames per second to send (default 15 for local)
+            jpeg_quality: JPEG encoding quality 1-100 (default 60 for substream)
             camera_id: Unique camera ID for drawing face bounding boxes (optional)
         """
-        cap = cv2.VideoCapture(rtsp_url)
+        # Set RTSP transport to TCP for local network reliability
+        os.environ.setdefault('OPENCV_FFMPEG_CAPTURE_OPTIONS', 'rtsp_transport;tcp')
+
+        cap = cv2.VideoCapture(rtsp_url, cv2.CAP_FFMPEG)
+        
+        # Minimize buffer to always get the latest frame (lowest latency)
+        try:
+            cap.set(cv2.CAP_PROP_BUFFERSIZE, 1)
+        except Exception:
+            pass
+
         frame_interval = 1.0 / fps_limit
 
         try:
@@ -181,7 +197,11 @@ class RTSPService:
                 if not ret:
                     # Try to reconnect once
                     cap.release()
-                    cap = cv2.VideoCapture(rtsp_url)
+                    cap = cv2.VideoCapture(rtsp_url, cv2.CAP_FFMPEG)
+                    try:
+                        cap.set(cv2.CAP_PROP_BUFFERSIZE, 1)
+                    except Exception:
+                        pass
                     ret, frame = cap.read()
                     if not ret:
                         break
@@ -224,9 +244,14 @@ class RTSPService:
                     '.jpg', frame,
                     [cv2.IMWRITE_JPEG_QUALITY, jpeg_quality]
                 )
+
+                # Measure frame processing latency
+                frame_latency_ms = int((time.monotonic() - start) * 1000)
+
                 yield (
                     b'--frame\r\n'
-                    b'Content-Type: image/jpeg\r\n\r\n'
+                    b'Content-Type: image/jpeg\r\n'
+                    b'X-Frame-Latency: ' + str(frame_latency_ms).encode() + b'\r\n\r\n'
                     + buffer.tobytes()
                     + b'\r\n'
                 )

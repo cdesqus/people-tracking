@@ -12,6 +12,8 @@ const Dashboard: React.FC = () => {
   const [selectedCamera, setSelectedCamera] = useState<string>('CAM-01');
   const [selectedBranch, setSelectedBranch] = useState<string>('all');
   const [previewImage, setPreviewImage] = useState<{ src: string, title: string, subtitle: string } | null>(null);
+  const [streamLatency, setStreamLatency] = useState<number | null>(null);
+  const [streamInfo, setStreamInfo] = useState<{ resolution: string; fps: string } | null>(null);
   const [kpiStats, setKpiStats] = useState({
     occupancy: 0,
     activeCameras: 0,
@@ -321,6 +323,65 @@ const Dashboard: React.FC = () => {
       }
     };
   }, [activeTab]);
+
+  // Measure stream latency dynamically for the focused camera
+  useEffect(() => {
+    if (activeTab !== 'monitor' || !activeFocusedCamera || activeFocusedCamera.status !== 'active') {
+      return;
+    }
+
+    // Measure latency by timing how long it takes to receive a frame
+    const measureLatency = async () => {
+      try {
+        const streamUrl = activeFocusedCamera.image;
+        if (!streamUrl) return;
+
+        const start = performance.now();
+        const response = await fetch(streamUrl, {
+          method: 'GET',
+          signal: AbortSignal.timeout(3000),
+        });
+        
+        if (response.ok) {
+          // Read just enough to confirm we got data
+          const reader = response.body?.getReader();
+          if (reader) {
+            await reader.read();
+            reader.cancel();
+          }
+          const latency = Math.round(performance.now() - start);
+          setStreamLatency(latency);
+        }
+      } catch {
+        // Silently fail — latency display will show last known value
+      }
+    };
+
+    // Also fetch stream info (resolution, fps) from the test-connection endpoint
+    const fetchStreamInfo = async () => {
+      try {
+        const res = await fetch(`/api/cameras/${activeFocusedCamera.id}/test-connection`, {
+          method: 'POST',
+        });
+        if (res.ok) {
+          const data = await res.json();
+          if (data.resolution && data.fps) {
+            setStreamInfo({
+              resolution: data.resolution,
+              fps: `${Math.round(data.fps)}`,
+            });
+          }
+        }
+      } catch {
+        // Use defaults
+      }
+    };
+
+    measureLatency();
+    fetchStreamInfo();
+    const interval = setInterval(measureLatency, 5000);
+    return () => clearInterval(interval);
+  }, [activeTab, activeFocusedCamera]);
 
   return (
     <div className="flex-1 flex flex-col bg-slate-950 text-gray-100">
@@ -736,10 +797,12 @@ const Dashboard: React.FC = () => {
                       </div>
                       <div className="flex items-center gap-2">
                         <span className="text-[9px] font-mono px-2 py-0.5 bg-slate-950 rounded border border-slate-800 text-emerald-400 font-bold">
-                          {activeFocusedCamera.status === 'active' ? '1080P @ 30FPS' : 'OFFLINE'}
+                          {activeFocusedCamera.status === 'active'
+                            ? (streamInfo ? `${streamInfo.resolution} @ ${streamInfo.fps}FPS` : 'CONNECTING...')
+                            : 'OFFLINE'}
                         </span>
                         <span className="text-[9px] font-mono px-2 py-0.5 bg-blue-600/10 text-blue-400 rounded border border-blue-500/20 font-bold">
-                          LATENCY: 34ms
+                          LATENCY: {streamLatency !== null ? `${streamLatency}ms` : '...'}
                         </span>
                       </div>
                     </div>

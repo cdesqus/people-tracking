@@ -15,6 +15,92 @@ from app.utils.websocket_manager import ws_manager
 
 logger = logging.getLogger(__name__)
 
+# Persistent VideoCapture connections per camera to avoid reconnection overhead
+_camera_captures: dict = {}  # camera_id -> cv2.VideoCapture
+
+
+def _crop_face_from_frame(frame, bounding_box: dict, padding: float = 0.20):
+    """Crop a face from a frame using a normalized bounding box with padding.
+    
+    Args:
+        frame: The video frame (numpy array)
+        bounding_box: Dict with 'Top', 'Left', 'Width', 'Height' (0.0-1.0 normalized)
+        padding: Fraction of face size to add as margin (default 20%)
+    
+    Returns:
+        Tuple of (crop_bytes, normalized_box_dict) or (None, box_dict) on failure
+    """
+    try:
+        h, w = frame.shape[:2]
+        
+        f_left = bounding_box.get("Left", 0.0)
+        f_top = bounding_box.get("Top", 0.0)
+        f_width = bounding_box.get("Width", 0.0)
+        f_height = bounding_box.get("Height", 0.0)
+        
+        # Add padding around the face for better visual context
+        pad_x = f_width * padding
+        pad_y = f_height * padding
+        
+        crop_left = max(0.0, f_left - pad_x)
+        crop_top = max(0.0, f_top - pad_y)
+        crop_right = min(1.0, f_left + f_width + pad_x)
+        crop_bottom = min(1.0, f_top + f_height + pad_y)
+        
+        px_left = int(crop_left * w)
+        px_top = int(crop_top * h)
+        px_right = int(crop_right * w)
+        px_bottom = int(crop_bottom * h)
+        
+        if px_right > px_left + 10 and px_bottom > px_top + 10:
+            face_crop = frame[px_top:px_bottom, px_left:px_right]
+            _, crop_buffer = cv2.imencode(".jpg", face_crop)
+            return crop_buffer.tobytes(), {
+                "top": f_top,
+                "left": f_left,
+                "width": f_width,
+                "height": f_height,
+            }
+    except Exception as crop_err:
+        logger.error(f"Error cropping face: {crop_err}")
+    
+    return None, {
+        "top": bounding_box.get("Top", 0.2),
+        "left": bounding_box.get("Left", 0.3),
+        "width": bounding_box.get("Width", 0.4),
+        "height": bounding_box.get("Height", 0.4),
+    }
+
+
+def _get_camera_capture(camera_id: str, stream_url: str):
+    """Get or create a persistent VideoCapture for a camera."""
+    cap = _camera_captures.get(camera_id)
+    if cap is not None and cap.isOpened():
+        return cap
+    
+    # Close old capture if it exists but is not opened
+    if cap is not None:
+        try:
+            cap.release()
+        except Exception:
+            pass
+    
+    # Create new capture with optimized settings
+    new_cap = cv2.VideoCapture(stream_url, cv2.CAP_FFMPEG)
+    try:
+        new_cap.set(cv2.CAP_PROP_BUFFERSIZE, 1)
+        new_cap.set(cv2.CAP_PROP_OPEN_TIMEOUT_MSECS, 3000)
+        new_cap.set(cv2.CAP_PROP_READ_TIMEOUT_MSECS, 3000)
+    except Exception:
+        pass
+    
+    if new_cap.isOpened():
+        _camera_captures[camera_id] = new_cap
+        return new_cap
+    else:
+        new_cap.release()
+        return None
+
 
 async def start_face_processor():
     """Background loop that processes active camera streams and performs face recognition"""
@@ -159,24 +245,15 @@ async def start_face_processor():
             for camera in cameras:
                 try:
                     logger.debug(f"Grabbing frame from camera: {camera.name}")
-                    cap = cv2.VideoCapture(camera.stream_url)
+                    cap = _get_camera_capture(camera.id, camera.stream_url)
 
-                    # Set standard timeout parameters if available in build
-                    try:
-                        cap.set(cv2.CAP_PROP_OPEN_TIMEOUT_MSECS, 3000)
-                        cap.set(cv2.CAP_PROP_READ_TIMEOUT_MSECS, 3000)
-                    except Exception:
-                        pass
-
-                    if not cap.isOpened():
+                    if cap is None:
                         logger.error(
                             f"Could not open stream for camera: {camera.name}"
                         )
-                        cap.release()
                         continue
 
                     ret, frame = cap.read()
-                    cap.release()
 
                     if not ret or frame is None:
                         logger.warning(
@@ -259,11 +336,14 @@ async def start_face_processor():
                         f"Searching face in AWS Rekognition collection: {collection_id}"
                     )
                     try:
-                        matches = await rekognition_service.search_faces_by_image(
+                        search_result = await rekognition_service.search_faces_by_image(
                             collection_id=collection_id,
                             image_bytes=frame_bytes,
                             threshold=0.6,
                         )
+                        matches = search_result.get('matches', [])
+                        # This is the bounding box of the face in the QUERY image (current frame)
+                        searched_face_box = search_result.get('searched_face_bounding_box', {})
 
                         if matches:
                             for match in matches:
@@ -276,41 +356,15 @@ async def start_face_processor():
                                     f"AWS Match Found! ID: {external_id}, Similarity: {similarity}%"
                                 )
 
-                                # Crop the recognized face from the frame using bounding box
-                                crop_bytes = None
-                                bounding_box = {
-                                    "top": 0.2,
-                                    "left": 0.3,
-                                    "width": 0.4,
-                                    "height": 0.4,
+                                # Crop the recognized face using SearchedFaceBoundingBox
+                                # (the face's position in the CURRENT camera frame)
+                                crop_box = searched_face_box if searched_face_box else {
+                                    "Top": 0.2, "Left": 0.3, "Width": 0.4, "Height": 0.4
                                 }
-                                try:
-                                    box = face_details.get("BoundingBox", {})
-                                    bounding_box = {
-                                        "top": box.get("Top", 0.2),
-                                        "left": box.get("Left", 0.3),
-                                        "width": box.get("Width", 0.4),
-                                        "height": box.get("Height", 0.4),
-                                    }
-                                    h, w, _ = frame.shape
-                                    left = int(box.get("Left", 0.0) * w)
-                                    top = int(box.get("Top", 0.0) * h)
-                                    width = int(box.get("Width", 1.0) * w)
-                                    height = int(box.get("Height", 1.0) * h)
-
-                                    left = max(0, left)
-                                    top = max(0, top)
-                                    right = min(w, left + width)
-                                    bottom = min(h, top + height)
-
-                                    if right > left and bottom > top:
-                                        face_crop = frame[top:bottom, left:right]
-                                        _, crop_buffer = cv2.imencode(".jpg", face_crop)
-                                        crop_bytes = crop_buffer.tobytes()
-                                except Exception as crop_err:
-                                    logger.error(f"Error cropping recognized face: {crop_err}")
+                                crop_bytes, bounding_box = _crop_face_from_frame(frame, crop_box)
 
                                 if crop_bytes is None:
+                                    logger.warning(f"Face crop failed for {external_id}, storing full frame as fallback")
                                     crop_bytes = frame_bytes
 
                                 async with async_session() as session:
@@ -397,33 +451,9 @@ async def start_face_processor():
                             for face_detail in faces_found:
                                 confidence = face_detail.get("Confidence", 90.0)
                                 box = face_detail.get("BoundingBox", {})
-                                bounding_box = {
-                                    "top": box.get("Top", 0.2),
-                                    "left": box.get("Left", 0.3),
-                                    "width": box.get("Width", 0.4),
-                                    "height": box.get("Height", 0.4),
-                                }
 
-                                # Crop each individual face
-                                crop_bytes = None
-                                try:
-                                    h, w, _ = frame.shape
-                                    f_left = int(box.get("Left", 0.0) * w)
-                                    f_top = int(box.get("Top", 0.0) * h)
-                                    f_width = int(box.get("Width", 1.0) * w)
-                                    f_height = int(box.get("Height", 1.0) * h)
-
-                                    f_left = max(0, f_left)
-                                    f_top = max(0, f_top)
-                                    f_right = min(w, f_left + f_width)
-                                    f_bottom = min(h, f_top + f_height)
-
-                                    if f_right > f_left and f_bottom > f_top:
-                                        face_crop = frame[f_top:f_bottom, f_left:f_right]
-                                        _, crop_buffer = cv2.imencode(".jpg", face_crop)
-                                        crop_bytes = crop_buffer.tobytes()
-                                except Exception as crop_err:
-                                    logger.error(f"Error cropping unrecognized face: {crop_err}")
+                                # Crop each individual face using the shared helper
+                                crop_bytes, bounding_box = _crop_face_from_frame(frame, box)
 
                                 if crop_bytes is None:
                                     crop_bytes = frame_bytes
