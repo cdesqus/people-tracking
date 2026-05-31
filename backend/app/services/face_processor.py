@@ -275,13 +275,19 @@ async def start_face_processor():
 
                     # Check for camera obstruction (tampering)
                     try:
-                        gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
+                        # Analyze only the center 50% region to avoid watermarks/timestamps at the edges
+                        h, w = frame.shape[:2]
+                        cy, cx = h // 2, w // 2
+                        dy, dx = h // 4, w // 4
+                        center_crop = frame[cy-dy:cy+dy, cx-dx:cx+dx]
+
+                        gray = cv2.cvtColor(center_crop, cv2.COLOR_BGR2GRAY)
                         mean_val, std_val = cv2.meanStdDev(gray)
                         mean = mean_val[0][0]
                         std_dev = std_val[0][0]
 
-                        # Obstructed if too dark (mean < 12.0) or too flat/uniform (std_dev < 3.0)
-                        is_obstructed = (mean < 12.0) or (std_dev < 3.0)
+                        # Obstructed if center region is too dark (mean < 18.0) or too flat/uniform (std_dev < 8.0)
+                        is_obstructed = (mean < 18.0) or (std_dev < 8.0)
 
                         if is_obstructed:
                             obstructed_counts[camera.id] = obstructed_counts.get(camera.id, 0) + 1
