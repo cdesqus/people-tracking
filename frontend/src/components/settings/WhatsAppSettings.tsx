@@ -227,7 +227,7 @@ const WhatsAppSettings: React.FC = () => {
   };
 
   const handleLogout = async () => {
-    if (!confirm('Logout dari WhatsApp? Kamu perlu scan QR atau pairing code lagi.')) return;
+    if (!window.confirm('Logout dari WhatsApp? Kamu perlu scan QR atau pairing code lagi.')) return;
     setLoggingOut(true);
     try {
       await fetch('/api/whatsapp/session/logout', { method: 'POST' });
@@ -361,7 +361,7 @@ const WhatsAppSettings: React.FC = () => {
   };
 
   const handleDeleteRecipient = async (r: Recipient) => {
-    if (!confirm(`Hapus penerima "${r.label}"?`)) return;
+    if (!window.confirm(`Hapus penerima "${r.label}"?`)) return;
     try {
       await fetch(`/api/whatsapp/recipients/${r.id}`, { method: 'DELETE' });
       toast.success(`${r.label} dihapus`);
