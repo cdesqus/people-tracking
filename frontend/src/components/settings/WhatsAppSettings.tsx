@@ -432,13 +432,13 @@ const WhatsAppSettings: React.FC = () => {
               <p className="text-xs text-red-400 mt-0.5 truncate">{status.error}</p>
             )}
           </div>
-          {isConnected && (
+          {(isConnected || status?.status?.toUpperCase() === 'FAILED') && (
             <button
               onClick={handleLogout}
               disabled={loggingOut}
               className="px-3 py-1.5 text-xs font-medium bg-red-500/10 text-red-400 border border-red-500/20 hover:bg-red-500/20 rounded-lg transition-colors"
             >
-              {loggingOut ? <Loader2 className="w-3 h-3 animate-spin" /> : 'Logout'}
+              {loggingOut ? <Loader2 className="w-3 h-3 animate-spin" /> : 'Reset / Logout'}
             </button>
           )}
         </div>

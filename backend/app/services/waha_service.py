@@ -149,11 +149,11 @@ async def request_pairing_code(
 
 
 async def logout_session(waha_url: str, api_key: Optional[str], session_name: str) -> dict:
-    """Logout / disconnect the Waha session."""
-    url = f"{waha_url.rstrip('/')}/api/sessions/{session_name}/logout"
+    """Logout and completely delete the Waha session to reset its cache."""
+    url = f"{waha_url.rstrip('/')}/api/sessions/{session_name}"
     try:
         async with httpx.AsyncClient(timeout=10.0) as client:
-            resp = await client.post(url, headers=_build_headers(api_key), json={})
+            resp = await client.delete(url, headers=_build_headers(api_key))
             invalidate_config_cache()
             return resp.json()
     except Exception as e:
