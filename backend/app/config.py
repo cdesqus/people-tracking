@@ -47,6 +47,11 @@ class Settings(BaseSettings):
     # Alert Configuration
     alert_retention_days: int = 30
 
+    # Waha WhatsApp Gateway
+    waha_url: str = "http://waha:3000"
+    waha_api_key: Optional[str] = None
+    waha_session: str = "default"
+
     # Logging
     log_level: str = "INFO"
     log_dir: str = "./logs"

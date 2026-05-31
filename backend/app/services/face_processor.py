@@ -12,6 +12,7 @@ from app.models.face import Face
 from app.models.alert import Alert, AlertSeverity, AlertType
 from app.services.aws_rekognition import rekognition_service, NoFacesException
 from app.utils.websocket_manager import ws_manager
+from app.services import waha_service
 
 logger = logging.getLogger(__name__)
 
@@ -315,6 +316,18 @@ async def start_face_processor():
                                         }
                                     })
                                     logger.error(f"CRITICAL: Camera {camera.name} is obstructed! Raised Alert {alert_id}")
+
+                                    # Send WhatsApp notification (non-blocking)
+                                    asyncio.create_task(waha_service.send_alert_notification(
+                                        alert_id=alert_id,
+                                        alert_title=db_alert.title,
+                                        alert_description=db_alert.description,
+                                        severity="critical",
+                                        alert_type="suspicious_activity",
+                                        camera_name=camera.name,
+                                        timestamp=now,
+                                        face_image_bytes=None,
+                                    ))
                         else:
                             # Reset count if it is clear
                             if obstructed_counts.get(camera.id, 0) > 0:
@@ -428,6 +441,22 @@ async def start_face_processor():
                                                 },
                                             }
                                         )
+
+                                        # Send WhatsApp notification for recognized employee (non-blocking)
+                                        match_alert_id = str(uuid.uuid4())
+                                        asyncio.create_task(waha_service.send_alert_notification(
+                                            alert_id=match_alert_id,
+                                            alert_title=f"Employee Detected: {employee.name}",
+                                            alert_description=(
+                                                f"{employee.name} was detected on camera {camera.name} "
+                                                f"with {similarity:.1f}% confidence."
+                                            ),
+                                            severity="low",
+                                            alert_type="match",
+                                            camera_name=camera.name,
+                                            timestamp=db_face.timestamp,
+                                            face_image_bytes=crop_bytes,
+                                        ))
                         else:
                             # If no registered match, but we didn't raise NoFacesException,
                             # a face is indeed present in the frame but unrecognized.
@@ -534,6 +563,18 @@ async def start_face_processor():
                                         },
                                     }
                                 )
+
+                                # Send WhatsApp notification (non-blocking)
+                                asyncio.create_task(waha_service.send_alert_notification(
+                                    alert_id=alert_id,
+                                    alert_title=db_alert.title,
+                                    alert_description=db_alert.description,
+                                    severity="critical",
+                                    alert_type="unknown_face",
+                                    camera_name=camera.name,
+                                    timestamp=db_face.timestamp,
+                                    face_image_bytes=crop_bytes,
+                                ))
                     except NoFacesException:
                         logger.debug(f"No faces detected on camera {camera.name}")
 

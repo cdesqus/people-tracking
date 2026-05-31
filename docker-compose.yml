@@ -50,11 +50,16 @@ services:
       - DEBUG=False
       - LOG_LEVEL=INFO
       - WORKERS=4
+      - WAHA_URL=http://waha:3000
+      - WAHA_API_KEY=${WAHA_API_KEY:-}
+      - WAHA_SESSION=default
     depends_on:
       postgres:
         condition: service_healthy
       redis:
         condition: service_healthy
+      waha:
+        condition: service_started
     command: >
       sh -c "uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload"
     volumes:
@@ -112,10 +117,35 @@ services:
       start_period: 10s
     command: redis-server --appendonly yes
 
+  # Waha WhatsApp HTTP API Gateway
+  # Pull image first: docker login -u devlikeapro && docker pull devlikeapro/waha-plus:latest
+  waha:
+    image: devlikeapro/waha-plus:latest
+    ports:
+      - "3000:3000"
+    environment:
+      - WHATSAPP_DEFAULT_ENGINE=NOWEB
+      - WHATSAPP_API_KEY=${WAHA_API_KEY:-}
+      - WHATSAPP_HOOK_URL=http://backend:8000/api/whatsapp/webhook
+      - WAHA_LOG_LEVEL=info
+    volumes:
+      - waha_data:/app/.sessions
+    networks:
+      - cctv-network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:3000/api/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 15s
+
 volumes:
   postgres_data:
     driver: local
   redis_data:
+    driver: local
+  waha_data:
     driver: local
 
 networks:

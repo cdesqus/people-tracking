@@ -43,6 +43,10 @@ async def get_db():
 
 async def init_db():
     """Initialize database tables"""
+    # Import all models so SQLAlchemy metadata is populated before create_all
+    from app.models import alert, camera, employee, face, person, user  # noqa: F401
+    from app.models import whatsapp_config, whatsapp_recipient  # noqa: F401
+
     async with engine.begin() as conn:
         await conn.run_sync(Base.metadata.create_all)
         

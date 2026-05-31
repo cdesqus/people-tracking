@@ -30,6 +30,7 @@ import CameraConfiguration from '@components/settings/CameraConfiguration';
 import DataRetentionPolicy from '@components/settings/DataRetentionPolicy';
 import NotificationSettings from '@components/settings/NotificationSettings';
 import SystemHealth from '@components/settings/SystemHealth';
+import WhatsAppSettings from '@components/settings/WhatsAppSettings';
 
 const SettingsPage: React.FC = () => {
   const dispatch = useAppDispatch();
@@ -106,6 +107,7 @@ const SettingsPage: React.FC = () => {
     { id: 'cameras', label: 'Camera Configuration' },
     { id: 'retention', label: 'Data Retention' },
     { id: 'notifications', label: 'Notifications' },
+    { id: 'whatsapp', label: '💬 WhatsApp' },
     { id: 'health', label: 'System Health' },
   ];
 
@@ -154,6 +156,7 @@ const SettingsPage: React.FC = () => {
       {activeTab === 'cameras' && <CameraConfiguration />}
       {activeTab === 'retention' && <DataRetentionPolicy />}
       {activeTab === 'notifications' && <NotificationSettings />}
+      {activeTab === 'whatsapp' && <WhatsAppSettings />}
       {activeTab === 'health' && <SystemHealth />}
     </div>
   );

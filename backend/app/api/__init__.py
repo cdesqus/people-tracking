@@ -1,5 +1,5 @@
 from fastapi import APIRouter
-from app.api import cameras, faces, persons, employees, alerts, system, reports, auth
+from app.api import cameras, faces, persons, employees, alerts, system, reports, auth, whatsapp
 
 api_router = APIRouter(prefix="/api")
 
@@ -13,4 +13,5 @@ api_router.include_router(employees.router, prefix="/employees", tags=["employee
 api_router.include_router(alerts.router, prefix="/alerts", tags=["alerts"])
 api_router.include_router(system.router, prefix="/system", tags=["system"])
 api_router.include_router(reports.router, prefix="/reports", tags=["reports"])
+api_router.include_router(whatsapp.router, prefix="/whatsapp", tags=["whatsapp"])
 
