@@ -333,6 +333,7 @@ async def start_face_processor():
                                         "type": "new_alert",
                                         "data": {
                                             "id": alert_id,
+                                            "type": db_alert.type.value,
                                             "title": db_alert.title,
                                             "description": db_alert.description,
                                             "camera_id": camera.id,
@@ -513,8 +514,9 @@ async def start_face_processor():
                                 logger.error(f"Error detecting faces for multi-person scan: {detect_err}")
 
                             if not faces_found:
-                                # Fallback: create a single unknown detection with default bounding box
-                                faces_found = [{"Confidence": 90.0, "BoundingBox": {"Top": 0.2, "Left": 0.3, "Width": 0.4, "Height": 0.4}}]
+                                # Fallback: use the bounding box from search_faces_by_image
+                                fallback_box = searched_face_box if searched_face_box else {"Top": 0.2, "Left": 0.3, "Width": 0.4, "Height": 0.4}
+                                faces_found = [{"Confidence": 90.0, "BoundingBox": fallback_box}]
 
                             logger.info(f"Found {len(faces_found)} face(s) in frame from camera {camera.name}")
 
@@ -597,6 +599,7 @@ async def start_face_processor():
                                         "type": "new_alert",
                                         "data": {
                                             "id": alert_id,
+                                            "type": db_alert.type.value,
                                             "title": db_alert.title,
                                             "description": db_alert.description,
                                             "camera_id": camera.id,
