@@ -10,7 +10,7 @@ import Dashboard from '@pages/Dashboard';
 import Cameras from '@pages/Cameras';
 import Alerts from '@pages/Alerts';
 import Analytics from '@pages/Analytics';
-import Settings from '@pages/Settings';
+import Settings from '@pages/SettingsPage';
 import Employees from '@pages/Employees';
 import Visitors from '@pages/Visitors';
 import NotFound from '@pages/NotFound';

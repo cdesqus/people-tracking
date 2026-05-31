@@ -94,7 +94,10 @@ async def test_rtsp_connection(request: RTSPTestRequest):
         raise HTTPException(status_code=400, detail=str(e))
     
     # Test connection
-    test_result = RTSPService.test_rtsp_connection(rtsp_url, timeout=5)
+    loop = asyncio.get_running_loop()
+    test_result = await loop.run_in_executor(
+        None, RTSPService.test_rtsp_connection, rtsp_url, 5
+    )
     
     # Return result with masked URL
     return RTSPTestResponse(

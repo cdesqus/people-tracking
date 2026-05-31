@@ -103,6 +103,19 @@ def _get_camera_capture(camera_id: str, stream_url: str):
         return None
 
 
+def _open_and_read_frame(camera_id: str, stream_url: str):
+    """Open camera stream and grab a single frame (blocking I/O, runs in executor)"""
+    try:
+        cap = _get_camera_capture(camera_id, stream_url)
+        if cap is None:
+            return False, None
+        ret, frame = cap.read()
+        return ret, frame
+    except Exception as e:
+        logger.error(f"Error in _open_and_read_frame for camera {camera_id}: {e}")
+        return False, None
+
+
 async def start_face_processor():
     """Background loop that processes active camera streams and performs face recognition"""
     logger.info("Initializing background face processor loop...")
@@ -246,15 +259,13 @@ async def start_face_processor():
             for camera in cameras:
                 try:
                     logger.debug(f"Grabbing frame from camera: {camera.name}")
-                    cap = _get_camera_capture(camera.id, camera.stream_url)
-
-                    if cap is None:
-                        logger.error(
-                            f"Could not open stream for camera: {camera.name}"
-                        )
-                        continue
-
-                    ret, frame = cap.read()
+                    
+                    # Run the blocking OpenCV stream opening and frame reading in a background thread executor
+                    # to prevent blocking the main asyncio event loop (which causes login/HTTP requests to freeze).
+                    loop = asyncio.get_running_loop()
+                    ret, frame = await loop.run_in_executor(
+                        None, _open_and_read_frame, camera.id, camera.stream_url
+                    )
 
                     if not ret or frame is None:
                         logger.warning(

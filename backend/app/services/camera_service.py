@@ -208,7 +208,10 @@ class CameraService:
         if not camera:
             return {"status": "error", "message": "Camera not found"}
         
-        result = RTSPService.test_rtsp_connection(camera.stream_url, timeout)
+        loop = asyncio.get_running_loop()
+        result = await loop.run_in_executor(
+            None, RTSPService.test_rtsp_connection, camera.stream_url, timeout
+        )
         
         # Update camera status based on test result
         if result["status"] == "connected":
