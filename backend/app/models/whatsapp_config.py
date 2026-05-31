@@ -9,7 +9,7 @@ class WhatsappConfig(Base):
     __tablename__ = "whatsapp_configs"
 
     id = Column(String(36), primary_key=True, default="singleton")
-    waha_url = Column(String(500), nullable=False, default="http://localhost:3050")
+    waha_url = Column(String(500), nullable=False, default="http://localhost:3000")
     waha_api_key = Column(String(255), nullable=True)
     session_name = Column(String(100), nullable=False, default="default")
     is_enabled = Column(Boolean, default=False, nullable=False)

@@ -97,7 +97,7 @@ const statusDot = (status?: string) => {
 const WhatsAppSettings: React.FC = () => {
   // ── Config state ──
   const [config, setConfig] = useState<WahaConfig>({
-    waha_url: 'http://waha:3050',
+    waha_url: 'http://waha:3000',
     waha_api_key: null,
     session_name: 'default',
     is_enabled: false,
@@ -573,7 +573,7 @@ const WhatsAppSettings: React.FC = () => {
               type="url"
               value={config.waha_url}
               onChange={(e) => setConfig((p) => ({ ...p, waha_url: e.target.value }))}
-              placeholder="http://waha:3050"
+              placeholder="http://waha:3000"
               className="w-full px-3 py-2 bg-slate-800 border border-slate-700 rounded-lg text-sm text-white placeholder-slate-500 focus:outline-none focus:border-blue-500 transition-colors"
             />
           </div>

@@ -85,11 +85,24 @@ async def get_session_status() -> dict:
 
 
 async def start_session(waha_url: str, api_key: Optional[str], session_name: str) -> dict:
-    """Start (or restart) a Waha session."""
-    url = f"{waha_url.rstrip('/')}/api/sessions/{session_name}/start"
+    """Start (or restart) a Waha session. Creates the session if it doesn't exist."""
+    create_url = f"{waha_url.rstrip('/')}/api/sessions"
+    headers = _build_headers(api_key)
+    
     try:
-        async with httpx.AsyncClient(timeout=10.0) as client:
-            resp = await client.post(url, headers=_build_headers(api_key), json={})
+        async with httpx.AsyncClient(timeout=15.0) as client:
+            # 1. Try to create the session (which also starts it automatically)
+            resp = await client.post(create_url, headers=headers, json={"name": session_name})
+            
+            if resp.status_code in (200, 201):
+                return resp.json()
+            
+            # 2. If it already exists (409 Conflict), try to start it explicitly
+            if resp.status_code == 409 or "exists" in resp.text.lower():
+                start_url = f"{waha_url.rstrip('/')}/api/sessions/{session_name}/start"
+                start_resp = await client.post(start_url, headers=headers, json={})
+                return start_resp.json()
+                
             return resp.json()
     except Exception as e:
         logger.error(f"[Waha] start_session error: {e}")
