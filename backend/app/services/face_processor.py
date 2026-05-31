@@ -16,6 +16,19 @@ from app.services import waha_service
 
 logger = logging.getLogger(__name__)
 
+
+def _safe_create_task(coro, name: str = "waha_task"):
+    """Create an asyncio task that logs exceptions instead of silently swallowing them."""
+    task = asyncio.create_task(coro, name=name)
+    def _on_done(t):
+        if t.cancelled():
+            logger.warning(f"[Task:{name}] was cancelled")
+        elif t.exception():
+            logger.error(f"[Task:{name}] FAILED with exception: {t.exception()}", exc_info=t.exception())
+    task.add_done_callback(_on_done)
+    return task
+
+
 # Persistent VideoCapture connections per camera to avoid reconnection overhead
 _camera_captures: dict = {}  # camera_id -> cv2.VideoCapture
 
@@ -335,7 +348,7 @@ async def start_face_processor():
                                     logger.error(f"CRITICAL: Camera {camera.name} is obstructed! Raised Alert {alert_id}")
 
                                     # Send WhatsApp notification (non-blocking)
-                                    asyncio.create_task(waha_service.send_alert_notification(
+                                    _safe_create_task(waha_service.send_alert_notification(
                                         alert_id=alert_id,
                                         alert_title=db_alert.title,
                                         alert_description=db_alert.description,
@@ -344,7 +357,7 @@ async def start_face_processor():
                                         camera_name=camera.name,
                                         timestamp=now,
                                         face_image_bytes=None,
-                                    ))
+                                    ), name=f"waha_obstruction_{alert_id[:8]}")
                         else:
                             # Reset count if it is clear
                             if obstructed_counts.get(camera.id, 0) > 0:
@@ -461,7 +474,7 @@ async def start_face_processor():
 
                                         # Send WhatsApp notification for recognized employee (non-blocking)
                                         match_alert_id = str(uuid.uuid4())
-                                        asyncio.create_task(waha_service.send_alert_notification(
+                                        _safe_create_task(waha_service.send_alert_notification(
                                             alert_id=match_alert_id,
                                             alert_title=f"Employee Detected: {employee.name}",
                                             alert_description=(
@@ -473,7 +486,7 @@ async def start_face_processor():
                                             camera_name=camera.name,
                                             timestamp=db_face.timestamp,
                                             face_image_bytes=crop_bytes,
-                                        ))
+                                        ), name=f"waha_match_{match_alert_id[:8]}")
                         else:
                             # If no registered match, but we didn't raise NoFacesException,
                             # a face is indeed present in the frame but unrecognized.
@@ -567,6 +580,7 @@ async def start_face_processor():
                                 )
 
                                 # Broadcast alert
+                                logger.info(f">>> UNKNOWN FACE: Broadcasting alert {alert_id} via WebSocket")
                                 await ws_manager.broadcast(
                                     {
                                         "type": "new_alert",
@@ -582,7 +596,8 @@ async def start_face_processor():
                                 )
 
                                 # Send WhatsApp notification (non-blocking)
-                                asyncio.create_task(waha_service.send_alert_notification(
+                                logger.info(f">>> UNKNOWN FACE: Dispatching WhatsApp notification for alert {alert_id}")
+                                _safe_create_task(waha_service.send_alert_notification(
                                     alert_id=alert_id,
                                     alert_title=db_alert.title,
                                     alert_description=db_alert.description,
@@ -591,7 +606,7 @@ async def start_face_processor():
                                     camera_name=camera.name,
                                     timestamp=db_face.timestamp,
                                     face_image_bytes=crop_bytes,
-                                ))
+                                ), name=f"waha_unknown_{alert_id[:8]}")
                     except NoFacesException:
                         logger.debug(f"No faces detected on camera {camera.name}")
 

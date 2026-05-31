@@ -236,19 +236,22 @@ async def send_alert_notification(
     Silently logs errors — never raises, never blocks the main flow.
     """
     try:
+        logger.info(f"[Waha] >>> send_alert_notification CALLED for alert_id={alert_id}, severity={severity}, type={alert_type}")
         cfg = await _get_config()
         if not cfg:
-            logger.debug("[Waha] No config found, skipping WA notification")
+            logger.warning("[Waha] No config found in DB, skipping WA notification")
             return
 
+        logger.info(f"[Waha] Config loaded: enabled={cfg['is_enabled']}, url={cfg['waha_url']}, session={cfg['session']}, severities={cfg['alert_severities']}")
+
         if not cfg["is_enabled"]:
-            logger.debug("[Waha] Notifications disabled, skipping")
+            logger.warning("[Waha] Notifications DISABLED (is_enabled=False), skipping")
             return
 
         # Check if this severity is enabled
         allowed_severities = [s.lower() for s in (cfg["alert_severities"] or [])]
         if severity.lower() not in allowed_severities:
-            logger.debug(f"[Waha] Severity '{severity}' not in allowed list {allowed_severities}, skipping")
+            logger.warning(f"[Waha] Severity '{severity}' NOT in allowed list {allowed_severities}, skipping")
             return
 
         # Load active recipients
@@ -263,8 +266,10 @@ async def send_alert_notification(
             recipients = res.scalars().all()
 
         if not recipients:
-            logger.debug("[Waha] No active recipients, skipping")
+            logger.warning("[Waha] No active recipients found (is_active=True), skipping")
             return
+
+        logger.info(f"[Waha] Sending to {len(recipients)} recipient(s): {[r.label for r in recipients]}")
 
         caption = _format_alert_caption(
             alert_title, alert_description, severity, alert_type, camera_name, timestamp
