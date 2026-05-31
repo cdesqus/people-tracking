@@ -64,7 +64,7 @@ async def get_whatsapp_config(db: AsyncSession = Depends(get_db)):
         # Return defaults if not configured yet
         return {
             "id": "singleton",
-            "waha_url": "http://localhost:3000",
+            "waha_url": "http://localhost:3050",
             "waha_api_key": None,
             "session_name": "default",
             "is_enabled": False,
@@ -133,7 +133,7 @@ async def start_session(body: StartSessionRequest, db: AsyncSession = Depends(ge
     res = await db.execute(select(WhatsappConfig).where(WhatsappConfig.id == "singleton"))
     cfg = res.scalar_one_or_none()
 
-    waha_url = body.waha_url or (cfg.waha_url if cfg else "http://localhost:3000")
+    waha_url = body.waha_url or (cfg.waha_url if cfg else "http://localhost:3050")
     api_key = body.waha_api_key or (cfg.waha_api_key if cfg else None)
     session_name = body.session_name or (cfg.session_name if cfg else "default")
 
