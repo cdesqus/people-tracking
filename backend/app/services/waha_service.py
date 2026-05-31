@@ -72,7 +72,7 @@ async def get_session_status() -> dict:
     if not cfg:
         return {"status": "config_missing", "error": "Waha config not found"}
 
-    url = f"{cfg['waha_url']}/api/{cfg['session']}/status"
+    url = f"{cfg['waha_url']}/api/sessions/{cfg['session']}"
     try:
         async with httpx.AsyncClient(timeout=8.0) as client:
             resp = await client.get(url, headers=_build_headers(cfg["api_key"]))
