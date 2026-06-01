@@ -135,6 +135,8 @@ async def start_face_processor():
 
     obstructed_counts = {}  # camera_id -> count of consecutive obstructed frames
     last_alert_sent = {}    # camera_id -> timestamp of last sent alert
+    last_unknown_alert_sent = {} # camera_id -> timestamp of last unknown face alert
+    last_employee_alert_sent = {} # (camera_id, employee_id) -> timestamp of last employee alert
 
     # Wait a few seconds for database and services to settle
     await asyncio.sleep(5)
@@ -485,20 +487,23 @@ async def start_face_processor():
                                 )
 
                                 # Send WhatsApp notification for recognized employee (non-blocking)
-                                match_alert_id = str(uuid.uuid4())
-                                _safe_create_task(waha_service.send_alert_notification(
-                                    alert_id=match_alert_id,
-                                    alert_title=f"Employee Detected: {active_employee.name}",
-                                    alert_description=(
-                                        f"{active_employee.name} was detected on camera {camera.name} "
-                                        f"with {similarity:.1f}% confidence."
-                                    ),
-                                    severity="low",
-                                    alert_type="match",
-                                    camera_name=camera.name,
-                                    timestamp=db_face.timestamp,
-                                    face_image_bytes=crop_bytes,
-                                ), name=f"waha_match_{match_alert_id[:8]}")
+                                last_emp_alert = last_employee_alert_sent.get((camera.id, active_employee.id))
+                                if not last_emp_alert or (now - last_emp_alert).total_seconds() > 300.0:  # 5 minutes cooldown
+                                    last_employee_alert_sent[(camera.id, active_employee.id)] = now
+                                    match_alert_id = str(uuid.uuid4())
+                                    _safe_create_task(waha_service.send_alert_notification(
+                                        alert_id=match_alert_id,
+                                        alert_title=f"Employee Detected: {active_employee.name}",
+                                        alert_description=(
+                                            f"{active_employee.name} was detected on camera {camera.name} "
+                                            f"with {similarity:.1f}% confidence."
+                                        ),
+                                        severity="low",
+                                        alert_type="match",
+                                        camera_name=camera.name,
+                                        timestamp=db_face.timestamp,
+                                        face_image_bytes=crop_bytes,
+                                    ), name=f"waha_match_{match_alert_id[:8]}")
                         else:
                             # If no registered match, but we didn't raise NoFacesException,
                             # a face is indeed present in the frame but unrecognized.
@@ -531,32 +536,19 @@ async def start_face_processor():
                                     crop_bytes = frame_bytes
 
                                 face_id = str(uuid.uuid4())
+                                now = datetime.utcnow()
                                 db_face = Face(
                                     id=face_id,
                                     camera_id=camera.id,
                                     person_id=None,
                                     confidence=confidence / 100.0,
                                     boundingbox=bounding_box,
-                                    timestamp=datetime.utcnow(),
+                                    timestamp=now,
                                     image_data=crop_bytes,
-                                )
-
-                                alert_id = str(uuid.uuid4())
-                                db_alert = Alert(
-                                    id=alert_id,
-                                    type=AlertType.UNKNOWN_FACE,
-                                    severity=AlertSeverity.CRITICAL,
-                                    title="Unrecognized Subject Detected",
-                                    description=f"An unrecognized individual was detected on camera {camera.name}.",
-                                    camera_id=camera.id,
-                                    face_id=face_id,
-                                    acknowledged=False,
                                 )
 
                                 async with async_session() as session:
                                     session.add(db_face)
-                                    await session.flush()
-                                    session.add(db_alert)
                                     await session.commit()
 
                                     # Update last detections cache for live stream overlay
@@ -564,7 +556,6 @@ async def start_face_processor():
                                     if camera.id not in RTSPService.last_detections:
                                         RTSPService.last_detections[camera.id] = []
 
-                                    now = datetime.utcnow()
                                     RTSPService.last_detections[camera.id] = [
                                         d for d in RTSPService.last_detections[camera.id]
                                         if (now - d["timestamp"]).total_seconds() < 5.0
@@ -592,35 +583,56 @@ async def start_face_processor():
                                     }
                                 )
 
-                                # Broadcast alert
-                                logger.info(f">>> UNKNOWN FACE: Broadcasting alert {alert_id} via WebSocket")
-                                await ws_manager.broadcast(
-                                    {
-                                        "type": "new_alert",
-                                        "data": {
-                                            "id": alert_id,
-                                            "type": db_alert.type.value,
-                                            "title": db_alert.title,
-                                            "description": db_alert.description,
-                                            "camera_id": camera.id,
-                                            "severity": "critical",
-                                            "created_at": datetime.utcnow().isoformat(),
-                                        },
-                                    }
-                                )
+                                # --- ALERTS & WAHA RATE LIMITING ---
+                                last_unknown = last_unknown_alert_sent.get(camera.id)
+                                if not last_unknown or (now - last_unknown).total_seconds() > 120.0:  # 2 minutes cooldown
+                                    last_unknown_alert_sent[camera.id] = now
+                                    
+                                    alert_id = str(uuid.uuid4())
+                                    db_alert = Alert(
+                                        id=alert_id,
+                                        type=AlertType.UNKNOWN_FACE,
+                                        severity=AlertSeverity.CRITICAL,
+                                        title="Unrecognized Subject Detected",
+                                        description=f"An unrecognized individual was detected on camera {camera.name}.",
+                                        camera_id=camera.id,
+                                        face_id=face_id,
+                                        acknowledged=False,
+                                    )
 
-                                # Send WhatsApp notification (non-blocking)
-                                logger.info(f">>> UNKNOWN FACE: Dispatching WhatsApp notification for alert {alert_id}")
-                                _safe_create_task(waha_service.send_alert_notification(
-                                    alert_id=alert_id,
-                                    alert_title=db_alert.title,
-                                    alert_description=db_alert.description,
-                                    severity="critical",
-                                    alert_type="unknown_face",
-                                    camera_name=camera.name,
-                                    timestamp=db_face.timestamp,
-                                    face_image_bytes=crop_bytes,
-                                ), name=f"waha_unknown_{alert_id[:8]}")
+                                    async with async_session() as session:
+                                        session.add(db_alert)
+                                        await session.commit()
+
+                                    # Broadcast alert
+                                    logger.info(f">>> UNKNOWN FACE: Broadcasting alert {alert_id} via WebSocket")
+                                    await ws_manager.broadcast(
+                                        {
+                                            "type": "new_alert",
+                                            "data": {
+                                                "id": alert_id,
+                                                "type": db_alert.type.value,
+                                                "title": db_alert.title,
+                                                "description": db_alert.description,
+                                                "camera_id": camera.id,
+                                                "severity": "critical",
+                                                "created_at": now.isoformat(),
+                                            },
+                                        }
+                                    )
+
+                                    # Send WhatsApp notification (non-blocking)
+                                    logger.info(f">>> UNKNOWN FACE: Dispatching WhatsApp notification for alert {alert_id}")
+                                    _safe_create_task(waha_service.send_alert_notification(
+                                        alert_id=alert_id,
+                                        alert_title=db_alert.title,
+                                        alert_description=db_alert.description,
+                                        severity="critical",
+                                        alert_type="unknown_face",
+                                        camera_name=camera.name,
+                                        timestamp=db_face.timestamp,
+                                        face_image_bytes=crop_bytes,
+                                    ), name=f"waha_unknown_{alert_id[:8]}")
                     except NoFacesException:
                         logger.debug(f"No faces detected on camera {camera.name}")
 

@@ -343,9 +343,9 @@ async def get_attendance_report(
             
             # Present / Late / Early Leave statuses
             status = "present"
-            if first_seen.time() > datetime.strptime("09:15:00", "%H:%M:%S").time():
+            if first_seen.time() > datetime.strptime("09:00:00", "%H:%M:%S").time():
                 status = "late"
-            elif last_seen.time() < datetime.strptime("16:45:00", "%H:%M:%S").time():
+            elif last_seen.time() < datetime.strptime("17:00:00", "%H:%M:%S").time():
                 status = "early_leave"
                 
             records.append({

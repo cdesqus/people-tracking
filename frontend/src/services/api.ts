@@ -147,6 +147,27 @@ class ApiClient {
     );
   }
 
+  // Reports & Analytics
+  async getAttendanceReport(fromDate: string, toDate: string) {
+    return this.client.get<ApiResponse<any>>(`/reports/attendance?from=${fromDate}&to=${toDate}`);
+  }
+
+  async getVisitorsReport(fromDate: string, toDate: string) {
+    return this.client.get<ApiResponse<any>>(`/reports/visitors?from=${fromDate}&to=${toDate}`);
+  }
+
+  async getCameraUptimeReport() {
+    return this.client.get<ApiResponse<any>>(`/reports/camera-uptime`);
+  }
+
+  async getSecurityIncidentsReport(fromDate: string, toDate: string) {
+    return this.client.get<ApiResponse<any>>(`/reports/security-incidents?from=${fromDate}&to=${toDate}`);
+  }
+
+  async getConsolidatedReport(fromDate: string, toDate: string) {
+    return this.client.get<ApiResponse<any>>(`/reports/consolidated?from=${fromDate}&to=${toDate}`);
+  }
+
   // Authentication
   async login(data: any) {
     return this.client.post<ApiResponse<any>>('/auth/login', data);

@@ -5,6 +5,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { useAppDispatch, useAppSelector } from '@store/store';
+import apiClient from '../../services/api';
 import {
   setReportType,
   setDateRange,
@@ -80,9 +81,11 @@ const ReportGenerator: React.FC = () => {
       switch (selectedType) {
         case 'attendance': {
           dispatch(fetchAttendanceStart());
-          const response = await fetch(`/api/reports/attendance?${params}`);
-          if (!response.ok) throw new Error('Failed to fetch attendance report');
-          const data = await response.json();
+          const response = await apiClient.getAttendanceReport(
+            localFromDate.toISOString().split('T')[0],
+            localToDate.toISOString().split('T')[0]
+          );
+          const data = response.data.data || response.data;
           dispatch(fetchAttendanceSuccess({
             records: data.records || [],
             summary: data.summary || { present: 0, absent: 0, late: 0, earlyLeave: 0 },
@@ -91,9 +94,11 @@ const ReportGenerator: React.FC = () => {
         }
         case 'visitors': {
           dispatch(fetchVisitorsStart());
-          const response = await fetch(`/api/reports/visitors?${params}`);
-          if (!response.ok) throw new Error('Failed to fetch visitor report');
-          const data = await response.json();
+          const response = await apiClient.getVisitorsReport(
+            localFromDate.toISOString().split('T')[0],
+            localToDate.toISOString().split('T')[0]
+          );
+          const data = response.data.data || response.data;
           dispatch(fetchVisitorsSuccess({
             records: data.records || [],
             summary: data.summary || { totalVisitors: 0, avgDuration: 0, topHosts: [] },
@@ -102,9 +107,8 @@ const ReportGenerator: React.FC = () => {
         }
         case 'camera_uptime': {
           dispatch(fetchCameraUptimeStart());
-          const response = await fetch(`/api/reports/camera-uptime?${params}`);
-          if (!response.ok) throw new Error('Failed to fetch camera uptime report');
-          const data = await response.json();
+          const response = await apiClient.getCameraUptimeReport();
+          const data = response.data.data || response.data;
           dispatch(fetchCameraUptimeSuccess({
             records: data.records || [],
             summary: data.summary || { avgUptime: 0, onlineCameras: 0, offlineIncidents: 0 },
@@ -113,9 +117,11 @@ const ReportGenerator: React.FC = () => {
         }
         case 'security_incidents': {
           dispatch(fetchSecurityStart());
-          const response = await fetch(`/api/reports/security-incidents?${params}`);
-          if (!response.ok) throw new Error('Failed to fetch security report');
-          const data = await response.json();
+          const response = await apiClient.getSecurityIncidentsReport(
+            localFromDate.toISOString().split('T')[0],
+            localToDate.toISOString().split('T')[0]
+          );
+          const data = response.data.data || response.data;
           dispatch(fetchSecuritySuccess({
             records: data.records || [],
             summary: data.summary || { total: 0, critical: 0, warnings: 0, info: 0 },
@@ -124,9 +130,11 @@ const ReportGenerator: React.FC = () => {
         }
         case 'consolidated': {
           dispatch(fetchConsolidatedStart());
-          const response = await fetch(`/api/reports/consolidated?${params}`);
-          if (!response.ok) throw new Error('Failed to fetch consolidated report');
-          const data = await response.json();
+          const response = await apiClient.getConsolidatedReport(
+            localFromDate.toISOString().split('T')[0],
+            localToDate.toISOString().split('T')[0]
+          );
+          const data = response.data.data || response.data;
           dispatch(fetchConsolidatedSuccess(data));
           break;
         }
