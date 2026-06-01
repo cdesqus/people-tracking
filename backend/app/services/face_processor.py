@@ -345,6 +345,11 @@ async def start_face_processor():
                                     })
                                     logger.error(f"CRITICAL: Camera {camera.name} is obstructed! Raised Alert {alert_id}")
 
+                                    # Encode current frame to attach as proof
+                                    resized = cv2.resize(frame, (640, 480))
+                                    _, buffer = cv2.imencode(".jpg", resized)
+                                    obstruction_image_bytes = buffer.tobytes()
+
                                     # Send WhatsApp notification (non-blocking)
                                     _safe_create_task(waha_service.send_alert_notification(
                                         alert_id=alert_id,
@@ -354,7 +359,7 @@ async def start_face_processor():
                                         alert_type="suspicious_activity",
                                         camera_name=camera.name,
                                         timestamp=now,
-                                        face_image_bytes=None,
+                                        face_image_bytes=obstruction_image_bytes,
                                     ), name=f"waha_obstruction_{alert_id[:8]}")
                         else:
                             # Reset count if it is clear
