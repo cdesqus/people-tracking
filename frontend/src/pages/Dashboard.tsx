@@ -862,11 +862,18 @@ const Dashboard: React.FC = () => {
                       >
                         {camera.status === 'active' ? (
                           <>
-                            <img 
-                              alt={camera.name} 
-                              className="w-full h-full object-cover opacity-65 group-hover:opacity-100 transition-opacity"
-                              src={camera.image} 
-                            />
+                            {isSelected ? (
+                              <img 
+                                alt={camera.name} 
+                                className="w-full h-full object-cover opacity-65 group-hover:opacity-100 transition-opacity"
+                                src={camera.image} 
+                              />
+                            ) : (
+                              <div className="w-full h-full flex flex-col items-center justify-center py-2 bg-slate-900 text-gray-500 group-hover:text-blue-400 transition-colors">
+                                <span className="material-symbols-outlined text-2xl mb-1">play_circle</span>
+                                <span className="text-[9px] font-mono font-bold tracking-widest">STANDBY</span>
+                              </div>
+                            )}
                             <div className="absolute inset-0 bg-slate-950/40" />
                             
                             <div className="absolute top-1.5 left-1.5 z-10 font-mono text-[8px] bg-slate-950/80 px-1.5 py-0.5 rounded border border-slate-800 text-gray-300">
