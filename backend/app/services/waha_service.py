@@ -6,7 +6,7 @@ Handles session management, QR/pairing auth, and sending alert notifications.
 import asyncio
 import base64
 import logging
-from datetime import datetime
+from datetime import datetime, timedelta
 from typing import Optional
 
 import httpx
@@ -207,7 +207,10 @@ def _format_alert_caption(
         "system_error": "System Error",
     }.get(alert_type.lower(), alert_type.replace("_", " ").title())
 
-    ts = timestamp.strftime("%d/%m/%Y %H:%M:%S") if timestamp else datetime.utcnow().strftime("%d/%m/%Y %H:%M:%S")
+    # Convert naive UTC to WIB (UTC+7)
+    base_time = timestamp if timestamp else datetime.utcnow()
+    wib_time = base_time + timedelta(hours=7)
+    ts = wib_time.strftime("%d/%m/%Y %H:%M:%S WIB")
 
     return (
         f"🚨 *SECURITY ALERT*\n"
