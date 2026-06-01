@@ -43,6 +43,7 @@ interface WahaConfig {
   session_name: string;
   is_enabled: boolean;
   alert_severities: string[];
+  alert_types?: string[];
 }
 
 interface WahaStatus {
@@ -70,6 +71,13 @@ const SEVERITY_OPTIONS = [
   { value: 'high', label: 'High', color: 'bg-orange-500/20 text-orange-400 border-orange-500/30', dot: 'bg-orange-500' },
   { value: 'medium', label: 'Medium', color: 'bg-yellow-500/20 text-yellow-400 border-yellow-500/30', dot: 'bg-yellow-500' },
   { value: 'low', label: 'Low', color: 'bg-green-500/20 text-green-400 border-green-500/30', dot: 'bg-green-500' },
+];
+
+const ALERT_TYPE_OPTIONS = [
+  { value: 'unknown_face', label: 'Unknown Face Detected', color: 'bg-red-500/20 text-red-400 border-red-500/30', dot: 'bg-red-500' },
+  { value: 'match', label: 'Face Matched', color: 'bg-emerald-500/20 text-emerald-400 border-emerald-500/30', dot: 'bg-emerald-500' },
+  { value: 'suspicious_activity', label: 'Suspicious Activity', color: 'bg-orange-500/20 text-orange-400 border-orange-500/30', dot: 'bg-orange-500' },
+  { value: 'system_error', label: 'System Error', color: 'bg-slate-500/20 text-slate-400 border-slate-500/30', dot: 'bg-slate-500' },
 ];
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
@@ -102,6 +110,7 @@ const WhatsAppSettings: React.FC = () => {
     session_name: 'default',
     is_enabled: false,
     alert_severities: ['critical', 'high'],
+    alert_types: ['match', 'unknown_face', 'suspicious_activity', 'system_error'],
   });
   const [showApiKey, setShowApiKey] = useState(false);
   const [savingConfig, setSavingConfig] = useState(false);
@@ -285,6 +294,14 @@ const WhatsAppSettings: React.FC = () => {
       const current = prev.alert_severities || [];
       const next = current.includes(sev) ? current.filter((s) => s !== sev) : [...current, sev];
       return { ...prev, alert_severities: next };
+    });
+  };
+
+  const toggleAlertType = (type: string) => {
+    setConfig((prev) => {
+      const current = prev.alert_types || [];
+      const next = current.includes(type) ? current.filter((t) => t !== type) : [...current, type];
+      return { ...prev, alert_types: next };
     });
   };
 
@@ -624,6 +641,31 @@ const WhatsAppSettings: React.FC = () => {
                   <button
                     key={opt.value}
                     onClick={() => toggleSeverity(opt.value)}
+                    className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg border text-xs font-medium transition-all ${active ? opt.color : 'bg-slate-800 text-slate-500 border-slate-700 opacity-60'}`}
+                  >
+                    <span className={`w-1.5 h-1.5 rounded-full ${active ? opt.dot : 'bg-slate-600'}`} />
+                    {opt.label}
+                    {active && <CheckCircle2 className="w-3 h-3" />}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+
+          {/* Alert Type filter */}
+          <div>
+            <label className="block text-xs font-medium text-slate-400 mb-2">
+              <AlertCircle className="w-3.5 h-3.5 inline-block mr-1.5 -mt-0.5" />
+              Filter Kategori Alert
+            </label>
+            <p className="text-xs text-slate-500 mb-3">Pilih kategori alert apa saja yang ingin dikirimkan</p>
+            <div className="flex flex-wrap gap-2">
+              {ALERT_TYPE_OPTIONS.map((opt) => {
+                const active = config.alert_types?.includes(opt.value) ?? true;
+                return (
+                  <button
+                    key={opt.value}
+                    onClick={() => toggleAlertType(opt.value)}
                     className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg border text-xs font-medium transition-all ${active ? opt.color : 'bg-slate-800 text-slate-500 border-slate-700 opacity-60'}`}
                   >
                     <span className={`w-1.5 h-1.5 rounded-full ${active ? opt.dot : 'bg-slate-600'}`} />

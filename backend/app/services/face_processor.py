@@ -296,8 +296,8 @@ async def start_face_processor():
                         mean = mean_val[0][0]
                         std_dev = std_val[0][0]
 
-                        # Obstructed if center region is too dark (mean < 18.0) or too flat/uniform (std_dev < 8.0)
-                        is_obstructed = (mean < 18.0) or (std_dev < 8.0)
+                        # Obstructed if center region is too dark (mean < 20.0) or too flat/uniform (std_dev < 15.0)
+                        is_obstructed = (mean < 20.0) or (std_dev < 15.0)
 
                         if is_obstructed:
                             obstructed_counts[camera.id] = obstructed_counts.get(camera.id, 0) + 1
@@ -305,8 +305,8 @@ async def start_face_processor():
                                 f"Camera {camera.name} is possibly obstructed (Mean={mean:.2f}, StdDev={std_dev:.2f}). Count={obstructed_counts[camera.id]}"
                             )
 
-                            # Trigger alert if consecutive count reaches 4 (approx 12-15 seconds of solid blockage)
-                            if obstructed_counts[camera.id] >= 4:
+                            # Trigger alert if consecutive count reaches 3 (approx 9 seconds of solid blockage)
+                            if obstructed_counts[camera.id] >= 3:
                                 now = datetime.utcnow()
                                 last_sent = last_alert_sent.get(camera.id)
                                 if not last_sent or (now - last_sent).total_seconds() > 60.0:

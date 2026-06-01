@@ -50,6 +50,7 @@ async def _get_config() -> Optional[dict]:
                     "session": cfg.session_name,
                     "is_enabled": cfg.is_enabled,
                     "alert_severities": cfg.alert_severities or ["critical", "high"],
+                    "alert_types": cfg.alert_types or ["match", "unknown_face", "suspicious_activity", "system_error"],
                 }
                 _config_cache_ttl = now + _CONFIG_CACHE_SECONDS
                 return _config_cache
@@ -252,6 +253,12 @@ async def send_alert_notification(
         allowed_severities = [s.lower() for s in (cfg["alert_severities"] or [])]
         if severity.lower() not in allowed_severities:
             logger.warning(f"[Waha] Severity '{severity}' NOT in allowed list {allowed_severities}, skipping")
+            return
+
+        # Check if this alert type is enabled
+        allowed_types = [t.lower() for t in (cfg.get("alert_types") or [])]
+        if alert_type.lower() not in allowed_types:
+            logger.warning(f"[Waha] Alert type '{alert_type}' NOT in allowed list {allowed_types}, skipping")
             return
 
         # Load active recipients

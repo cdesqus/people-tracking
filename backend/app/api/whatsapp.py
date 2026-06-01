@@ -27,6 +27,7 @@ class WhatsappConfigUpdate(BaseModel):
     session_name: str = "default"
     is_enabled: bool = False
     alert_severities: list[str] = ["critical", "high"]
+    alert_types: list[str] = ["match", "unknown_face", "suspicious_activity", "system_error"]
 
 
 class RecipientCreate(BaseModel):
@@ -69,6 +70,7 @@ async def get_whatsapp_config(db: AsyncSession = Depends(get_db)):
             "session_name": "default",
             "is_enabled": False,
             "alert_severities": ["critical", "high"],
+            "alert_types": ["match", "unknown_face", "suspicious_activity", "system_error"],
         }
     return {
         "id": cfg.id,
@@ -77,6 +79,7 @@ async def get_whatsapp_config(db: AsyncSession = Depends(get_db)):
         "session_name": cfg.session_name,
         "is_enabled": cfg.is_enabled,
         "alert_severities": cfg.alert_severities,
+        "alert_types": cfg.alert_types,
     }
 
 
@@ -92,6 +95,7 @@ async def update_whatsapp_config(data: WhatsappConfigUpdate, db: AsyncSession = 
         cfg.session_name = data.session_name
         cfg.is_enabled = data.is_enabled
         cfg.alert_severities = data.alert_severities
+        cfg.alert_types = data.alert_types
     else:
         cfg = WhatsappConfig(
             id="singleton",
@@ -100,6 +104,7 @@ async def update_whatsapp_config(data: WhatsappConfigUpdate, db: AsyncSession = 
             session_name=data.session_name,
             is_enabled=data.is_enabled,
             alert_severities=data.alert_severities,
+            alert_types=data.alert_types,
         )
         db.add(cfg)
 
@@ -114,6 +119,7 @@ async def update_whatsapp_config(data: WhatsappConfigUpdate, db: AsyncSession = 
         "session_name": cfg.session_name,
         "is_enabled": cfg.is_enabled,
         "alert_severities": cfg.alert_severities,
+        "alert_types": cfg.alert_types,
     }}
 
 

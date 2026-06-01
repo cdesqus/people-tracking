@@ -58,6 +58,11 @@ async def init_db():
             if db_dialect == "postgresql":
                 await session.execute(text("ALTER TABLE faces ADD COLUMN IF NOT EXISTS image_data BYTEA;"))
                 
+                try:
+                    await session.execute(text("ALTER TABLE whatsapp_configs ADD COLUMN IF NOT EXISTS alert_types JSONB;"))
+                except Exception as e:
+                    print(f"Migration warning whatsapp_configs alert_types: {e}")
+                
                 # Correct foreign keys to point to employees instead of persons
                 try:
                     await session.execute(text("ALTER TABLE faces DROP CONSTRAINT IF EXISTS faces_person_id_fkey;"))
@@ -73,6 +78,11 @@ async def init_db():
             elif db_dialect == "sqlite":
                 try:
                     await session.execute(text("ALTER TABLE faces ADD COLUMN image_data BLOB;"))
+                except Exception:
+                    pass
+                
+                try:
+                    await session.execute(text("ALTER TABLE whatsapp_configs ADD COLUMN alert_types TEXT;"))
                 except Exception:
                     pass
             await session.commit()
