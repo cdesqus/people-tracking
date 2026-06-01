@@ -3,6 +3,8 @@ import cv2
 import logging
 import os
 import uuid
+import threading
+import time
 from datetime import datetime
 from sqlalchemy import select
 from app.database import async_session
@@ -29,8 +31,41 @@ def _safe_create_task(coro, name: str = "waha_task"):
     return task
 
 
-# Persistent VideoCapture connections per camera to avoid reconnection overhead
-_camera_captures: dict = {}  # camera_id -> cv2.VideoCapture
+# Persistent background readers per camera to avoid OpenCV buffering latency
+_camera_threads: dict = {}   # camera_id -> threading.Thread
+_camera_active: dict = {}    # camera_id -> bool
+_latest_frames: dict = {}    # camera_id -> latest frame (numpy array)
+
+def _camera_worker(camera_id: str, stream_url: str):
+    """Background thread that continuously reads from the camera to flush the buffer."""
+    cap = cv2.VideoCapture(stream_url, cv2.CAP_FFMPEG)
+    try:
+        cap.set(cv2.CAP_PROP_BUFFERSIZE, 1)
+        cap.set(cv2.CAP_PROP_OPEN_TIMEOUT_MSECS, 3000)
+        cap.set(cv2.CAP_PROP_READ_TIMEOUT_MSECS, 3000)
+    except Exception:
+        pass
+    
+    logger.info(f"Started frame grabber thread for camera {camera_id}")
+    
+    while _camera_active.get(camera_id, False):
+        if not cap.isOpened():
+            time.sleep(1)
+            cap = cv2.VideoCapture(stream_url, cv2.CAP_FFMPEG)
+            continue
+            
+        ret, frame = cap.read()
+        if not ret or frame is None:
+            # Connection lost or EOF, release and try to reconnect
+            cap.release()
+            time.sleep(1)
+            continue
+            
+        # Store latest frame safely
+        _latest_frames[camera_id] = frame
+        
+    cap.release()
+    logger.info(f"Stopped frame grabber thread for camera {camera_id}")
 
 
 def _crop_face_from_frame(frame, bounding_box: dict, padding: float = 0.20):
@@ -86,47 +121,20 @@ def _crop_face_from_frame(frame, bounding_box: dict, padding: float = 0.20):
     }
 
 
-def _get_camera_capture(camera_id: str, stream_url: str):
-    """Get or create a persistent VideoCapture for a camera."""
-    cap = _camera_captures.get(camera_id)
-    if cap is not None and cap.isOpened():
-        return cap
-    
-    # Close old capture if it exists but is not opened
-    if cap is not None:
-        try:
-            cap.release()
-        except Exception:
-            pass
-    
-    # Create new capture with optimized settings
-    new_cap = cv2.VideoCapture(stream_url, cv2.CAP_FFMPEG)
-    try:
-        new_cap.set(cv2.CAP_PROP_BUFFERSIZE, 1)
-        new_cap.set(cv2.CAP_PROP_OPEN_TIMEOUT_MSECS, 3000)
-        new_cap.set(cv2.CAP_PROP_READ_TIMEOUT_MSECS, 3000)
-    except Exception:
-        pass
-    
-    if new_cap.isOpened():
-        _camera_captures[camera_id] = new_cap
-        return new_cap
-    else:
-        new_cap.release()
-        return None
-
-
 def _open_and_read_frame(camera_id: str, stream_url: str):
-    """Open camera stream and grab a single frame (blocking I/O, runs in executor)"""
-    try:
-        cap = _get_camera_capture(camera_id, stream_url)
-        if cap is None:
-            return False, None
-        ret, frame = cap.read()
-        return ret, frame
-    except Exception as e:
-        logger.error(f"Error in _open_and_read_frame for camera {camera_id}: {e}")
-        return False, None
+    """Get the latest frame from the background grabber thread."""
+    if camera_id not in _camera_threads or not _camera_threads[camera_id].is_alive():
+        _camera_active[camera_id] = True
+        t = threading.Thread(target=_camera_worker, args=(camera_id, stream_url), daemon=True)
+        _camera_threads[camera_id] = t
+        t.start()
+        # Give it a moment to fetch the first frame
+        time.sleep(1.0)
+        
+    frame = _latest_frames.get(camera_id)
+    if frame is not None:
+        return True, frame.copy()
+    return False, None
 
 
 async def start_face_processor():
