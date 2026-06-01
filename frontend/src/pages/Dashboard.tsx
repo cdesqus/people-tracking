@@ -11,6 +11,7 @@ const Dashboard: React.FC = () => {
   const [activeTab, setActiveTab] = useState<'overview' | 'monitor'>('overview');
   const [selectedCamera, setSelectedCamera] = useState<string>('CAM-01');
   const [selectedBranch, setSelectedBranch] = useState<string>('all');
+  const [snapshotTick, setSnapshotTick] = useState(Date.now());
   const [previewImage, setPreviewImage] = useState<{ src: string, title: string, subtitle: string } | null>(null);
   const [streamLatency, setStreamLatency] = useState<number | null>(null);
   const [streamInfo, setStreamInfo] = useState<{ resolution: string; fps: string } | null>(null);
@@ -43,6 +44,14 @@ const Dashboard: React.FC = () => {
       document.head.removeChild(linkIcons);
       document.head.removeChild(linkFonts);
     };
+  }, []);
+
+  // Update snapshot timestamp every 3 seconds for thumbnails
+  useEffect(() => {
+    const snapshotInterval = setInterval(() => {
+      setSnapshotTick(Date.now());
+    }, 3000);
+    return () => clearInterval(snapshotInterval);
   }, []);
 
   // Handle alert acknowledgment via API
@@ -215,6 +224,9 @@ const Dashboard: React.FC = () => {
         image: c.status === 'active'
           ? `${API_BASE_URL}/cameras/${c.id}/stream`
           : '',
+        snapshotUrl: c.status === 'active'
+          ? `${API_BASE_URL}/cameras/${c.id}/snapshot?t=${snapshotTick}`
+          : '',
         branch: c.branch || 'br-hq'
       }))
     : mockCameras;
@@ -225,7 +237,7 @@ const Dashboard: React.FC = () => {
         id: a.id,
         title: a.title,
         description: a.description,
-        location: a.camera_id ? `Camera ${a.camera_id}` : 'System',
+        location: a.camera_id ? (cameras.find((c: any) => c.id === a.camera_id)?.name || `Camera ${a.camera_id}`) : 'System',
         time: new Date(a.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' }),
         severity: a.severity || 'high',
         type: a.type,
@@ -557,7 +569,7 @@ const Dashboard: React.FC = () => {
                         <img 
                           alt={camera.name} 
                           className="w-full h-full object-cover opacity-75 group-hover/cam:opacity-100 transition-opacity duration-300"
-                          src={camera.image} 
+                          src={camera.snapshotUrl || camera.image} 
                         />
                         
                         {/* Scanline Overlay */}

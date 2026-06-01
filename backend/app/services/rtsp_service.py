@@ -154,6 +154,34 @@ class RTSPService:
                 pass
 
     @staticmethod
+    def get_snapshot(rtsp_url: str, jpeg_quality: int = 60) -> Optional[bytes]:
+        """
+        Get a single JPEG snapshot from the RTSP stream.
+        This uses fewer resources and avoids keeping TCP connections open.
+        """
+        os.environ.setdefault('OPENCV_FFMPEG_CAPTURE_OPTIONS', 'rtsp_transport;tcp')
+        cap = cv2.VideoCapture(rtsp_url, cv2.CAP_FFMPEG)
+        try:
+            cap.set(cv2.CAP_PROP_BUFFERSIZE, 1)
+            ret, frame = cap.read()
+            if not ret or frame is None:
+                return None
+            
+            _, buffer = cv2.imencode(
+                '.jpg', frame,
+                [cv2.IMWRITE_JPEG_QUALITY, jpeg_quality]
+            )
+            return buffer.tobytes()
+        except Exception as e:
+            logger.error(f"Failed to get snapshot: {str(e)}")
+            return None
+        finally:
+            try:
+                cap.release()
+            except:
+                pass
+
+    @staticmethod
     def generate_mjpeg_stream(
         rtsp_url: str,
         fps_limit: int = 15,

@@ -218,6 +218,43 @@ async def stream_camera(
     )
 
 
+from fastapi.responses import Response
+
+@router.get("/{camera_id}/snapshot")
+async def get_camera_snapshot(
+    camera_id: str,
+    db: AsyncSession = Depends(get_db)
+):
+    """
+    Get a single JPEG frame from a camera's RTSP source.
+    Useful for thumbnails to prevent browser connection limit exhaustion.
+    """
+    camera = await CameraService.get_camera(db, camera_id)
+    if not camera:
+        raise HTTPException(status_code=404, detail="Camera not found")
+    
+    if not camera.stream_url:
+        raise HTTPException(status_code=400, detail="Camera has no stream URL configured")
+    
+    import asyncio
+    loop = asyncio.get_running_loop()
+    # Run cv2 operations in threadpool to avoid blocking event loop
+    snapshot_bytes = await loop.run_in_executor(
+        None, RTSPService.get_snapshot, camera.stream_url
+    )
+    
+    if not snapshot_bytes:
+        raise HTTPException(status_code=500, detail="Failed to capture snapshot")
+        
+    return Response(
+        content=snapshot_bytes,
+        media_type="image/jpeg",
+        headers={
+            "Cache-Control": "no-cache, no-store, must-revalidate",
+        }
+    )
+
+
 @router.post("/{camera_id}/test-connection")
 async def test_camera_connection(
     camera_id: str,

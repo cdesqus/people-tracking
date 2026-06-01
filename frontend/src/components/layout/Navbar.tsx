@@ -89,7 +89,11 @@ const Navbar: React.FC = () => {
           {/* Right: Icons + Profile */}
           <div className="flex items-center gap-2 sm:gap-4">
             {/* Notifications - Hidden on mobile */}
-            <button className="hidden sm:flex p-2 rounded-lg hover:bg-slate-700 transition-colors relative text-gray-300 hover:text-white">
+            <button 
+              onClick={() => navigate('/alerts')}
+              className="hidden sm:flex p-2 rounded-lg hover:bg-slate-700 transition-colors relative text-gray-300 hover:text-white"
+              title="View Alerts"
+            >
               <Bell size={20} />
               <span className="absolute top-1 right-1 w-2 h-2 bg-red-500 rounded-full animate-pulse"></span>
             </button>
