@@ -159,7 +159,7 @@ class RTSPService:
         Get a single JPEG snapshot from the RTSP stream.
         This uses fewer resources and avoids keeping TCP connections open.
         """
-        os.environ.setdefault('OPENCV_FFMPEG_CAPTURE_OPTIONS', 'rtsp_transport;tcp')
+        os.environ.setdefault('OPENCV_FFMPEG_CAPTURE_OPTIONS', 'rtsp_transport;tcp|stimeout;5000000')
         cap = cv2.VideoCapture(rtsp_url, cv2.CAP_FFMPEG)
         try:
             cap.set(cv2.CAP_PROP_BUFFERSIZE, 1)
@@ -205,8 +205,8 @@ class RTSPService:
             jpeg_quality: JPEG encoding quality 1-100 (default 60 for substream)
             camera_id: Unique camera ID for drawing face bounding boxes (optional)
         """
-        # Set RTSP transport to TCP for local network reliability
-        os.environ.setdefault('OPENCV_FFMPEG_CAPTURE_OPTIONS', 'rtsp_transport;tcp')
+        # Set RTSP transport to TCP and 5s timeout for local network reliability
+        os.environ.setdefault('OPENCV_FFMPEG_CAPTURE_OPTIONS', 'rtsp_transport;tcp|stimeout;5000000')
 
         cap = cv2.VideoCapture(rtsp_url, cv2.CAP_FFMPEG)
         
