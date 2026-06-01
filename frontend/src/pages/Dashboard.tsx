@@ -567,7 +567,7 @@ const Dashboard: React.FC = () => {
                         <div className="absolute top-2 left-2 flex items-center gap-1.5 z-10">
                           <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
                           <span className="font-mono text-white text-[8px] bg-slate-950/85 px-1.5 py-0.5 rounded border border-slate-800 backdrop-blur-sm">
-                            {camera.id} • {camera.name}
+                            {camera.name.toUpperCase()}
                           </span>
                         </div>
 
@@ -587,7 +587,7 @@ const Dashboard: React.FC = () => {
                         <div className="absolute top-2 left-2 flex items-center gap-2 z-10">
                           <div className="w-1.5 h-1.5 rounded-full bg-slate-700" />
                           <span className="font-mono text-gray-600 text-[8px] bg-slate-950/80 px-1.5 py-0.5 rounded border border-slate-900">
-                            {camera.id} • {camera.name}
+                            {camera.name.toUpperCase()}
                           </span>
                         </div>
                       </div>
@@ -792,7 +792,7 @@ const Dashboard: React.FC = () => {
                       <div className="flex items-center gap-2">
                         <div className={`w-2.5 h-2.5 rounded-full ${activeFocusedCamera.status === 'active' ? 'bg-red-500 animate-pulse' : 'bg-slate-600'}`} />
                         <span className="font-mono text-white text-xs font-bold">
-                          {activeFocusedCamera.id} • {activeFocusedCamera.name.toUpperCase()} (FOCUSED FEED)
+                          {activeFocusedCamera.name.toUpperCase()} (FOCUSED FEED)
                         </span>
                       </div>
                       <div className="flex items-center gap-2">
@@ -869,12 +869,11 @@ const Dashboard: React.FC = () => {
                             />
                             <div className="absolute inset-0 bg-slate-950/40" />
                             
-                            {/* Small Tag overlay */}
                             <div className="absolute top-1.5 left-1.5 z-10 font-mono text-[8px] bg-slate-950/80 px-1.5 py-0.5 rounded border border-slate-800 text-gray-300">
-                              {camera.id}
+                              {camera.name.toUpperCase()}
                             </div>
                             <div className="absolute bottom-1.5 left-1.5 z-10 font-mono text-[8px] text-gray-400 truncate max-w-[80%]">
-                              {camera.name}
+                              LIVE
                             </div>
                             {isSelected && (
                               <div className="absolute inset-0 border-2 border-blue-500 rounded-lg pointer-events-none" />
@@ -883,7 +882,7 @@ const Dashboard: React.FC = () => {
                         ) : (
                           <div className="w-full h-full flex flex-col items-center justify-center py-2 bg-slate-950/80 text-gray-700">
                             <span className="material-symbols-outlined text-lg mb-0.5">videocam_off</span>
-                            <span className="text-[7px] font-mono font-bold tracking-wider">{camera.id} OFFLINE</span>
+                            <span className="text-[7px] font-mono font-bold tracking-wider">{camera.name.toUpperCase()} OFFLINE</span>
                           </div>
                         )}
                       </div>
