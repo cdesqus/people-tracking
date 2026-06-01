@@ -27,7 +27,7 @@ interface MenuItem {
 
 const Sidebar: React.FC = () => {
   const location = useLocation();
-  const { sidebarOpen } = useSidebar();
+  const { sidebarOpen, toggle } = useSidebar();
   const userRole = useAppSelector((state) => state.auth.user?.role);
 
   const isActive = (path: string) => location.pathname === path;
@@ -124,18 +124,21 @@ const Sidebar: React.FC = () => {
           sidebarOpen ? 'w-64' : 'w-20'
         }`}
       >
-        {/* Logo Section */}
-        <div className="flex-shrink-0 px-4 py-6 border-b border-slate-800 flex items-center justify-center">
+        {/* Logo Section (Click to Toggle) */}
+        <div 
+          onClick={toggle}
+          className="flex-shrink-0 px-4 py-6 border-b border-slate-800 flex items-center justify-center cursor-pointer hover:bg-slate-800/50 transition-colors"
+          title="Toggle Sidebar"
+        >
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-blue-500 to-blue-600 flex items-center justify-center font-bold text-lg flex-shrink-0">
+            <div className={`w-10 h-10 rounded-lg bg-gradient-to-br from-blue-500 to-blue-600 flex items-center justify-center font-bold text-lg flex-shrink-0 shadow-lg ${!sidebarOpen ? 'mx-auto' : ''}`}>
               CC
             </div>
             {sidebarOpen && (
               <div className="flex flex-col gap-0">
-                <span className="text-xs font-semibold text-gray-300">
-                  CCTV
+                <span className="text-sm font-bold text-gray-200 tracking-wider">
+                  DASHBOARD
                 </span>
-                <span className="text-xs text-gray-500">System v1.0</span>
               </div>
             )}
           </div>
