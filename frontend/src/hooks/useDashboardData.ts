@@ -23,6 +23,7 @@ import {
   fetchFacesError,
 } from '@store/slices/faceSlice';
 import { Camera, Face, Alert } from '@/types/index';
+import { WS_URL } from '@utils/constants';
 
 interface UseDashboardDataOptions {
   autoConnect?: boolean;
@@ -110,8 +111,7 @@ export const useDashboardData = (options: UseDashboardDataOptions = {}) => {
     }
 
     try {
-      const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
-      const wsUrl = `${protocol}//${window.location.host}/ws/dashboard`;
+      const wsUrl = `${WS_URL}/dashboard`;
 
       wsRef.current = new WebSocket(wsUrl);
 
