@@ -207,7 +207,11 @@ async def stream_camera(
         raise HTTPException(status_code=400, detail="Camera has no stream URL configured")
     
     return StreamingResponse(
-        RTSPService.generate_mjpeg_stream(camera.stream_url, camera_id=camera.id),
+        RTSPService.generate_mjpeg_stream(
+            camera.stream_url,
+            camera_id=camera.id,
+            intrusion_zones=camera.intrusion_zones
+        ),
         media_type="multipart/x-mixed-replace; boundary=frame",
         headers={
             "Cache-Control": "no-cache, no-store, must-revalidate",

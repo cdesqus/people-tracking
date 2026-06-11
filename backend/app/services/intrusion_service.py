@@ -95,8 +95,13 @@ class IntrusionService:
                                 pass
                                 
                         for polygon_points in zones_data:
-                            # Convert to numpy array of shape (N, 2)
-                            pts_array = np.array(polygon_points, dtype=np.int32)
+                            pts = []
+                            for p in polygon_points:
+                                if isinstance(p, dict):
+                                    pts.append([int(p.get("x", 0)), int(p.get("y", 0))])
+                                else:
+                                    pts.append([int(p[0]), int(p[1])])
+                            pts_array = np.array(pts, dtype=np.int32)
                             zone = sv.PolygonZone(polygon=pts_array, frame_resolution_wh=resolution_wh)
                             self.camera_zones[cam.id].append(zone)
 

@@ -64,7 +64,7 @@ const ZoneEditor: React.FC<ZoneEditorProps> = ({ isOpen, onClose, onSave, camera
       ctx.fillStyle = 'rgba(255, 0, 0, 0.3)';
       ctx.fill();
       ctx.strokeStyle = 'red';
-      ctx.lineWidth = 2;
+      ctx.lineWidth = 6;
       ctx.stroke();
     });
 
@@ -81,13 +81,13 @@ const ZoneEditor: React.FC<ZoneEditorProps> = ({ isOpen, onClose, onSave, camera
       ctx.fillStyle = 'rgba(0, 150, 255, 0.3)';
       if (!isDrawing) ctx.fill();
       ctx.strokeStyle = 'blue';
-      ctx.lineWidth = 2;
+      ctx.lineWidth = 6;
       ctx.stroke();
 
       // Draw points
       points.forEach((p) => {
         ctx.beginPath();
-        ctx.arc(p.x, p.y, 4, 0, Math.PI * 2);
+        ctx.arc(p.x, p.y, 8, 0, Math.PI * 2);
         ctx.fillStyle = 'white';
         ctx.fill();
         ctx.stroke();
@@ -101,10 +101,10 @@ const ZoneEditor: React.FC<ZoneEditorProps> = ({ isOpen, onClose, onSave, camera
 
   const handleImageLoad = () => {
     if (imgRef.current && canvasRef.current) {
-      const { width, height } = imgRef.current;
-      canvasRef.current.width = width;
-      canvasRef.current.height = height;
-      setImgSize({ width, height });
+      const { naturalWidth, naturalHeight } = imgRef.current;
+      canvasRef.current.width = naturalWidth;
+      canvasRef.current.height = naturalHeight;
+      setImgSize({ width: naturalWidth, height: naturalHeight });
     }
   };
 
@@ -163,20 +163,22 @@ const ZoneEditor: React.FC<ZoneEditorProps> = ({ isOpen, onClose, onSave, camera
         </p>
 
         <div className="relative border border-gray-300 dark:border-slate-300 rounded-lg overflow-hidden bg-black flex justify-center items-center">
-          <img
-            ref={imgRef}
-            src={`${API_BASE_URL}/cameras/${camera.id}/snapshot?t=${new Date().getTime()}`}
-            alt="Camera Snapshot"
-            onLoad={handleImageLoad}
-            crossOrigin="anonymous"
-            className="max-w-full h-auto object-contain"
-            style={{ maxHeight: '60vh' }}
-          />
-          <canvas
-            ref={canvasRef}
-            onClick={handleCanvasClick}
-            className="absolute top-0 left-0 cursor-crosshair w-full h-full object-contain"
-          />
+          <div className="relative">
+            <img
+              ref={imgRef}
+              src={`${API_BASE_URL}/cameras/${camera.id}/snapshot?t=${new Date().getTime()}`}
+              alt="Camera Snapshot"
+              onLoad={handleImageLoad}
+              crossOrigin="anonymous"
+              className="max-w-full h-auto"
+              style={{ maxHeight: '60vh', display: 'block' }}
+            />
+            <canvas
+              ref={canvasRef}
+              onClick={handleCanvasClick}
+              className="absolute top-0 left-0 cursor-crosshair w-full h-full"
+            />
+          </div>
         </div>
 
         <div className="flex justify-between items-center mt-4 pt-4 border-t border-gray-200 dark:border-slate-300">

@@ -7,6 +7,7 @@ import asyncio
 import logging
 import os
 import time
+import numpy as np
 from typing import Optional, Dict, Any, Generator
 from urllib.parse import quote, unquote
 from app.utils.rtsp_config import get_brand_config, RTSP_FORMATS
@@ -187,6 +188,7 @@ class RTSPService:
         fps_limit: int = 15,
         jpeg_quality: int = 60,
         camera_id: Optional[str] = None,
+        intrusion_zones: Optional[str] = None,
     ) -> Generator[bytes, None, None]:
         """
         Generate MJPEG frames from an RTSP stream for browser display.
@@ -204,7 +206,29 @@ class RTSPService:
             fps_limit: Max frames per second to send (default 15 for local)
             jpeg_quality: JPEG encoding quality 1-100 (default 60 for substream)
             camera_id: Unique camera ID for drawing face bounding boxes (optional)
+            intrusion_zones: JSON string containing polygon points of intrusion zones (optional)
         """
+        # Parse zones if provided
+        zones = []
+        if intrusion_zones:
+            try:
+                import json
+                if isinstance(intrusion_zones, str):
+                    zones_data = json.loads(intrusion_zones)
+                else:
+                    zones_data = intrusion_zones
+                for polygon in zones_data:
+                    pts = []
+                    for p in polygon:
+                        if isinstance(p, dict):
+                            pts.append([int(p.get("x", 0)), int(p.get("y", 0))])
+                        else:
+                            pts.append([int(p[0]), int(p[1])])
+                    if pts:
+                        zones.append(np.array(pts, dtype=np.int32))
+            except Exception as e:
+                logger.error(f"Error parsing intrusion zones in stream: {e}")
+
         # Set RTSP transport to TCP and 5s timeout for local network reliability
         os.environ.setdefault('OPENCV_FFMPEG_CAPTURE_OPTIONS', 'rtsp_transport;tcp|stimeout;5000000')
 
@@ -267,6 +291,10 @@ class RTSPService:
                         
                         cv2.rectangle(frame, (left, top - lh - 10), (left + lw + 10, top), color, cv2.FILLED)
                         cv2.putText(frame, label, (left + 5, top - 5), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (255, 255, 255), 1, cv2.LINE_AA)
+
+                # Draw intrusion zones
+                if zones:
+                    cv2.polylines(frame, zones, isClosed=True, color=(0, 0, 255), thickness=2)
 
                 _, buffer = cv2.imencode(
                     '.jpg', frame,
