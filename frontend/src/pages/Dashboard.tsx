@@ -35,13 +35,7 @@ const Dashboard: React.FC = () => {
   const [previewImage, setPreviewImage] = useState<{ src: string, title: string, subtitle: string } | null>(null);
   const [streamLatency, setStreamLatency] = useState<number | null>(null);
   const [streamInfo, setStreamInfo] = useState<{ resolution: string; fps: string } | null>(null);
-  const [kpiStats, setKpiStats] = useState({
-    occupancy: 0,
-    activeCameras: 0,
-    totalCameras: 0,
-    activeAlerts: 0,
-    currentVisitors: 0,
-  });
+  // kpiStats is now calculated dynamically inline during render to avoid state loops
 
   // Load real-time data from custom hook
   const { cameras, alerts, faces, isConnected } = useDashboardData({
@@ -293,26 +287,24 @@ const Dashboard: React.FC = () => {
     (f: any) => selectedBranch === 'all' || f.branch === selectedBranch
   );
 
-  // Update KPI stats dynamically from actual arrays
-  useEffect(() => {
-    const activeCameraCount = filteredCameras.filter(
-      (c: any) => c.status === 'active' || c.isOnline === true
-    ).length;
-    const activeAlertCount = filteredAlerts.length;
-    const knownPersons = new Set(
-      filteredFaces
-        .filter((f: any) => f.role !== 'Unknown' && f.status === 'verified')
-        .map((f: any) => f.name)
-    ).size;
+  // Update KPI stats dynamically from actual arrays (calculated inline to prevent state render loop)
+  const activeCameraCount = filteredCameras.filter(
+    (c: any) => c.status === 'active' || c.isOnline === true
+  ).length;
+  const activeAlertCount = filteredAlerts.length;
+  const knownPersons = new Set(
+    filteredFaces
+      .filter((f: any) => f.role !== 'Unknown' && f.status === 'verified')
+      .map((f: any) => f.name)
+  ).size;
 
-    setKpiStats({
-      occupancy: filteredFaces.length || (selectedBranch === 'all' ? 18 : selectedBranch === 'br-hq' ? 10 : 4),
-      activeCameras: activeCameraCount || (selectedBranch === 'all' ? 5 : selectedBranch === 'br-hq' ? 2 : 1),
-      totalCameras: filteredCameras.length || (selectedBranch === 'all' ? 6 : selectedBranch === 'br-hq' ? 2 : 1),
-      activeAlerts: activeAlertCount,
-      currentVisitors: knownPersons || (selectedBranch === 'all' ? 142 : selectedBranch === 'br-hq' ? 84 : selectedBranch === 'br-bdg' ? 34 : 12),
-    });
-  }, [selectedBranch, cameras, alerts, faces, filteredCameras, filteredAlerts, filteredFaces]);
+  const kpiStats = {
+    occupancy: filteredFaces.length || (selectedBranch === 'all' ? 18 : selectedBranch === 'br-hq' ? 10 : 4),
+    activeCameras: activeCameraCount || (selectedBranch === 'all' ? 5 : selectedBranch === 'br-hq' ? 2 : 1),
+    totalCameras: filteredCameras.length || (selectedBranch === 'all' ? 6 : selectedBranch === 'br-hq' ? 2 : 1),
+    activeAlerts: activeAlertCount,
+    currentVisitors: knownPersons || (selectedBranch === 'all' ? 142 : selectedBranch === 'br-hq' ? 84 : selectedBranch === 'br-bdg' ? 34 : 12),
+  };
 
   // Automatically select camera belonging to the filtered branch when branch changes
   useEffect(() => {
@@ -362,12 +354,14 @@ const Dashboard: React.FC = () => {
       return;
     }
 
+    const cameraId = activeFocusedCamera.id;
+
     // Measure latency by timing how long it takes to fetch a snapshot
     const measureLatency = async () => {
       try {
         const start = performance.now();
         // Use snapshot instead of stream to prevent spawning a new OpenCV RTSP thread on the backend every 5 seconds
-        const response = await fetch(`/api/cameras/${activeFocusedCamera.id}/snapshot`, {
+        const response = await fetch(`/api/cameras/${cameraId}/snapshot`, {
           method: 'GET',
           signal: AbortSignal.timeout(3000),
         });
@@ -384,7 +378,7 @@ const Dashboard: React.FC = () => {
     // Only fetch stream info ONCE when the camera focuses, not every 5 seconds
     const fetchStreamInfo = async () => {
       try {
-        const res = await fetch(`/api/cameras/${activeFocusedCamera.id}/test-connection`, {
+        const res = await fetch(`/api/cameras/${cameraId}/test-connection`, {
           method: 'POST',
         });
         if (res.ok) {
@@ -407,7 +401,7 @@ const Dashboard: React.FC = () => {
     // Only poll latency, not test-connection
     const interval = setInterval(measureLatency, 5000);
     return () => clearInterval(interval);
-  }, [activeTab, activeFocusedCamera]);
+  }, [activeTab, activeFocusedCamera?.id, activeFocusedCamera?.status]);
 
   return (
     <div className="flex-1 flex flex-col bg-slate-50 text-slate-800">
