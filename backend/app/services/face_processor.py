@@ -15,6 +15,7 @@ from app.models.alert import Alert, AlertSeverity, AlertType
 from app.services.aws_rekognition import rekognition_service, NoFacesException
 from app.utils.websocket_manager import ws_manager
 from app.services import waha_service
+from app.config import settings
 
 from ultralytics import YOLO
 import supervision as sv
@@ -430,7 +431,7 @@ async def start_face_processor():
                             search_result = await rekognition_service.search_faces_by_image(
                                 collection_id=collection_id,
                                 image_bytes=crop_bytes,
-                                threshold=0.85,
+                                threshold=settings.face_match_threshold,
                             )
                             
                             matches = search_result.get('matches', [])

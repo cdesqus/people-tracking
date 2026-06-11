@@ -3,6 +3,7 @@ Camera Service - Handle camera management with RTSP configuration
 """
 
 import uuid
+import asyncio
 import logging
 from datetime import datetime
 from typing import Optional, List, Dict, Any

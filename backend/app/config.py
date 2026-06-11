@@ -42,7 +42,7 @@ class Settings(BaseSettings):
     # Face Recognition
     confidence_threshold: float = 0.9
     max_faces_per_image: int = 10
-    face_match_threshold: float = 0.6
+    face_match_threshold: float = 0.70
 
     # Alert Configuration
     alert_retention_days: int = 30
