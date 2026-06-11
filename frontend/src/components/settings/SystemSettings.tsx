@@ -54,10 +54,10 @@ const SystemSettings: React.FC = () => {
         <div className="space-y-4">
           <div className="flex items-center justify-between p-4 border border-gray-200 dark:border-gray-700 rounded-lg">
             <div>
-              <p className="font-medium text-gray-900 dark:text-white">
+              <p className="font-medium text-gray-900 dark:text-slate-900">
                 Email Notifications
               </p>
-              <p className="text-sm text-gray-600 dark:text-gray-400">
+              <p className="text-sm text-gray-600 dark:text-slate-500">
                 Receive alerts via email
               </p>
             </div>
@@ -77,10 +77,10 @@ const SystemSettings: React.FC = () => {
 
           <div className="flex items-center justify-between p-4 border border-gray-200 dark:border-gray-700 rounded-lg">
             <div>
-              <p className="font-medium text-gray-900 dark:text-white">
+              <p className="font-medium text-gray-900 dark:text-slate-900">
                 SMS Notifications
               </p>
-              <p className="text-sm text-gray-600 dark:text-gray-400">
+              <p className="text-sm text-gray-600 dark:text-slate-500">
                 Receive alerts via SMS
               </p>
             </div>
@@ -100,10 +100,10 @@ const SystemSettings: React.FC = () => {
 
           <div className="flex items-center justify-between p-4 border border-gray-200 dark:border-gray-700 rounded-lg">
             <div>
-              <p className="font-medium text-gray-900 dark:text-white">
+              <p className="font-medium text-gray-900 dark:text-slate-900">
                 Slack Notifications
               </p>
-              <p className="text-sm text-gray-600 dark:text-gray-400">
+              <p className="text-sm text-gray-600 dark:text-slate-500">
                 Send alerts to Slack
               </p>
             </div>
@@ -128,7 +128,7 @@ const SystemSettings: React.FC = () => {
         <div className="space-y-6">
           {/* Confidence Threshold */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+            <label className="block text-sm font-medium text-gray-700 dark:text-slate-600 mb-2">
               Confidence Threshold
             </label>
             <div className="flex items-center gap-4">
@@ -149,18 +149,18 @@ const SystemSettings: React.FC = () => {
                 }
                 className="flex-1 h-2 bg-gray-200 dark:bg-gray-700 rounded-lg appearance-none cursor-pointer accent-blue-500"
               />
-              <span className="text-xl font-bold text-gray-900 dark:text-white w-16 text-right">
+              <span className="text-xl font-bold text-gray-900 dark:text-slate-900 w-16 text-right">
                 {settings.thresholds.confidenceThreshold}%
               </span>
             </div>
-            <p className="text-xs text-gray-500 dark:text-gray-400 mt-2">
+            <p className="text-xs text-gray-500 dark:text-slate-500 mt-2">
               Minimum confidence level for detections (0-100%)
             </p>
           </div>
 
           {/* Detection Sensitivity */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+            <label className="block text-sm font-medium text-gray-700 dark:text-slate-600 mb-2">
               Detection Sensitivity
             </label>
             <div className="flex items-center gap-4">
@@ -181,11 +181,11 @@ const SystemSettings: React.FC = () => {
                 }
                 className="flex-1 h-2 bg-gray-200 dark:bg-gray-700 rounded-lg appearance-none cursor-pointer accent-green-500"
               />
-              <span className="text-xl font-bold text-gray-900 dark:text-white w-16 text-right">
+              <span className="text-xl font-bold text-gray-900 dark:text-slate-900 w-16 text-right">
                 {settings.thresholds.detectionSensitivity}%
               </span>
             </div>
-            <p className="text-xs text-gray-500 dark:text-gray-400 mt-2">
+            <p className="text-xs text-gray-500 dark:text-slate-500 mt-2">
               How sensitive the system is to detecting objects (0-100%)
             </p>
           </div>
@@ -195,7 +195,7 @@ const SystemSettings: React.FC = () => {
       {/* Camera Check Interval */}
       <Card title="Camera Monitoring" subtitle="Configure camera health checks">
         <div>
-          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+          <label className="block text-sm font-medium text-gray-700 dark:text-slate-600 mb-2">
             Camera Check Interval (seconds)
           </label>
           <Input
@@ -213,7 +213,7 @@ const SystemSettings: React.FC = () => {
             min="10"
             max="300"
           />
-          <p className="text-xs text-gray-500 dark:text-gray-400 mt-2">
+          <p className="text-xs text-gray-500 dark:text-slate-500 mt-2">
             Frequency of camera health checks (10-300 seconds)
           </p>
         </div>

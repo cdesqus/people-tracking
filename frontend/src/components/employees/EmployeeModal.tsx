@@ -53,17 +53,17 @@ const EmployeeModal: React.FC<EmployeeModalProps> = ({
           <img
             src={employee.photo_url}
             alt={employee.name}
-            className="w-32 h-32 rounded-lg object-cover border-2 border-gray-200 dark:border-slate-600"
+            className="w-32 h-32 rounded-lg object-cover border-2 border-gray-200 dark:border-slate-300"
           />
         )}
 
         <div className="flex-1">
-          <h3 className="text-2xl font-semibold text-gray-900 dark:text-white mb-2">
+          <h3 className="text-2xl font-semibold text-gray-900 dark:text-slate-900 mb-2">
             {employee.name}
           </h3>
           <div className="space-y-2">
             <div className="flex items-center justify-between">
-              <span className="text-sm text-gray-600 dark:text-gray-400">Status:</span>
+              <span className="text-sm text-gray-600 dark:text-slate-500">Status:</span>
               <Badge
                 color={statusColorMap[employee.status] || 'gray'}
               >
@@ -71,14 +71,14 @@ const EmployeeModal: React.FC<EmployeeModalProps> = ({
               </Badge>
             </div>
             <div className="flex items-center justify-between">
-              <span className="text-sm text-gray-600 dark:text-gray-400">Employee ID:</span>
-              <span className="font-semibold text-gray-900 dark:text-white">
+              <span className="text-sm text-gray-600 dark:text-slate-500">Employee ID:</span>
+              <span className="font-semibold text-gray-900 dark:text-slate-900">
                 {employee.id}
               </span>
             </div>
             <div className="flex items-center justify-between">
-              <span className="text-sm text-gray-600 dark:text-gray-400">Department:</span>
-              <span className="font-semibold text-gray-900 dark:text-white">
+              <span className="text-sm text-gray-600 dark:text-slate-500">Department:</span>
+              <span className="font-semibold text-gray-900 dark:text-slate-900">
                 {employee.department}
               </span>
             </div>
@@ -87,59 +87,59 @@ const EmployeeModal: React.FC<EmployeeModalProps> = ({
       </div>
 
       {/* Detailed Information */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-4 border-t border-gray-200 dark:border-slate-700">
-        <Card className="p-4 bg-gray-50 dark:bg-slate-700/50">
-          <h4 className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-4 border-t border-gray-200 dark:border-slate-300">
+        <Card className="p-4 bg-gray-50 dark:bg-slate-200/50">
+          <h4 className="text-sm font-semibold text-gray-700 dark:text-slate-600 mb-2">
             Email
           </h4>
-          <p className="text-gray-900 dark:text-white break-all">
+          <p className="text-gray-900 dark:text-slate-900 break-all">
             {employee.email || '-'}
           </p>
         </Card>
 
-        <Card className="p-4 bg-gray-50 dark:bg-slate-700/50">
-          <h4 className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">
+        <Card className="p-4 bg-gray-50 dark:bg-slate-200/50">
+          <h4 className="text-sm font-semibold text-gray-700 dark:text-slate-600 mb-2">
             Contact
           </h4>
-          <p className="text-gray-900 dark:text-white">
+          <p className="text-gray-900 dark:text-slate-900">
             {employee.contact || '-'}
           </p>
         </Card>
 
-        <Card className="p-4 bg-gray-50 dark:bg-slate-700/50">
-          <h4 className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">
+        <Card className="p-4 bg-gray-50 dark:bg-slate-200/50">
+          <h4 className="text-sm font-semibold text-gray-700 dark:text-slate-600 mb-2">
             Last Detected
           </h4>
-          <p className="text-gray-900 dark:text-white">
+          <p className="text-gray-900 dark:text-slate-900">
             {employee.last_detected
               ? new Date(employee.last_detected).toLocaleString()
               : 'Never'}
           </p>
         </Card>
 
-        <Card className="p-4 bg-gray-50 dark:bg-slate-700/50">
-          <h4 className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">
+        <Card className="p-4 bg-gray-50 dark:bg-slate-200/50">
+          <h4 className="text-sm font-semibold text-gray-700 dark:text-slate-600 mb-2">
             Current Location
           </h4>
-          <p className="text-gray-900 dark:text-white">
+          <p className="text-gray-900 dark:text-slate-900">
             {employee.current_location || 'Unknown'}
           </p>
         </Card>
 
-        <Card className="p-4 bg-gray-50 dark:bg-slate-700/50">
-          <h4 className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">
+        <Card className="p-4 bg-gray-50 dark:bg-slate-200/50">
+          <h4 className="text-sm font-semibold text-gray-700 dark:text-slate-600 mb-2">
             Created
           </h4>
-          <p className="text-gray-900 dark:text-white text-sm">
+          <p className="text-gray-900 dark:text-slate-900 text-sm">
             {new Date(employee.created_at).toLocaleString()}
           </p>
         </Card>
 
-        <Card className="p-4 bg-gray-50 dark:bg-slate-700/50">
-          <h4 className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">
+        <Card className="p-4 bg-gray-50 dark:bg-slate-200/50">
+          <h4 className="text-sm font-semibold text-gray-700 dark:text-slate-600 mb-2">
             Updated
           </h4>
-          <p className="text-gray-900 dark:text-white text-sm">
+          <p className="text-gray-900 dark:text-slate-900 text-sm">
             {new Date(employee.updated_at).toLocaleString()}
           </p>
         </Card>
@@ -201,7 +201,7 @@ const EmployeeModal: React.FC<EmployeeModalProps> = ({
           )}
 
           {/* Action Buttons */}
-          <div className="flex gap-3 justify-end pt-4 border-t border-gray-200 dark:border-slate-700">
+          <div className="flex gap-3 justify-end pt-4 border-t border-gray-200 dark:border-slate-300">
             <Button variant="secondary" onClick={onClose} disabled={isLoading}>
               Close
             </Button>

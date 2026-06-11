@@ -126,7 +126,7 @@ const Select: React.FC<SelectProps> = ({
   return (
     <div ref={containerRef} className="w-full">
       {label && (
-        <label className="mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-300">
+        <label className="mb-1.5 block text-sm font-medium text-gray-700 dark:text-slate-600">
           {label}
         </label>
       )}
@@ -135,7 +135,7 @@ const Select: React.FC<SelectProps> = ({
         <button
           onClick={() => setIsOpen(!isOpen)}
           disabled={disabled || isLoading}
-          className={`w-full px-4 py-2 h-10 bg-white dark:bg-slate-800 border border-gray-300 dark:border-slate-600 rounded-lg text-left text-gray-900 dark:text-white ${
+          className={`w-full px-4 py-2 h-10 bg-white dark:bg-slate-100 border border-gray-300 dark:border-slate-300 rounded-lg text-left text-gray-900 dark:text-slate-900 ${
             isOpen ? 'ring-2 ring-sky-500' : ''
           } ${disabled ? 'opacity-50 cursor-not-allowed' : ''} ${TRANSITIONS.base} flex items-center justify-between`}
           aria-haspopup="listbox"
@@ -164,24 +164,24 @@ const Select: React.FC<SelectProps> = ({
         {isOpen && !isLoading && (
           <div
             ref={menuRef}
-            className="absolute top-full left-0 right-0 mt-1 bg-white dark:bg-slate-800 border border-gray-300 dark:border-slate-600 rounded-lg shadow-lg z-50 max-h-48 overflow-y-auto"
+            className="absolute top-full left-0 right-0 mt-1 bg-white dark:bg-slate-100 border border-gray-300 dark:border-slate-300 rounded-lg shadow-lg z-50 max-h-48 overflow-y-auto"
             role="listbox"
           >
             {searchable && (
-              <div className="sticky top-0 p-2 border-b border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-800">
+              <div className="sticky top-0 p-2 border-b border-gray-200 dark:border-slate-300 bg-white dark:bg-slate-100">
                 <input
                   type="text"
                   placeholder="Search..."
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
-                  className="w-full px-2 py-1 text-sm border border-gray-300 dark:border-slate-600 rounded bg-gray-50 dark:bg-slate-700 text-gray-900 dark:text-white"
+                  className="w-full px-2 py-1 text-sm border border-gray-300 dark:border-slate-300 rounded bg-gray-50 dark:bg-slate-200 text-gray-900 dark:text-slate-900"
                   onClick={(e) => e.stopPropagation()}
                 />
               </div>
             )}
 
             {filteredOptions.length === 0 ? (
-              <div className="p-3 text-center text-gray-500 dark:text-gray-400 text-sm">
+              <div className="p-3 text-center text-gray-500 dark:text-slate-500 text-sm">
                 No options available
               </div>
             ) : (
@@ -189,7 +189,7 @@ const Select: React.FC<SelectProps> = ({
                 if (isOptionGroup(item)) {
                   return (
                     <div key={`group-${index}`}>
-                      <div className="px-4 py-2 text-xs font-semibold text-gray-500 dark:text-gray-400 bg-gray-50 dark:bg-slate-700">
+                      <div className="px-4 py-2 text-xs font-semibold text-gray-500 dark:text-slate-500 bg-gray-50 dark:bg-slate-200">
                         {item.label}
                       </div>
                       {item.options.map((opt) => (
@@ -200,11 +200,11 @@ const Select: React.FC<SelectProps> = ({
                           className={`w-full text-left px-4 py-2 text-sm ${
                             isMulti && Array.isArray(value)
                               ? value.includes(opt.value)
-                                ? 'bg-sky-100 dark:bg-sky-900 text-gray-900 dark:text-white'
-                                : 'hover:bg-gray-100 dark:hover:bg-slate-700'
+                                ? 'bg-sky-100 dark:bg-sky-900 text-gray-900 dark:text-slate-900'
+                                : 'hover:bg-gray-100 dark:hover:bg-slate-200'
                               : value === opt.value
-                              ? 'bg-sky-100 dark:bg-sky-900 text-gray-900 dark:text-white'
-                              : 'hover:bg-gray-100 dark:hover:bg-slate-700'
+                              ? 'bg-sky-100 dark:bg-sky-900 text-gray-900 dark:text-slate-900'
+                              : 'hover:bg-gray-100 dark:hover:bg-slate-200'
                           } ${opt.disabled ? 'opacity-50 cursor-not-allowed' : ''} ${TRANSITIONS.base}`}
                           role="option"
                           aria-selected={
@@ -238,11 +238,11 @@ const Select: React.FC<SelectProps> = ({
                       isMulti && Array.isArray(value)
                         ? value.includes(item.value)
                           ? 'bg-sky-100 dark:bg-sky-900'
-                          : 'hover:bg-gray-100 dark:hover:bg-slate-700'
+                          : 'hover:bg-gray-100 dark:hover:bg-slate-200'
                         : value === item.value
                         ? 'bg-sky-100 dark:bg-sky-900'
-                        : 'hover:bg-gray-100 dark:hover:bg-slate-700'
-                    } ${item.disabled ? 'opacity-50 cursor-not-allowed' : ''} ${TRANSITIONS.base} text-gray-900 dark:text-white`}
+                        : 'hover:bg-gray-100 dark:hover:bg-slate-200'
+                    } ${item.disabled ? 'opacity-50 cursor-not-allowed' : ''} ${TRANSITIONS.base} text-gray-900 dark:text-slate-900`}
                     role="option"
                     aria-selected={
                       isMulti && Array.isArray(value)

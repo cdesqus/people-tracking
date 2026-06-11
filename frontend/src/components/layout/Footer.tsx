@@ -5,7 +5,7 @@ const Footer: React.FC = () => {
   const currentYear = new Date().getFullYear();
 
   return (
-    <footer className="bg-gradient-to-r from-slate-900 to-slate-800 text-gray-300 border-t border-slate-700 mt-auto">
+    <footer className="bg-gradient-to-r from-slate-900 to-slate-800 text-slate-600 border-t border-slate-300 mt-auto">
       <div className="max-w-7xl mx-auto px-4 py-8 sm:px-6 sm:py-12">
         {/* Main Footer Content */}
         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-6 mb-8">
@@ -15,7 +15,7 @@ const Footer: React.FC = () => {
               <span className="w-3 h-3 bg-blue-500 rounded-full"></span>
               About
             </h3>
-            <p className="text-xs text-gray-400 leading-relaxed">
+            <p className="text-xs text-slate-500 leading-relaxed">
               CCTV Face Recognition System - Enterprise-grade surveillance and
               access control solution.
             </p>
@@ -30,7 +30,7 @@ const Footer: React.FC = () => {
               <li>
                 <a
                   href="#docs"
-                  className="text-gray-400 hover:text-blue-400 transition-colors flex items-center gap-1"
+                  className="text-slate-500 hover:text-blue-600 transition-colors flex items-center gap-1"
                 >
                   <ExternalLink size={14} />
                   Documentation
@@ -39,7 +39,7 @@ const Footer: React.FC = () => {
               <li>
                 <a
                   href="#support"
-                  className="text-gray-400 hover:text-blue-400 transition-colors flex items-center gap-1"
+                  className="text-slate-500 hover:text-blue-600 transition-colors flex items-center gap-1"
                 >
                   <HelpCircle size={14} />
                   Support
@@ -48,7 +48,7 @@ const Footer: React.FC = () => {
               <li>
                 <a
                   href="#status"
-                  className="text-gray-400 hover:text-blue-400 transition-colors flex items-center gap-1"
+                  className="text-slate-500 hover:text-blue-600 transition-colors flex items-center gap-1"
                 >
                   <ExternalLink size={14} />
                   System Status
@@ -64,7 +64,7 @@ const Footer: React.FC = () => {
               <li>
                 <a
                   href="mailto:support@cctv.local"
-                  className="text-gray-400 hover:text-blue-400 transition-colors flex items-center gap-1"
+                  className="text-slate-500 hover:text-blue-600 transition-colors flex items-center gap-1"
                 >
                   <Mail size={14} />
                   support@cctv.local
@@ -73,7 +73,7 @@ const Footer: React.FC = () => {
               <li>
                 <a
                   href="#help"
-                  className="text-gray-400 hover:text-blue-400 transition-colors"
+                  className="text-slate-500 hover:text-blue-600 transition-colors"
                 >
                   Help Center
                 </a>
@@ -81,7 +81,7 @@ const Footer: React.FC = () => {
               <li>
                 <a
                   href="#faq"
-                  className="text-gray-400 hover:text-blue-400 transition-colors"
+                  className="text-slate-500 hover:text-blue-600 transition-colors"
                 >
                   FAQ
                 </a>
@@ -95,7 +95,7 @@ const Footer: React.FC = () => {
             <div className="space-y-2">
               <div className="flex items-center gap-2 text-xs">
                 <span className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></span>
-                <span className="text-gray-400">All Systems Online</span>
+                <span className="text-slate-500">All Systems Online</span>
               </div>
               <div className="text-xs text-gray-500">
                 <p>API: <span className="text-green-400">Operational</span></p>
@@ -106,7 +106,7 @@ const Footer: React.FC = () => {
         </div>
 
         {/* Divider */}
-        <div className="border-t border-slate-700 py-6 sm:py-8">
+        <div className="border-t border-slate-300 py-6 sm:py-8">
           {/* Middle Section */}
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
             {/* Version */}
@@ -126,29 +126,29 @@ const Footer: React.FC = () => {
             {/* Last Updated */}
             <div className="text-center sm:text-right">
               <p className="text-xs text-gray-500">
-                Last Updated: <span className="text-gray-400">May 22, 2026</span>
+                Last Updated: <span className="text-slate-500">May 22, 2026</span>
               </p>
             </div>
           </div>
 
           {/* Bottom Links */}
-          <div className="flex flex-col sm:flex-row justify-center sm:justify-between items-center gap-4 pt-6 border-t border-slate-700">
+          <div className="flex flex-col sm:flex-row justify-center sm:justify-between items-center gap-4 pt-6 border-t border-slate-300">
             <div className="flex gap-6 text-xs">
               <a
                 href="#privacy"
-                className="text-gray-400 hover:text-blue-400 transition-colors"
+                className="text-slate-500 hover:text-blue-600 transition-colors"
               >
                 Privacy Policy
               </a>
               <a
                 href="#terms"
-                className="text-gray-400 hover:text-blue-400 transition-colors"
+                className="text-slate-500 hover:text-blue-600 transition-colors"
               >
                 Terms of Service
               </a>
               <a
                 href="#cookies"
-                className="text-gray-400 hover:text-blue-400 transition-colors"
+                className="text-slate-500 hover:text-blue-600 transition-colors"
               >
                 Cookie Policy
               </a>
@@ -159,7 +159,7 @@ const Footer: React.FC = () => {
               Need help?{' '}
               <a
                 href="mailto:support@cctv.local"
-                className="text-blue-400 hover:text-blue-300 transition-colors font-medium"
+                className="text-blue-600 hover:text-blue-300 transition-colors font-medium"
               >
                 Contact Support
               </a>
@@ -169,7 +169,7 @@ const Footer: React.FC = () => {
       </div>
 
       {/* Bottom Bar */}
-      <div className="bg-slate-950 px-4 py-3 text-xs text-gray-500 text-center border-t border-slate-700">
+      <div className="bg-slate-50 px-4 py-3 text-xs text-gray-500 text-center border-t border-slate-300">
         <p>
           Powered by AWS Rekognition | Enterprise Surveillance Platform
         </p>

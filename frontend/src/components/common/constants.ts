@@ -34,7 +34,7 @@ export const BUTTON_VARIANTS = {
   },
   secondary: {
     base: 'bg-gray-200 text-gray-900 hover:bg-gray-300 active:bg-gray-400',
-    disabled: 'disabled:bg-gray-100 disabled:text-gray-400 disabled:cursor-not-allowed',
+    disabled: 'disabled:bg-gray-100 disabled:text-slate-500 disabled:cursor-not-allowed',
   },
   danger: {
     base: 'bg-red-500 text-white hover:bg-red-600 active:bg-red-700',
@@ -149,7 +149,7 @@ export const BADGE_COLORS = {
   },
   gray: {
     bg: 'bg-gray-100 dark:bg-gray-700',
-    text: 'text-gray-800 dark:text-gray-200',
+    text: 'text-gray-800 dark:text-slate-700',
     border: 'border-gray-300 dark:border-gray-600',
   },
 } as const;

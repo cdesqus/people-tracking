@@ -70,7 +70,7 @@ const CameraGrid: React.FC<CameraGridProps> = ({
               <div className="aspect-video flex items-center justify-center bg-gradient-to-br from-gray-800 to-gray-900">
                 <div className="text-center">
                   <div className="text-4xl opacity-50 mb-2">📹</div>
-                  <p className="text-xs text-gray-400">Live Feed</p>
+                  <p className="text-xs text-slate-500">Live Feed</p>
                 </div>
               </div>
 
@@ -92,12 +92,12 @@ const CameraGrid: React.FC<CameraGridProps> = ({
                 <p className="text-sm font-semibold text-white truncate">
                   {camera.name}
                 </p>
-                <p className="text-xs text-gray-300 truncate mt-1">
+                <p className="text-xs text-slate-600 truncate mt-1">
                   {camera.location}
                 </p>
 
                 {camera.lastDetection && (
-                  <div className="flex items-center justify-between mt-2 text-xs text-gray-300">
+                  <div className="flex items-center justify-between mt-2 text-xs text-slate-600">
                     <span>Last detection:</span>
                     <span className="font-medium">
                       {formatRelativeTime(camera.lastDetection)}
@@ -107,8 +107,8 @@ const CameraGrid: React.FC<CameraGridProps> = ({
 
                 {/* Detection Count */}
                 <div className="flex items-center justify-between mt-2 pt-2 border-t border-gray-700">
-                  <span className="text-xs text-gray-400">Detections</span>
-                  <span className="text-sm font-semibold text-blue-400">
+                  <span className="text-xs text-slate-500">Detections</span>
+                  <span className="text-sm font-semibold text-blue-600">
                     {camera.detectionCount}
                   </span>
                 </div>
@@ -134,7 +134,7 @@ const CameraGrid: React.FC<CameraGridProps> = ({
       </div>
 
       {displayCameras.length === 0 && (
-        <div className="py-12 text-center text-gray-500 dark:text-gray-400">
+        <div className="py-12 text-center text-gray-500 dark:text-slate-500">
           <p className="text-lg">No cameras available</p>
           <p className="text-sm mt-1">Configure cameras in settings</p>
         </div>

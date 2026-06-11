@@ -59,7 +59,7 @@ const SecurityReport: React.FC = () => {
       default:
         return {
           bg: 'bg-gray-100 dark:bg-gray-800',
-          text: 'text-gray-700 dark:text-gray-300',
+          text: 'text-gray-700 dark:text-slate-600',
           icon: '⚪',
         };
     }
@@ -96,7 +96,7 @@ const SecurityReport: React.FC = () => {
       label: 'Description',
       sortable: false,
       render: (value: string) => (
-        <span className="text-sm text-gray-600 dark:text-gray-400 truncate max-w-xs">
+        <span className="text-sm text-gray-600 dark:text-slate-500 truncate max-w-xs">
           {value}
         </span>
       ),
@@ -138,10 +138,10 @@ const SecurityReport: React.FC = () => {
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
         <Card className="bg-gray-50 dark:bg-gray-900/20 border-gray-200 dark:border-gray-800">
           <div className="p-6">
-            <p className="text-sm font-medium text-gray-600 dark:text-gray-400">
+            <p className="text-sm font-medium text-gray-600 dark:text-slate-500">
               Total Incidents
             </p>
-            <p className="text-3xl font-bold text-gray-700 dark:text-gray-300 mt-2">
+            <p className="text-3xl font-bold text-gray-700 dark:text-slate-600 mt-2">
               {securitySummary.total}
             </p>
           </div>
@@ -171,7 +171,7 @@ const SecurityReport: React.FC = () => {
 
         <Card className="bg-blue-50 dark:bg-blue-900/20 border-blue-200 dark:border-blue-800">
           <div className="p-6">
-            <p className="text-sm font-medium text-blue-600 dark:text-blue-400">
+            <p className="text-sm font-medium text-blue-600 dark:text-blue-600">
               Info
             </p>
             <p className="text-3xl font-bold text-blue-700 dark:text-blue-300 mt-2">
@@ -236,11 +236,11 @@ const SecurityReport: React.FC = () => {
                   <div className="flex items-center justify-between mb-2">
                     <div className="flex items-center gap-2">
                       <div className={`w-3 h-3 rounded-full ${item.color}`} />
-                      <span className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                      <span className="text-sm font-medium text-gray-700 dark:text-slate-600">
                         {item.label}
                       </span>
                     </div>
-                    <span className="text-sm font-semibold text-gray-900 dark:text-white">
+                    <span className="text-sm font-semibold text-gray-900 dark:text-slate-900">
                       {percent}%
                     </span>
                   </div>
@@ -250,7 +250,7 @@ const SecurityReport: React.FC = () => {
                       style={{ width: `${percent}%` }}
                     />
                   </div>
-                  <span className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                  <span className="text-xs text-gray-500 dark:text-slate-500 mt-1">
                     {item.count} incidents
                   </span>
                 </div>
@@ -275,7 +275,7 @@ const SecurityReport: React.FC = () => {
                   const max = Math.max(...Object.values(types));
                   return (
                     <div key={type} className="flex items-center gap-3">
-                      <span className="text-sm font-medium w-32 text-gray-600 dark:text-gray-400 truncate">
+                      <span className="text-sm font-medium w-32 text-gray-600 dark:text-slate-500 truncate">
                         {type}
                       </span>
                       <div className="flex-1 bg-gray-200 dark:bg-gray-700 rounded-full h-6 overflow-hidden">
@@ -286,7 +286,7 @@ const SecurityReport: React.FC = () => {
                           }}
                         />
                       </div>
-                      <span className="text-sm font-semibold text-gray-900 dark:text-white w-12">
+                      <span className="text-sm font-semibold text-gray-900 dark:text-slate-900 w-12">
                         {count}
                       </span>
                     </div>

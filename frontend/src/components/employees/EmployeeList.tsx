@@ -159,13 +159,13 @@ const EmployeeList: React.FC<EmployeeListProps> = ({
           />
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">
+            <label className="block text-sm font-medium text-gray-700 dark:text-slate-600 mb-1.5">
               Department
             </label>
             <select
               value={departmentFilter}
               onChange={(e) => onDepartmentFilterChange(e.target.value)}
-              className="w-full px-3 py-2 border border-gray-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-800 text-gray-900 dark:text-white"
+              className="w-full px-3 py-2 border border-gray-300 dark:border-slate-300 rounded-lg bg-white dark:bg-slate-100 text-gray-900 dark:text-slate-900"
             >
               <option value="">All Departments</option>
               {departments.map((dept) => (

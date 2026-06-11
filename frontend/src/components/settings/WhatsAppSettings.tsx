@@ -75,9 +75,9 @@ const SEVERITY_OPTIONS = [
 
 const ALERT_TYPE_OPTIONS = [
   { value: 'unknown_face', label: 'Unknown Face Detected', color: 'bg-red-500/20 text-red-400 border-red-500/30', dot: 'bg-red-500' },
-  { value: 'match', label: 'Face Matched', color: 'bg-emerald-500/20 text-emerald-400 border-emerald-500/30', dot: 'bg-emerald-500' },
+  { value: 'match', label: 'Face Matched', color: 'bg-emerald-500/20 text-emerald-600 border-emerald-500/30', dot: 'bg-emerald-500' },
   { value: 'suspicious_activity', label: 'Suspicious Activity', color: 'bg-orange-500/20 text-orange-400 border-orange-500/30', dot: 'bg-orange-500' },
-  { value: 'system_error', label: 'System Error', color: 'bg-slate-500/20 text-slate-400 border-slate-500/30', dot: 'bg-slate-500' },
+  { value: 'system_error', label: 'System Error', color: 'bg-slate-500/20 text-slate-500 border-slate-500/30', dot: 'bg-slate-500' },
 ];
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
@@ -85,10 +85,10 @@ const ALERT_TYPE_OPTIONS = [
 const statusColor = (status?: string) => {
   if (!status) return 'text-slate-500';
   const s = status.toUpperCase();
-  if (s === 'WORKING') return 'text-emerald-400';
+  if (s === 'WORKING') return 'text-emerald-600';
   if (s.includes('SCAN') || s.includes('QR') || s.includes('PAIRING')) return 'text-yellow-400';
   if (s === 'STOPPED' || s === 'FAILED') return 'text-red-400';
-  return 'text-slate-400';
+  return 'text-slate-500';
 };
 
 const statusDot = (status?: string) => {
@@ -406,11 +406,11 @@ const WhatsAppSettings: React.FC = () => {
     <div className="space-y-6">
 
       {/* ── Section 1: Connection Status ── */}
-      <div className="bg-slate-900 border border-slate-700/50 rounded-xl p-6">
+      <div className="bg-white border border-slate-300/50 rounded-xl p-6">
         <div className="flex items-center justify-between mb-6">
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 rounded-lg bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center">
-              <MessageCircle className="w-5 h-5 text-emerald-400" />
+              <MessageCircle className="w-5 h-5 text-emerald-600" />
             </div>
             <div>
               <h3 className="text-sm font-semibold text-white">Status Koneksi WhatsApp</h3>
@@ -420,14 +420,14 @@ const WhatsAppSettings: React.FC = () => {
           <button
             onClick={fetchStatus}
             disabled={statusLoading}
-            className="p-2 hover:bg-slate-800 rounded-lg text-slate-400 hover:text-white transition-colors"
+            className="p-2 hover:bg-slate-100 rounded-lg text-slate-500 hover:text-white transition-colors"
           >
             <RefreshCw className={`w-4 h-4 ${statusLoading ? 'animate-spin' : ''}`} />
           </button>
         </div>
 
         {/* Status card */}
-        <div className="flex items-center gap-4 p-4 bg-slate-800/50 rounded-xl border border-slate-700/30 mb-5">
+        <div className="flex items-center gap-4 p-4 bg-slate-100/50 rounded-xl border border-slate-300/30 mb-5">
           <div className={`w-3 h-3 rounded-full flex-shrink-0 animate-pulse ${statusDot(status?.status)}`} />
           <div className="flex-1 min-w-0">
             <div className="flex items-center gap-2">
@@ -435,13 +435,13 @@ const WhatsAppSettings: React.FC = () => {
                 {status?.status?.toUpperCase() || 'CONNECTING…'}
               </span>
               {status?.engine?.name && (
-                <span className="text-[10px] font-mono px-1.5 py-0.5 bg-slate-700 text-slate-400 rounded">
+                <span className="text-[10px] font-mono px-1.5 py-0.5 bg-slate-200 text-slate-500 rounded">
                   {status.engine.name}
                 </span>
               )}
             </div>
             {status?.me?.pushName && (
-              <p className="text-xs text-slate-400 mt-0.5">
+              <p className="text-xs text-slate-500 mt-0.5">
                 {status.me.pushName} · {status.me.id?.replace('@c.us', '')}
               </p>
             )}
@@ -474,16 +474,16 @@ const WhatsAppSettings: React.FC = () => {
             </button>
 
             {/* Login method tabs */}
-            <div className="flex gap-1 p-1 bg-slate-800 rounded-lg">
+            <div className="flex gap-1 p-1 bg-slate-100 rounded-lg">
               <button
                 onClick={() => { setLoginMethod('qr'); setPairingCode(null); }}
-                className={`flex-1 py-2 px-3 rounded-md text-xs font-medium transition-all flex items-center justify-center gap-1.5 ${loginMethod === 'qr' ? 'bg-slate-700 text-white shadow' : 'text-slate-400 hover:text-slate-300'}`}
+                className={`flex-1 py-2 px-3 rounded-md text-xs font-medium transition-all flex items-center justify-center gap-1.5 ${loginMethod === 'qr' ? 'bg-slate-200 text-white shadow' : 'text-slate-500 hover:text-slate-600'}`}
               >
                 <QrCode className="w-3.5 h-3.5" /> QR Code
               </button>
               <button
                 onClick={() => { setLoginMethod('code'); stopQrAutoRefresh(); setQrImageUrl(null); }}
-                className={`flex-1 py-2 px-3 rounded-md text-xs font-medium transition-all flex items-center justify-center gap-1.5 ${loginMethod === 'code' ? 'bg-slate-700 text-white shadow' : 'text-slate-400 hover:text-slate-300'}`}
+                className={`flex-1 py-2 px-3 rounded-md text-xs font-medium transition-all flex items-center justify-center gap-1.5 ${loginMethod === 'code' ? 'bg-slate-200 text-white shadow' : 'text-slate-500 hover:text-slate-600'}`}
               >
                 <Hash className="w-3.5 h-3.5" /> Pairing Code
               </button>
@@ -494,11 +494,11 @@ const WhatsAppSettings: React.FC = () => {
               <div className="flex flex-col items-center gap-4">
                 <div className="w-48 h-48 bg-white rounded-xl flex items-center justify-center overflow-hidden">
                   {qrLoading ? (
-                    <Loader2 className="w-8 h-8 text-slate-400 animate-spin" />
+                    <Loader2 className="w-8 h-8 text-slate-500 animate-spin" />
                   ) : qrImageUrl ? (
                     <img src={qrImageUrl} alt="WhatsApp QR Code" className="w-full h-full object-contain" />
                   ) : (
-                    <div className="flex flex-col items-center gap-2 text-slate-400 p-4">
+                    <div className="flex flex-col items-center gap-2 text-slate-500 p-4">
                       <QrCode className="w-10 h-10" />
                       <p className="text-xs text-center text-slate-500">Klik tombol untuk load QR</p>
                     </div>
@@ -524,14 +524,14 @@ const WhatsAppSettings: React.FC = () => {
             {loginMethod === 'code' && (
               <div className="space-y-3">
                 <div>
-                  <label className="block text-xs font-medium text-slate-400 mb-1.5">Nomor HP (format internasional)</label>
+                  <label className="block text-xs font-medium text-slate-500 mb-1.5">Nomor HP (format internasional)</label>
                   <div className="flex gap-2">
                     <input
                       type="tel"
                       value={phoneNumber}
                       onChange={(e) => setPhoneNumber(e.target.value)}
                       placeholder="628123456789"
-                      className="flex-1 px-3 py-2 bg-slate-800 border border-slate-700 rounded-lg text-sm text-white placeholder-slate-500 focus:outline-none focus:border-blue-500 transition-colors"
+                      className="flex-1 px-3 py-2 bg-slate-100 border border-slate-300 rounded-lg text-sm text-white placeholder-slate-500 focus:outline-none focus:border-blue-500 transition-colors"
                     />
                     <button
                       onClick={handleRequestPairingCode}
@@ -544,8 +544,8 @@ const WhatsAppSettings: React.FC = () => {
                   </div>
                 </div>
                 {pairingCode && (
-                  <div className="p-4 bg-slate-800 rounded-xl border border-yellow-500/20 text-center">
-                    <p className="text-xs text-slate-400 mb-2">Masukkan kode ini di WhatsApp:</p>
+                  <div className="p-4 bg-slate-100 rounded-xl border border-yellow-500/20 text-center">
+                    <p className="text-xs text-slate-500 mb-2">Masukkan kode ini di WhatsApp:</p>
                     <p className="text-2xl font-mono font-bold tracking-[0.3em] text-yellow-400">{pairingCode}</p>
                     <p className="text-[11px] text-slate-500 mt-2">Settings → Linked Devices → Link a Device → Link with phone number</p>
                   </div>
@@ -557,10 +557,10 @@ const WhatsAppSettings: React.FC = () => {
       </div>
 
       {/* ── Section 2: Waha Configuration ── */}
-      <div className="bg-slate-900 border border-slate-700/50 rounded-xl p-6">
+      <div className="bg-white border border-slate-300/50 rounded-xl p-6">
         <div className="flex items-center gap-3 mb-6">
           <div className="w-10 h-10 rounded-lg bg-blue-500/10 border border-blue-500/20 flex items-center justify-center">
-            <Settings2 className="w-5 h-5 text-blue-400" />
+            <Settings2 className="w-5 h-5 text-blue-600" />
           </div>
           <div>
             <h3 className="text-sm font-semibold text-white">Konfigurasi Waha</h3>
@@ -570,14 +570,14 @@ const WhatsAppSettings: React.FC = () => {
 
         <div className="space-y-4">
           {/* Enable toggle */}
-          <div className="flex items-center justify-between p-3 bg-slate-800/50 rounded-xl border border-slate-700/30">
+          <div className="flex items-center justify-between p-3 bg-slate-100/50 rounded-xl border border-slate-300/30">
             <div>
               <p className="text-sm font-medium text-white">Aktifkan Notifikasi WhatsApp</p>
               <p className="text-xs text-slate-500 mt-0.5">Kirim alert ke WhatsApp saat ada deteksi</p>
             </div>
             <button
               onClick={() => setConfig((p) => ({ ...p, is_enabled: !p.is_enabled }))}
-              className={`relative w-11 h-6 rounded-full transition-all duration-200 ${config.is_enabled ? 'bg-emerald-500' : 'bg-slate-700'}`}
+              className={`relative w-11 h-6 rounded-full transition-all duration-200 ${config.is_enabled ? 'bg-emerald-500' : 'bg-slate-200'}`}
             >
               <span className={`absolute top-0.5 left-0.5 w-5 h-5 bg-white rounded-full shadow transition-all duration-200 ${config.is_enabled ? 'translate-x-5' : 'translate-x-0'}`} />
             </button>
@@ -585,30 +585,30 @@ const WhatsAppSettings: React.FC = () => {
 
           {/* Waha URL */}
           <div>
-            <label className="block text-xs font-medium text-slate-400 mb-1.5">Waha Server URL</label>
+            <label className="block text-xs font-medium text-slate-500 mb-1.5">Waha Server URL</label>
             <input
               type="url"
               value={config.waha_url}
               onChange={(e) => setConfig((p) => ({ ...p, waha_url: e.target.value }))}
               placeholder="http://waha:3000"
-              className="w-full px-3 py-2 bg-slate-800 border border-slate-700 rounded-lg text-sm text-white placeholder-slate-500 focus:outline-none focus:border-blue-500 transition-colors"
+              className="w-full px-3 py-2 bg-slate-100 border border-slate-300 rounded-lg text-sm text-white placeholder-slate-500 focus:outline-none focus:border-blue-500 transition-colors"
             />
           </div>
 
           {/* API Key */}
           <div>
-            <label className="block text-xs font-medium text-slate-400 mb-1.5">API Key (opsional)</label>
+            <label className="block text-xs font-medium text-slate-500 mb-1.5">API Key (opsional)</label>
             <div className="relative">
               <input
                 type={showApiKey ? 'text' : 'password'}
                 value={config.waha_api_key || ''}
                 onChange={(e) => setConfig((p) => ({ ...p, waha_api_key: e.target.value || null }))}
                 placeholder="Kosongkan jika tidak dikonfigurasi"
-                className="w-full px-3 py-2 pr-10 bg-slate-800 border border-slate-700 rounded-lg text-sm text-white placeholder-slate-500 focus:outline-none focus:border-blue-500 transition-colors"
+                className="w-full px-3 py-2 pr-10 bg-slate-100 border border-slate-300 rounded-lg text-sm text-white placeholder-slate-500 focus:outline-none focus:border-blue-500 transition-colors"
               />
               <button
                 onClick={() => setShowApiKey((p) => !p)}
-                className="absolute right-2 top-1/2 -translate-y-1/2 p-1 text-slate-500 hover:text-slate-300"
+                className="absolute right-2 top-1/2 -translate-y-1/2 p-1 text-slate-500 hover:text-slate-600"
               >
                 {showApiKey ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
               </button>
@@ -617,19 +617,19 @@ const WhatsAppSettings: React.FC = () => {
 
           {/* Session name */}
           <div>
-            <label className="block text-xs font-medium text-slate-400 mb-1.5">Nama Session</label>
+            <label className="block text-xs font-medium text-slate-500 mb-1.5">Nama Session</label>
             <input
               type="text"
               value={config.session_name}
               onChange={(e) => setConfig((p) => ({ ...p, session_name: e.target.value }))}
               placeholder="default"
-              className="w-full px-3 py-2 bg-slate-800 border border-slate-700 rounded-lg text-sm text-white placeholder-slate-500 focus:outline-none focus:border-blue-500 transition-colors"
+              className="w-full px-3 py-2 bg-slate-100 border border-slate-300 rounded-lg text-sm text-white placeholder-slate-500 focus:outline-none focus:border-blue-500 transition-colors"
             />
           </div>
 
           {/* Severity filter */}
           <div>
-            <label className="block text-xs font-medium text-slate-400 mb-2">
+            <label className="block text-xs font-medium text-slate-500 mb-2">
               <Shield className="w-3.5 h-3.5 inline-block mr-1.5 -mt-0.5" />
               Filter Severity Alert
             </label>
@@ -641,7 +641,7 @@ const WhatsAppSettings: React.FC = () => {
                   <button
                     key={opt.value}
                     onClick={() => toggleSeverity(opt.value)}
-                    className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg border text-xs font-medium transition-all ${active ? opt.color : 'bg-slate-800 text-slate-500 border-slate-700 opacity-60'}`}
+                    className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg border text-xs font-medium transition-all ${active ? opt.color : 'bg-slate-100 text-slate-500 border-slate-300 opacity-60'}`}
                   >
                     <span className={`w-1.5 h-1.5 rounded-full ${active ? opt.dot : 'bg-slate-600'}`} />
                     {opt.label}
@@ -654,7 +654,7 @@ const WhatsAppSettings: React.FC = () => {
 
           {/* Alert Type filter */}
           <div>
-            <label className="block text-xs font-medium text-slate-400 mb-2">
+            <label className="block text-xs font-medium text-slate-500 mb-2">
               <AlertCircle className="w-3.5 h-3.5 inline-block mr-1.5 -mt-0.5" />
               Filter Kategori Alert
             </label>
@@ -666,7 +666,7 @@ const WhatsAppSettings: React.FC = () => {
                   <button
                     key={opt.value}
                     onClick={() => toggleAlertType(opt.value)}
-                    className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg border text-xs font-medium transition-all ${active ? opt.color : 'bg-slate-800 text-slate-500 border-slate-700 opacity-60'}`}
+                    className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg border text-xs font-medium transition-all ${active ? opt.color : 'bg-slate-100 text-slate-500 border-slate-300 opacity-60'}`}
                   >
                     <span className={`w-1.5 h-1.5 rounded-full ${active ? opt.dot : 'bg-slate-600'}`} />
                     {opt.label}
@@ -689,7 +689,7 @@ const WhatsAppSettings: React.FC = () => {
       </div>
 
       {/* ── Section 3: Recipients ── */}
-      <div className="bg-slate-900 border border-slate-700/50 rounded-xl p-6">
+      <div className="bg-white border border-slate-300/50 rounded-xl p-6">
         <div className="flex items-center justify-between mb-6">
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 rounded-lg bg-purple-500/10 border border-purple-500/20 flex items-center justify-center">
@@ -705,7 +705,7 @@ const WhatsAppSettings: React.FC = () => {
               onClick={fetchGroups}
               disabled={fetchingGroups}
               title="Fetch daftar grup dari WhatsApp yang terhubung"
-              className="px-3 py-2 text-xs font-medium bg-slate-800 text-slate-300 border border-slate-700 hover:border-slate-500 hover:text-white rounded-lg transition-colors flex items-center gap-1.5"
+              className="px-3 py-2 text-xs font-medium bg-slate-100 text-slate-600 border border-slate-300 hover:border-slate-500 hover:text-white rounded-lg transition-colors flex items-center gap-1.5"
             >
               {fetchingGroups ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Users className="w-3.5 h-3.5" />}
               Fetch Grup
@@ -731,17 +731,17 @@ const WhatsAppSettings: React.FC = () => {
             {recipients.map((r) => (
               <div
                 key={r.id}
-                className={`flex items-center gap-3 p-3 rounded-xl border transition-all ${r.is_active ? 'bg-slate-800/50 border-slate-700/30' : 'bg-slate-900/50 border-slate-800/30 opacity-60'}`}
+                className={`flex items-center gap-3 p-3 rounded-xl border transition-all ${r.is_active ? 'bg-slate-100/50 border-slate-300/30' : 'bg-white/50 border-slate-200/30 opacity-60'}`}
               >
-                <div className={`w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0 ${r.type === 'group' ? 'bg-blue-500/10' : 'bg-slate-700'}`}>
+                <div className={`w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0 ${r.type === 'group' ? 'bg-blue-500/10' : 'bg-slate-200'}`}>
                   {r.type === 'group'
-                    ? <Users className="w-4 h-4 text-blue-400" />
-                    : <User className="w-4 h-4 text-slate-400" />}
+                    ? <Users className="w-4 h-4 text-blue-600" />
+                    : <User className="w-4 h-4 text-slate-500" />}
                 </div>
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2">
                     <p className="text-sm font-medium text-white truncate">{r.label}</p>
-                    <span className={`text-[10px] font-mono px-1.5 py-0.5 rounded ${r.type === 'group' ? 'bg-blue-500/10 text-blue-400' : 'bg-slate-700 text-slate-400'}`}>
+                    <span className={`text-[10px] font-mono px-1.5 py-0.5 rounded ${r.type === 'group' ? 'bg-blue-500/10 text-blue-600' : 'bg-slate-200 text-slate-500'}`}>
                       {r.type}
                     </span>
                   </div>
@@ -751,20 +751,20 @@ const WhatsAppSettings: React.FC = () => {
                   {/* Toggle active */}
                   <button
                     onClick={() => handleToggleActive(r)}
-                    className={`w-8 h-8 rounded-lg flex items-center justify-center transition-colors ${r.is_active ? 'bg-emerald-500/10 text-emerald-400 hover:bg-emerald-500/20' : 'bg-slate-700 text-slate-500 hover:text-slate-300'}`}
+                    className={`w-8 h-8 rounded-lg flex items-center justify-center transition-colors ${r.is_active ? 'bg-emerald-500/10 text-emerald-600 hover:bg-emerald-500/20' : 'bg-slate-200 text-slate-500 hover:text-slate-600'}`}
                     title={r.is_active ? 'Nonaktifkan' : 'Aktifkan'}
                   >
                     {r.is_active ? <CheckCircle2 className="w-3.5 h-3.5" /> : <AlertCircle className="w-3.5 h-3.5" />}
                   </button>
                   <button
                     onClick={() => setEditingRecipient({ ...r })}
-                    className="w-8 h-8 rounded-lg flex items-center justify-center bg-slate-700 text-slate-400 hover:text-white hover:bg-slate-600 transition-colors"
+                    className="w-8 h-8 rounded-lg flex items-center justify-center bg-slate-200 text-slate-500 hover:text-white hover:bg-slate-600 transition-colors"
                   >
                     <Edit2 className="w-3.5 h-3.5" />
                   </button>
                   <button
                     onClick={() => handleDeleteRecipient(r)}
-                    className="w-8 h-8 rounded-lg flex items-center justify-center bg-slate-700 text-slate-400 hover:text-red-400 hover:bg-red-500/10 transition-colors"
+                    className="w-8 h-8 rounded-lg flex items-center justify-center bg-slate-200 text-slate-500 hover:text-red-400 hover:bg-red-500/10 transition-colors"
                   >
                     <Trash2 className="w-3.5 h-3.5" />
                   </button>
@@ -778,7 +778,7 @@ const WhatsAppSettings: React.FC = () => {
         <button
           onClick={handleSendTest}
           disabled={sendingTest || recipients.filter((r) => r.is_active).length === 0}
-          className="w-full py-2.5 px-4 bg-slate-800 hover:bg-slate-700 disabled:opacity-40 text-slate-300 hover:text-white text-sm font-medium rounded-lg border border-slate-700 transition-colors flex items-center justify-center gap-2"
+          className="w-full py-2.5 px-4 bg-slate-100 hover:bg-slate-200 disabled:opacity-40 text-slate-600 hover:text-white text-sm font-medium rounded-lg border border-slate-300 transition-colors flex items-center justify-center gap-2"
         >
           {sendingTest ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
           Kirim Pesan Test ke Semua Penerima Aktif
@@ -788,10 +788,10 @@ const WhatsAppSettings: React.FC = () => {
       {/* ── Add Recipient Modal ── */}
       {showAddModal && (
         <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-          <div className="bg-slate-900 border border-slate-700 rounded-2xl w-full max-w-md p-6 shadow-2xl">
+          <div className="bg-white border border-slate-300 rounded-2xl w-full max-w-md p-6 shadow-2xl">
             <div className="flex items-center justify-between mb-5">
               <h3 className="text-base font-semibold text-white">Tambah Penerima</h3>
-              <button onClick={() => { setShowAddModal(false); setShowGroupDropdown(false); }} className="p-1.5 text-slate-400 hover:text-white hover:bg-slate-800 rounded-lg">
+              <button onClick={() => { setShowAddModal(false); setShowGroupDropdown(false); }} className="p-1.5 text-slate-500 hover:text-white hover:bg-slate-100 rounded-lg">
                 <X className="w-4 h-4" />
               </button>
             </div>
@@ -799,13 +799,13 @@ const WhatsAppSettings: React.FC = () => {
             <div className="space-y-4">
               {/* Type selector */}
               <div>
-                <label className="block text-xs font-medium text-slate-400 mb-1.5">Tipe Penerima</label>
+                <label className="block text-xs font-medium text-slate-500 mb-1.5">Tipe Penerima</label>
                 <div className="flex gap-2">
                   {(['person', 'group'] as const).map((t) => (
                     <button
                       key={t}
                       onClick={() => { setNewRecipient((p) => ({ ...p, type: t })); setShowGroupDropdown(false); }}
-                      className={`flex-1 py-2 px-3 rounded-lg text-xs font-medium border transition-all flex items-center justify-center gap-1.5 ${newRecipient.type === t ? 'bg-blue-500/10 text-blue-400 border-blue-500/30' : 'bg-slate-800 text-slate-400 border-slate-700'}`}
+                      className={`flex-1 py-2 px-3 rounded-lg text-xs font-medium border transition-all flex items-center justify-center gap-1.5 ${newRecipient.type === t ? 'bg-blue-500/10 text-blue-600 border-blue-500/30' : 'bg-slate-100 text-slate-500 border-slate-300'}`}
                     >
                       {t === 'group' ? <Users className="w-3.5 h-3.5" /> : <User className="w-3.5 h-3.5" />}
                       {t === 'group' ? 'Grup' : 'Personal'}
@@ -817,11 +817,11 @@ const WhatsAppSettings: React.FC = () => {
               {/* Chat ID */}
               <div>
                 <div className="flex items-center justify-between mb-1.5">
-                  <label className="text-xs font-medium text-slate-400">Chat ID</label>
+                  <label className="text-xs font-medium text-slate-500">Chat ID</label>
                   {newRecipient.type === 'group' && groups.length > 0 && (
                     <button
                       onClick={() => setShowGroupDropdown((p) => !p)}
-                      className="text-xs text-blue-400 hover:text-blue-300 flex items-center gap-1"
+                      className="text-xs text-blue-600 hover:text-blue-300 flex items-center gap-1"
                     >
                       Pilih dari grup <ChevronDown className="w-3 h-3" />
                     </button>
@@ -830,12 +830,12 @@ const WhatsAppSettings: React.FC = () => {
 
                 {/* Group dropdown */}
                 {newRecipient.type === 'group' && showGroupDropdown && groups.length > 0 && (
-                  <div className="mb-2 max-h-40 overflow-y-auto bg-slate-800 border border-slate-700 rounded-lg divide-y divide-slate-700/50">
+                  <div className="mb-2 max-h-40 overflow-y-auto bg-slate-100 border border-slate-300 rounded-lg divide-y divide-slate-700/50">
                     {groups.map((g) => (
                       <button
                         key={g.id}
                         onClick={() => { setNewRecipient((p) => ({ ...p, chat_id: g.id, label: p.label || g.name })); setShowGroupDropdown(false); }}
-                        className="w-full text-left px-3 py-2.5 hover:bg-slate-700 transition-colors"
+                        className="w-full text-left px-3 py-2.5 hover:bg-slate-200 transition-colors"
                       >
                         <p className="text-sm font-medium text-white">{g.name}</p>
                         <p className="text-xs text-slate-500 font-mono">{g.id}</p>
@@ -849,7 +849,7 @@ const WhatsAppSettings: React.FC = () => {
                   value={newRecipient.chat_id}
                   onChange={(e) => setNewRecipient((p) => ({ ...p, chat_id: e.target.value }))}
                   placeholder={newRecipient.type === 'group' ? '120363xxxx@g.us' : '628123456789@c.us'}
-                  className="w-full px-3 py-2 bg-slate-800 border border-slate-700 rounded-lg text-sm text-white placeholder-slate-500 focus:outline-none focus:border-blue-500 transition-colors font-mono"
+                  className="w-full px-3 py-2 bg-slate-100 border border-slate-300 rounded-lg text-sm text-white placeholder-slate-500 focus:outline-none focus:border-blue-500 transition-colors font-mono"
                 />
                 <p className="text-[11px] text-slate-500 mt-1">
                   {newRecipient.type === 'group'
@@ -860,20 +860,20 @@ const WhatsAppSettings: React.FC = () => {
 
               {/* Label */}
               <div>
-                <label className="block text-xs font-medium text-slate-400 mb-1.5">Nama / Label</label>
+                <label className="block text-xs font-medium text-slate-500 mb-1.5">Nama / Label</label>
                 <input
                   type="text"
                   value={newRecipient.label}
                   onChange={(e) => setNewRecipient((p) => ({ ...p, label: e.target.value }))}
                   placeholder={newRecipient.type === 'group' ? 'Tim Security' : 'Pak Budi'}
-                  className="w-full px-3 py-2 bg-slate-800 border border-slate-700 rounded-lg text-sm text-white placeholder-slate-500 focus:outline-none focus:border-blue-500 transition-colors"
+                  className="w-full px-3 py-2 bg-slate-100 border border-slate-300 rounded-lg text-sm text-white placeholder-slate-500 focus:outline-none focus:border-blue-500 transition-colors"
                 />
               </div>
 
               <div className="flex gap-2 pt-2">
                 <button
                   onClick={() => { setShowAddModal(false); setShowGroupDropdown(false); }}
-                  className="flex-1 py-2 px-4 bg-slate-800 text-slate-300 hover:text-white text-sm font-medium rounded-lg border border-slate-700 transition-colors"
+                  className="flex-1 py-2 px-4 bg-slate-100 text-slate-600 hover:text-white text-sm font-medium rounded-lg border border-slate-300 transition-colors"
                 >
                   Batal
                 </button>
@@ -892,37 +892,37 @@ const WhatsAppSettings: React.FC = () => {
       {/* ── Edit Recipient Modal ── */}
       {editingRecipient && (
         <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-          <div className="bg-slate-900 border border-slate-700 rounded-2xl w-full max-w-md p-6 shadow-2xl">
+          <div className="bg-white border border-slate-300 rounded-2xl w-full max-w-md p-6 shadow-2xl">
             <div className="flex items-center justify-between mb-5">
               <h3 className="text-base font-semibold text-white">Edit Penerima</h3>
-              <button onClick={() => setEditingRecipient(null)} className="p-1.5 text-slate-400 hover:text-white hover:bg-slate-800 rounded-lg">
+              <button onClick={() => setEditingRecipient(null)} className="p-1.5 text-slate-500 hover:text-white hover:bg-slate-100 rounded-lg">
                 <X className="w-4 h-4" />
               </button>
             </div>
             <div className="space-y-4">
               <div>
-                <label className="block text-xs font-medium text-slate-400 mb-1.5">Chat ID</label>
+                <label className="block text-xs font-medium text-slate-500 mb-1.5">Chat ID</label>
                 <input
                   type="text"
                   value={editingRecipient.chat_id}
                   onChange={(e) => setEditingRecipient((p) => p ? { ...p, chat_id: e.target.value } : p)}
-                  className="w-full px-3 py-2 bg-slate-800 border border-slate-700 rounded-lg text-sm text-white focus:outline-none focus:border-blue-500 font-mono transition-colors"
+                  className="w-full px-3 py-2 bg-slate-100 border border-slate-300 rounded-lg text-sm text-white focus:outline-none focus:border-blue-500 font-mono transition-colors"
                 />
               </div>
               <div>
-                <label className="block text-xs font-medium text-slate-400 mb-1.5">Label</label>
+                <label className="block text-xs font-medium text-slate-500 mb-1.5">Label</label>
                 <input
                   type="text"
                   value={editingRecipient.label}
                   onChange={(e) => setEditingRecipient((p) => p ? { ...p, label: e.target.value } : p)}
-                  className="w-full px-3 py-2 bg-slate-800 border border-slate-700 rounded-lg text-sm text-white focus:outline-none focus:border-blue-500 transition-colors"
+                  className="w-full px-3 py-2 bg-slate-100 border border-slate-300 rounded-lg text-sm text-white focus:outline-none focus:border-blue-500 transition-colors"
                 />
               </div>
-              <div className="flex items-center justify-between p-3 bg-slate-800/50 rounded-xl">
-                <span className="text-sm text-slate-300">Aktif</span>
+              <div className="flex items-center justify-between p-3 bg-slate-100/50 rounded-xl">
+                <span className="text-sm text-slate-600">Aktif</span>
                 <button
                   onClick={() => setEditingRecipient((p) => p ? { ...p, is_active: !p.is_active } : p)}
-                  className={`relative w-10 h-5 rounded-full transition-all ${editingRecipient.is_active ? 'bg-emerald-500' : 'bg-slate-700'}`}
+                  className={`relative w-10 h-5 rounded-full transition-all ${editingRecipient.is_active ? 'bg-emerald-500' : 'bg-slate-200'}`}
                 >
                   <span className={`absolute top-0.5 left-0.5 w-4 h-4 bg-white rounded-full shadow transition-all ${editingRecipient.is_active ? 'translate-x-5' : 'translate-x-0'}`} />
                 </button>
@@ -930,7 +930,7 @@ const WhatsAppSettings: React.FC = () => {
               <div className="flex gap-2 pt-2">
                 <button
                   onClick={() => setEditingRecipient(null)}
-                  className="flex-1 py-2 px-4 bg-slate-800 text-slate-300 hover:text-white text-sm font-medium rounded-lg border border-slate-700 transition-colors"
+                  className="flex-1 py-2 px-4 bg-slate-100 text-slate-600 hover:text-white text-sm font-medium rounded-lg border border-slate-300 transition-colors"
                 >
                   Batal
                 </button>

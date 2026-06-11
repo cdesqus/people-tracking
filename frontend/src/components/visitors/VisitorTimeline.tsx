@@ -72,10 +72,10 @@ const VisitorTimeline: React.FC<VisitorTimelineProps> = ({
   return (
     <div className="space-y-4">
       <div>
-        <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
+        <h3 className="text-lg font-semibold text-gray-900 dark:text-slate-900">
           Movement Timeline - {visitorName}
         </h3>
-        <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
+        <p className="text-sm text-gray-600 dark:text-slate-500 mt-1">
           All recorded locations and movements during visit
         </p>
       </div>
@@ -83,7 +83,7 @@ const VisitorTimeline: React.FC<VisitorTimelineProps> = ({
       {/* Timeline */}
       <Card>
         {isLoading ? (
-          <div className="p-8 text-center text-gray-500 dark:text-gray-400">
+          <div className="p-8 text-center text-gray-500 dark:text-slate-500">
             Loading timeline...
           </div>
         ) : error ? (
@@ -91,7 +91,7 @@ const VisitorTimeline: React.FC<VisitorTimelineProps> = ({
             {error}
           </div>
         ) : timeline.length === 0 ? (
-          <div className="p-8 text-center text-gray-500 dark:text-gray-400">
+          <div className="p-8 text-center text-gray-500 dark:text-slate-500">
             No movement records found
           </div>
         ) : (
@@ -104,29 +104,29 @@ const VisitorTimeline: React.FC<VisitorTimelineProps> = ({
               {timeline.map((item, index) => (
                 <div key={item.id || index} className="flex gap-6 relative">
                   {/* Timeline dot with event color */}
-                  <div className="absolute left-2 top-2 w-4 h-4 rounded-full bg-sky-500 border-4 border-white dark:border-slate-800" />
+                  <div className="absolute left-2 top-2 w-4 h-4 rounded-full bg-sky-500 border-4 border-white dark:border-slate-200" />
 
                   {/* Content */}
                   <div className="flex-1 ml-8 pb-4">
                     <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
                       <div>
                         <div className="flex items-center gap-2 mb-1">
-                          <h4 className="font-semibold text-gray-900 dark:text-white">
+                          <h4 className="font-semibold text-gray-900 dark:text-slate-900">
                             {item.location}
                           </h4>
                           <Badge color={getEventColor(item.event)}>
                             {getEventLabel(item.event)}
                           </Badge>
                         </div>
-                        <p className="text-sm text-gray-600 dark:text-gray-400">
+                        <p className="text-sm text-gray-600 dark:text-slate-500">
                           Camera: {item.camera}
                         </p>
                       </div>
                       <div className="text-right">
-                        <p className="font-semibold text-gray-900 dark:text-white">
+                        <p className="font-semibold text-gray-900 dark:text-slate-900">
                           {formatTime(item.timestamp)}
                         </p>
-                        <p className="text-sm text-gray-600 dark:text-gray-400">
+                        <p className="text-sm text-gray-600 dark:text-slate-500">
                           {formatDate(item.timestamp)}
                         </p>
                       </div>
@@ -144,26 +144,26 @@ const VisitorTimeline: React.FC<VisitorTimelineProps> = ({
         <Card className="p-4 bg-sky-50 dark:bg-sky-900/20 border border-sky-200 dark:border-sky-800">
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
             <div>
-              <p className="text-xs text-gray-600 dark:text-gray-400">Total Events</p>
-              <p className="text-lg font-semibold text-gray-900 dark:text-white">
+              <p className="text-xs text-gray-600 dark:text-slate-500">Total Events</p>
+              <p className="text-lg font-semibold text-gray-900 dark:text-slate-900">
                 {timeline.length}
               </p>
             </div>
             <div>
-              <p className="text-xs text-gray-600 dark:text-gray-400">Check-In</p>
+              <p className="text-xs text-gray-600 dark:text-slate-500">Check-In</p>
               <p className="text-lg font-semibold text-green-600 dark:text-green-400">
                 {timeline.filter((t) => t.event === 'check_in').length}
               </p>
             </div>
             <div>
-              <p className="text-xs text-gray-600 dark:text-gray-400">Movements</p>
-              <p className="text-lg font-semibold text-blue-600 dark:text-blue-400">
+              <p className="text-xs text-gray-600 dark:text-slate-500">Movements</p>
+              <p className="text-lg font-semibold text-blue-600 dark:text-blue-600">
                 {timeline.filter((t) => t.event === 'movement').length}
               </p>
             </div>
             <div>
-              <p className="text-xs text-gray-600 dark:text-gray-400">Unique Locations</p>
-              <p className="text-lg font-semibold text-gray-900 dark:text-white">
+              <p className="text-xs text-gray-600 dark:text-slate-500">Unique Locations</p>
+              <p className="text-lg font-semibold text-gray-900 dark:text-slate-900">
                 {new Set(timeline.map((t) => t.location)).size}
               </p>
             </div>

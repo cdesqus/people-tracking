@@ -105,7 +105,7 @@ const CameraUptimeReport: React.FC = () => {
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         <Card className="bg-blue-50 dark:bg-blue-900/20 border-blue-200 dark:border-blue-800">
           <div className="p-6">
-            <p className="text-sm font-medium text-blue-600 dark:text-blue-400">
+            <p className="text-sm font-medium text-blue-600 dark:text-blue-600">
               Avg Uptime
             </p>
             <p className="text-3xl font-bold text-blue-700 dark:text-blue-300 mt-2">
@@ -177,11 +177,11 @@ const CameraUptimeReport: React.FC = () => {
                   <div className="flex items-center justify-between mb-2">
                     <div className="flex items-center gap-2">
                       <div className={`w-3 h-3 rounded-full ${item.color}`} />
-                      <span className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                      <span className="text-sm font-medium text-gray-700 dark:text-slate-600">
                         {item.label}
                       </span>
                     </div>
-                    <span className="text-sm font-semibold text-gray-900 dark:text-white">
+                    <span className="text-sm font-semibold text-gray-900 dark:text-slate-900">
                       {item.count}
                     </span>
                   </div>
@@ -207,7 +207,7 @@ const CameraUptimeReport: React.FC = () => {
                 const status = getStatusColor(camera.uptimePercent);
                 return (
                   <div key={idx} className="flex items-center gap-3">
-                    <span className="text-sm font-medium w-32 text-gray-600 dark:text-gray-400 truncate">
+                    <span className="text-sm font-medium w-32 text-gray-600 dark:text-slate-500 truncate">
                       {camera.cameraName}
                     </span>
                     <div className="flex-1 bg-gray-200 dark:bg-gray-700 rounded-full h-6 overflow-hidden">

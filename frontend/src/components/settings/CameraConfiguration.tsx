@@ -324,7 +324,7 @@ const CameraConfiguration: React.FC = () => {
           onClose={() => setShowDeleteConfirm(false)}
         >
           <div className="p-6 space-y-4">
-            <p className="text-gray-600 dark:text-gray-400">
+            <p className="text-gray-600 dark:text-slate-500">
               Are you sure you want to delete camera <strong>{selectedCamera.name}</strong>?
               This action cannot be undone.
             </p>

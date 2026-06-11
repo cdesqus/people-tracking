@@ -410,7 +410,7 @@ const Dashboard: React.FC = () => {
   }, [activeTab, activeFocusedCamera]);
 
   return (
-    <div className="flex-1 flex flex-col bg-slate-950 text-gray-100">
+    <div className="flex-1 flex flex-col bg-slate-50 text-slate-800">
       {/* Dynamic Styles Injection */}
       <style dangerouslySetInnerHTML={{__html: `
         .scanning-line {
@@ -449,15 +449,15 @@ const Dashboard: React.FC = () => {
       `}} />
 
       {/* Control Sub-Header */}
-      <div className="flex flex-col sm:flex-row justify-between items-center px-6 py-4 bg-slate-900 border-b border-slate-800 gap-4">
+      <div className="flex flex-col sm:flex-row justify-between items-center px-6 py-4 bg-white border-b border-slate-200 gap-4">
         <div className="flex items-center gap-2 w-full sm:w-auto justify-between sm:justify-start">
-          <div className="flex bg-slate-950 rounded-lg p-1 border border-slate-800">
+          <div className="flex bg-slate-50 rounded-lg p-1 border border-slate-200">
             <button
               onClick={() => setActiveTab('overview')}
               className={`flex items-center gap-2 px-4 py-2 rounded-md font-medium text-xs tracking-wider uppercase transition-all ${
                 activeTab === 'overview'
                   ? 'bg-blue-600 text-white shadow-lg'
-                  : 'text-gray-400 hover:text-gray-200'
+                  : 'text-slate-500 hover:text-slate-700'
               }`}
             >
               <span className="material-symbols-outlined text-[18px]">dashboard</span>
@@ -468,7 +468,7 @@ const Dashboard: React.FC = () => {
               className={`flex items-center gap-2 px-4 py-2 rounded-md font-medium text-xs tracking-wider uppercase transition-all ${
                 activeTab === 'monitor'
                   ? 'bg-blue-600 text-white shadow-lg'
-                  : 'text-gray-400 hover:text-gray-200'
+                  : 'text-slate-500 hover:text-slate-700'
               }`}
             >
               <span className="material-symbols-outlined text-[18px]">videocam</span>
@@ -484,7 +484,7 @@ const Dashboard: React.FC = () => {
             <select
               value={selectedBranch}
               onChange={(e) => setSelectedBranch(e.target.value)}
-              className="appearance-none pl-9 pr-8 py-1.5 bg-slate-950 border border-slate-800 rounded-lg text-xs font-mono font-bold text-gray-300 focus:outline-none focus:border-blue-500 cursor-pointer"
+              className="appearance-none pl-9 pr-8 py-1.5 bg-slate-50 border border-slate-200 rounded-lg text-xs font-mono font-bold text-slate-600 focus:outline-none focus:border-blue-500 cursor-pointer"
             >
               <option value="all">ALL BRANCHES (GLOBAL)</option>
               {branches.map((b) => (
@@ -501,9 +501,9 @@ const Dashboard: React.FC = () => {
             </span>
           </div>
 
-          <div className="flex items-center gap-2 px-3 py-1.5 bg-slate-950 rounded-full border border-slate-850">
+          <div className="flex items-center gap-2 px-3 py-1.5 bg-slate-50 rounded-full border border-slate-200">
             <div className={`w-2 h-2 rounded-full ${isConnected ? 'bg-emerald-500 animate-ping' : 'bg-red-500'}`} />
-            <span className="text-[10px] font-mono font-medium text-gray-300">
+            <span className="text-[10px] font-mono font-medium text-slate-600">
               {isConnected ? 'LIVE FEED CONNECTED' : 'RECONNECTING FEED...'}
             </span>
           </div>
@@ -516,30 +516,30 @@ const Dashboard: React.FC = () => {
           
           {/* KPI Dashboard Overview Section */}
           <section className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <div className="bg-slate-900 p-6 border border-slate-800/80 shadow-md rounded-xl flex items-center justify-between transition-all hover:border-slate-700">
+            <div className="bg-white p-6 border border-slate-200/80 shadow-md rounded-xl flex items-center justify-between transition-all hover:border-slate-300">
               <div>
-                <p className="font-sans text-[11px] font-bold text-gray-400 uppercase tracking-widest">Total Employees</p>
-                <h2 className="text-3xl font-extrabold font-mono mt-1 text-white">1,284</h2>
+                <p className="font-sans text-[11px] font-bold text-slate-500 uppercase tracking-widest">Total Employees</p>
+                <h2 className="text-3xl font-extrabold font-mono mt-1 text-slate-900">1,284</h2>
               </div>
               <div className="bg-blue-500/10 p-3.5 rounded-xl border border-blue-500/20">
                 <span className="material-symbols-outlined text-blue-500 scale-125">groups</span>
               </div>
             </div>
 
-            <div className="bg-slate-900 p-6 border border-slate-800/80 shadow-md rounded-xl flex items-center justify-between transition-all hover:border-slate-700">
+            <div className="bg-white p-6 border border-slate-200/80 shadow-md rounded-xl flex items-center justify-between transition-all hover:border-slate-300">
               <div>
-                <p className="font-sans text-[11px] font-bold text-gray-400 uppercase tracking-widest">Active Visitors</p>
-                <h2 className="text-3xl font-extrabold font-mono mt-1 text-emerald-400">{kpiStats.currentVisitors}</h2>
+                <p className="font-sans text-[11px] font-bold text-slate-500 uppercase tracking-widest">Active Visitors</p>
+                <h2 className="text-3xl font-extrabold font-mono mt-1 text-emerald-600">{kpiStats.currentVisitors}</h2>
               </div>
               <div className="bg-emerald-500/10 p-3.5 rounded-xl border border-emerald-500/20">
-                <span className="material-symbols-outlined text-emerald-400 scale-125">badge</span>
+                <span className="material-symbols-outlined text-emerald-600 scale-125">badge</span>
               </div>
             </div>
 
-            <div className="bg-slate-900 p-6 border border-slate-800/80 shadow-md rounded-xl flex items-center justify-between transition-all hover:border-slate-700 border-l-4 border-l-emerald-600">
+            <div className="bg-white p-6 border border-slate-200/80 shadow-md rounded-xl flex items-center justify-between transition-all hover:border-slate-300 border-l-4 border-l-emerald-600">
               <div>
-                <p className="font-sans text-[11px] font-bold text-gray-400 uppercase tracking-widest">System Health</p>
-                <h2 className="text-3xl font-extrabold font-mono mt-1 text-white">{isConnected ? '99.8%' : '92.4%'}</h2>
+                <p className="font-sans text-[11px] font-bold text-slate-500 uppercase tracking-widest">System Health</p>
+                <h2 className="text-3xl font-extrabold font-mono mt-1 text-slate-900">{isConnected ? '99.8%' : '92.4%'}</h2>
               </div>
               <div className="bg-emerald-500/10 p-3.5 rounded-xl border border-emerald-500/20">
                 <span className="material-symbols-outlined text-emerald-500 scale-125">dns</span>
@@ -551,14 +551,14 @@ const Dashboard: React.FC = () => {
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-4">
             
             {/* Live Camera Surveillance Wall (Col span 8) */}
-            <section className="lg:col-span-8 bg-slate-900 border border-slate-800 shadow-md rounded-xl overflow-hidden relative flex flex-col justify-between group">
-              <div className="p-4 border-b border-slate-800 flex justify-between items-center bg-slate-900/80 backdrop-blur">
-                <h3 className="text-sm font-semibold flex items-center gap-2 text-white">
+            <section className="lg:col-span-8 bg-white border border-slate-200 shadow-md rounded-xl overflow-hidden relative flex flex-col justify-between group">
+              <div className="p-4 border-b border-slate-200 flex justify-between items-center bg-white/80 backdrop-blur">
+                <h3 className="text-sm font-semibold flex items-center gap-2 text-slate-900">
                   <span className="material-symbols-outlined text-blue-500">grid_view</span>
                   Live Camera Surveillance Wall
                 </h3>
                 <div className="flex items-center gap-2">
-                  <span className="text-[10px] font-mono px-2 py-1 bg-slate-950 rounded border border-slate-800 text-gray-400">
+                  <span className="text-[10px] font-mono px-2 py-1 bg-slate-50 rounded border border-slate-200 text-slate-500">
                     {filteredCameras.filter((c: any) => c.status === 'active').length} Channels Online
                   </span>
                   <span className="text-[10px] font-mono px-2 py-1 bg-blue-600 text-white rounded font-bold animate-pulse">LIVE</span>
@@ -566,7 +566,7 @@ const Dashboard: React.FC = () => {
               </div>
 
               {/* Grid of Active Cameras */}
-              <div className="p-4 bg-slate-950 grid grid-cols-1 md:grid-cols-2 gap-4 h-[400px] md:h-[480px] overflow-y-auto no-scrollbar">
+              <div className="p-4 bg-slate-50 grid grid-cols-1 md:grid-cols-2 gap-4 h-[400px] md:h-[480px] overflow-y-auto no-scrollbar">
                 {filteredCameras.slice(0, 4).map((camera) => (
                   <div 
                     key={camera.id}
@@ -576,7 +576,7 @@ const Dashboard: React.FC = () => {
                         setActiveTab('monitor');
                       }
                     }}
-                    className="relative aspect-video bg-slate-900 rounded-lg overflow-hidden border border-slate-850 hover:border-blue-500/50 transition-all cursor-pointer group/cam"
+                    className="relative aspect-video bg-white rounded-lg overflow-hidden border border-slate-200 hover:border-blue-500/50 transition-all cursor-pointer group/cam"
                   >
                     {camera.status === 'active' ? (
                       <>
@@ -592,27 +592,27 @@ const Dashboard: React.FC = () => {
                         {/* Top Info Bar */}
                         <div className="absolute top-2 left-2 flex items-center gap-1.5 z-10">
                           <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
-                          <span className="font-mono text-white text-[8px] bg-slate-950/85 px-1.5 py-0.5 rounded border border-slate-800 backdrop-blur-sm">
+                          <span className="font-mono text-slate-900 text-[8px] bg-slate-50/85 px-1.5 py-0.5 rounded border border-slate-200 backdrop-blur-sm">
                             {camera.name.toUpperCase()}
                           </span>
                         </div>
 
                         {/* Status Badge */}
                         <div className="absolute bottom-2 right-2 z-10 flex items-center gap-1">
-                          <span className="font-mono text-emerald-400 text-[8px] bg-slate-950/85 px-1.5 py-0.5 rounded border border-slate-800/80 font-bold backdrop-blur-sm">
+                          <span className="font-mono text-emerald-600 text-[8px] bg-slate-50/85 px-1.5 py-0.5 rounded border border-slate-200/80 font-bold backdrop-blur-sm">
                             AI ACTIVE
                           </span>
                         </div>
                       </>
                     ) : (
-                      <div className="w-full h-full flex flex-col items-center justify-center bg-slate-950/40">
+                      <div className="w-full h-full flex flex-col items-center justify-center bg-slate-50/40">
                         <span className="material-symbols-outlined text-2xl text-gray-700 mb-1">videocam_off</span>
                         <p className="font-mono text-gray-600 text-[9px] tracking-wider font-bold">SIGNAL LOST</p>
                         
                         {/* Camera details */}
                         <div className="absolute top-2 left-2 flex items-center gap-2 z-10">
-                          <div className="w-1.5 h-1.5 rounded-full bg-slate-700" />
-                          <span className="font-mono text-gray-600 text-[8px] bg-slate-950/80 px-1.5 py-0.5 rounded border border-slate-900">
+                          <div className="w-1.5 h-1.5 rounded-full bg-slate-200" />
+                          <span className="font-mono text-gray-600 text-[8px] bg-slate-50/80 px-1.5 py-0.5 rounded border border-slate-900">
                             {camera.name.toUpperCase()}
                           </span>
                         </div>
@@ -623,9 +623,9 @@ const Dashboard: React.FC = () => {
               </div>
 
               {/* Surveillance Footer */}
-              <div className="p-4 flex justify-between items-center bg-slate-950/80 border-t border-slate-800">
-                <span className="text-xs text-gray-400 font-mono">
-                  Showing active system nodes for branch: <strong className="text-blue-400 uppercase">{selectedBranch === 'all' ? 'All Branches' : selectedBranch}</strong>
+              <div className="p-4 flex justify-between items-center bg-slate-50/80 border-t border-slate-200">
+                <span className="text-xs text-slate-500 font-mono">
+                  Showing active system nodes for branch: <strong className="text-blue-600 uppercase">{selectedBranch === 'all' ? 'All Branches' : selectedBranch}</strong>
                 </span>
                 <button 
                   onClick={() => setActiveTab('monitor')}
@@ -637,9 +637,9 @@ const Dashboard: React.FC = () => {
             </section>
 
             {/* Active Incident Alerts (Col span 4) */}
-            <section className="lg:col-span-4 bg-slate-900 border border-slate-800 shadow-md rounded-xl flex flex-col overflow-hidden">
-              <div className="p-4 border-b border-slate-800 flex justify-between items-center bg-slate-900/80 backdrop-blur">
-                <h3 className="text-sm font-semibold flex items-center gap-2 text-white">
+            <section className="lg:col-span-4 bg-white border border-slate-200 shadow-md rounded-xl flex flex-col overflow-hidden">
+              <div className="p-4 border-b border-slate-200 flex justify-between items-center bg-white/80 backdrop-blur">
+                <h3 className="text-sm font-semibold flex items-center gap-2 text-slate-900">
                   <span className="material-symbols-outlined text-red-500">warning</span>
                   Active Alerts
                 </h3>
@@ -659,7 +659,7 @@ const Dashboard: React.FC = () => {
                         ? 'bg-red-500/5 border-red-600 border border-y-slate-800 border-r-slate-800 hover:bg-red-500/10'
                         : alert.severity === 'high'
                         ? 'bg-amber-500/5 border-amber-500 border border-y-slate-800 border-r-slate-800 hover:bg-amber-500/10'
-                        : 'bg-slate-950/40 border-slate-600 border border-y-slate-800 border-r-slate-800 hover:bg-slate-950/60'
+                        : 'bg-slate-50/40 border-slate-300 border border-y-slate-800 border-r-slate-800 hover:bg-slate-50/60'
                     }`}
                   >
                     <span className={`material-symbols-outlined mt-0.5 ${
@@ -669,19 +669,19 @@ const Dashboard: React.FC = () => {
                     </span>
                     <div className="flex-1">
                       <div className="flex items-center justify-between">
-                        <p className="text-xs font-bold text-gray-200">{alert.title}</p>
+                        <p className="text-xs font-bold text-slate-700">{alert.title}</p>
                         <span className="text-[9px] font-mono text-gray-500">{alert.time}</span>
                       </div>
-                      <p className="text-[11px] text-gray-400 mt-1 font-mono">{alert.location}</p>
+                      <p className="text-[11px] text-slate-500 mt-1 font-mono">{alert.location}</p>
                     </div>
                   </div>
                 ))}
               </div>
 
-              <div className="p-4 border-t border-slate-800/60 mt-auto bg-slate-950/20">
+              <div className="p-4 border-t border-slate-200/60 mt-auto bg-slate-50/20">
                 <Link 
                   to="/alerts" 
-                  className="w-full py-2 border border-slate-700 text-gray-300 font-mono text-[11px] rounded-lg hover:bg-slate-800 hover:text-white transition-colors block text-center uppercase tracking-wider font-bold"
+                  className="w-full py-2 border border-slate-300 text-slate-600 font-mono text-[11px] rounded-lg hover:bg-slate-100 hover:text-slate-900 transition-colors block text-center uppercase tracking-wider font-bold"
                 >
                   View All Incident Logs
                 </Link>
@@ -690,13 +690,13 @@ const Dashboard: React.FC = () => {
           </div>
 
           {/* Recent AI Face Detections (Col span 12) */}
-          <section className="bg-slate-900 border border-slate-800 shadow-md rounded-xl overflow-hidden w-full">
-            <div className="p-4 border-b border-slate-800 bg-slate-900/80 backdrop-blur flex items-center justify-between">
-              <h3 className="text-sm font-semibold flex items-center gap-2 text-white">
+          <section className="bg-white border border-slate-200 shadow-md rounded-xl overflow-hidden w-full">
+            <div className="p-4 border-b border-slate-200 bg-white/80 backdrop-blur flex items-center justify-between">
+              <h3 className="text-sm font-semibold flex items-center gap-2 text-slate-900">
                 <span className="material-symbols-outlined text-blue-500">face</span>
                 Recent AI Face Detections
               </h3>
-              <span className="text-[10px] font-mono text-blue-400 bg-blue-500/10 px-2 py-0.5 rounded border border-blue-500/20">
+              <span className="text-[10px] font-mono text-blue-600 bg-blue-500/10 px-2 py-0.5 rounded border border-blue-500/20">
                 GLOBAL SCAN ACTIVE
               </span>
             </div>
@@ -711,7 +711,7 @@ const Dashboard: React.FC = () => {
                     title: face.name,
                     subtitle: `${face.location} • ${face.time} (${face.role})`
                   })}
-                  className="group relative aspect-square rounded-xl overflow-hidden bg-slate-950 border border-slate-800/80 transition-all hover:border-blue-500/80 hover:shadow-lg cursor-pointer"
+                  className="group relative aspect-square rounded-xl overflow-hidden bg-slate-50 border border-slate-200/80 transition-all hover:border-blue-500/80 hover:shadow-lg cursor-pointer"
                 >
                   {/* Image with scanner effects */}
                   <img 
@@ -730,8 +730,8 @@ const Dashboard: React.FC = () => {
 
                   {/* Identification Badge Overlay */}
                   <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-slate-950 via-slate-950/80 to-transparent p-3 pt-8">
-                    <p className="text-[11px] font-bold text-white tracking-wide truncate">{face.name}</p>
-                    <p className={`text-[9px] font-mono mt-1 ${face.status === 'verified' ? 'text-emerald-400' : 'text-red-400 animate-pulse'}`}>
+                    <p className="text-[11px] font-bold text-slate-900 tracking-wide truncate">{face.name}</p>
+                    <p className={`text-[9px] font-mono mt-1 ${face.status === 'verified' ? 'text-emerald-600' : 'text-red-400 animate-pulse'}`}>
                       {face.status === 'verified' ? `MATCH: ${face.confidence}%` : 'SCANNING...'}
                     </p>
                   </div>
@@ -741,7 +741,7 @@ const Dashboard: React.FC = () => {
               {/* View All Redirect Card */}
               <Link 
                 to="/employees"
-                className="group aspect-square border-2 border-dashed border-slate-800 rounded-xl flex flex-col items-center justify-center text-gray-500 hover:text-blue-500 hover:border-blue-500/40 transition-colors cursor-pointer bg-slate-950/20 hover:bg-slate-900/40"
+                className="group aspect-square border-2 border-dashed border-slate-200 rounded-xl flex flex-col items-center justify-center text-gray-500 hover:text-blue-500 hover:border-blue-500/40 transition-colors cursor-pointer bg-slate-50/20 hover:bg-white/40"
               >
                 <span className="material-symbols-outlined text-4xl mb-1 group-hover:scale-110 transition-transform">more_horiz</span>
                 <span className="text-[10px] font-mono uppercase tracking-wider font-bold">View All Users</span>
@@ -751,16 +751,16 @@ const Dashboard: React.FC = () => {
         </div>
       ) : (
         /* ==================== TAB 2: LIVE MONITOR FEED ==================== */
-        <div className="flex flex-col lg:flex-row w-full bg-slate-950">
+        <div className="flex flex-col lg:flex-row w-full bg-slate-50">
           
           {/* Left Panel: Identification Log (Scrollable) */}
-          <aside className="w-full h-[350px] lg:h-auto lg:max-h-[calc(100vh-120px)] lg:w-[340px] border-t lg:border-t-0 lg:border-r border-slate-850 flex flex-col overflow-hidden bg-slate-900/40 order-last lg:order-none lg:sticky lg:top-0">
-            <div className="p-4 border-b border-slate-850 bg-slate-900">
-              <h2 className="text-sm font-semibold flex items-center gap-2 text-white">
+          <aside className="w-full h-[350px] lg:h-auto lg:max-h-[calc(100vh-120px)] lg:w-[340px] border-t lg:border-t-0 lg:border-r border-slate-200 flex flex-col overflow-hidden bg-white/40 order-last lg:order-none lg:sticky lg:top-0">
+            <div className="p-4 border-b border-slate-200 bg-white">
+              <h2 className="text-sm font-semibold flex items-center gap-2 text-slate-900">
                 <span className="material-symbols-outlined text-blue-500">face</span>
                 Identification Log
               </h2>
-              <p className="text-[10px] font-mono text-gray-400 mt-1 uppercase tracking-wider">Real-time AI Processing</p>
+              <p className="text-[10px] font-mono text-slate-500 mt-1 uppercase tracking-wider">Real-time AI Processing</p>
             </div>
             
             <div className="flex-1 overflow-y-auto p-4 space-y-3.5 no-scrollbar">
@@ -772,10 +772,10 @@ const Dashboard: React.FC = () => {
                     title: face.name,
                     subtitle: `${face.location} • ${face.time} (${face.role})`
                   })}
-                  className={`flex items-center gap-3.5 p-2.5 bg-slate-900 border rounded-lg transition-colors cursor-pointer group ${
+                  className={`flex items-center gap-3.5 p-2.5 bg-white border rounded-lg transition-colors cursor-pointer group ${
                     face.status === 'unrecognized' 
                       ? 'border-red-500/40 hover:border-red-500 bg-red-500/5' 
-                      : 'border-slate-850 hover:border-blue-500/80 bg-slate-900/60'
+                      : 'border-slate-200 hover:border-blue-500/80 bg-white/60'
                   }`}
                 >
                   <div className="relative flex-shrink-0">
@@ -791,7 +791,7 @@ const Dashboard: React.FC = () => {
                     </div>
                   </div>
                   <div className="flex-1 min-w-0">
-                    <p className={`text-xs font-bold truncate ${face.status === 'unrecognized' ? 'text-red-400' : 'text-gray-200'}`}>
+                    <p className={`text-xs font-bold truncate ${face.status === 'unrecognized' ? 'text-red-400' : 'text-slate-700'}`}>
                       {face.name}
                     </p>
                     <p className="text-[10px] font-mono text-gray-500 mt-0.5 truncate">
@@ -804,37 +804,37 @@ const Dashboard: React.FC = () => {
           </aside>
 
           {/* Right Area: Focus Stream, Sidebar Selectors & Bottom Alert Center */}
-          <section className="flex-1 flex flex-col p-4 bg-slate-950 order-first lg:order-none">
+          <section className="flex-1 flex flex-col p-4 bg-slate-50 order-first lg:order-none">
             
             {/* Main Area: Split between Large Player (left) and Camera Grid (right) */}
             <div className="flex-1 flex flex-col lg:flex-row gap-4 min-h-0 mb-4">
               
               {/* Large Focused Camera Player */}
-              <div className="flex-[7] flex flex-col bg-slate-900 border border-slate-800 rounded-xl overflow-hidden relative shadow-2xl">
+              <div className="flex-[7] flex flex-col bg-white border border-slate-200 rounded-xl overflow-hidden relative shadow-2xl">
                 {activeFocusedCamera ? (
                   <div className="flex-1 flex flex-col min-h-0">
                     {/* Header bar of Focused Player */}
-                    <div className="p-3 bg-slate-900 border-b border-slate-850 flex justify-between items-center">
+                    <div className="p-3 bg-white border-b border-slate-200 flex justify-between items-center">
                       <div className="flex items-center gap-2">
                         <div className={`w-2.5 h-2.5 rounded-full ${activeFocusedCamera.status === 'active' ? 'bg-red-500 animate-pulse' : 'bg-slate-600'}`} />
-                        <span className="font-mono text-white text-xs font-bold">
+                        <span className="font-mono text-slate-900 text-xs font-bold">
                           {activeFocusedCamera.name.toUpperCase()} (FOCUSED FEED)
                         </span>
                       </div>
                       <div className="flex items-center gap-2">
-                        <span className="text-[9px] font-mono px-2 py-0.5 bg-slate-950 rounded border border-slate-800 text-emerald-400 font-bold">
+                        <span className="text-[9px] font-mono px-2 py-0.5 bg-slate-50 rounded border border-slate-200 text-emerald-600 font-bold">
                           {activeFocusedCamera.status === 'active'
                             ? (streamInfo ? `${streamInfo.resolution} @ ${streamInfo.fps}FPS` : 'CONNECTING...')
                             : 'OFFLINE'}
                         </span>
-                        <span className="text-[9px] font-mono px-2 py-0.5 bg-blue-600/10 text-blue-400 rounded border border-blue-500/20 font-bold">
+                        <span className="text-[9px] font-mono px-2 py-0.5 bg-blue-600/10 text-blue-600 rounded border border-blue-500/20 font-bold">
                           LATENCY: {streamLatency !== null ? `${streamLatency}ms` : '...'}
                         </span>
                       </div>
                     </div>
 
                     {/* Stream display */}
-                    <div className="bg-slate-950 relative flex items-center justify-center overflow-hidden">
+                    <div className="bg-slate-50 relative flex items-center justify-center overflow-hidden">
                       {activeFocusedCamera.status === 'active' ? (
                         <>
                           <MjpegStream
@@ -867,9 +867,9 @@ const Dashboard: React.FC = () => {
               </div>
 
               {/* Small Sidebar Camera Selectors */}
-              <div className="flex-[3] flex flex-col bg-slate-900 border border-slate-800 rounded-xl overflow-hidden min-h-0">
-                <div className="p-3 bg-slate-900 border-b border-slate-850">
-                  <h3 className="text-xs font-bold text-white uppercase tracking-wider">Select Stream</h3>
+              <div className="flex-[3] flex flex-col bg-white border border-slate-200 rounded-xl overflow-hidden min-h-0">
+                <div className="p-3 bg-white border-b border-slate-200">
+                  <h3 className="text-xs font-bold text-slate-900 uppercase tracking-wider">Select Stream</h3>
                 </div>
                 
                 {/* Scrollable list of other camera thumbnails */}
@@ -882,29 +882,29 @@ const Dashboard: React.FC = () => {
                         onClick={() => setSelectedCamera(camera.id)}
                         className={`group relative rounded-lg overflow-hidden transition-all duration-200 cursor-pointer aspect-video flex flex-col border ${
                           isSelected 
-                            ? 'border-blue-500 shadow-md shadow-blue-500/10 bg-slate-950' 
-                            : 'border-slate-800 bg-slate-950/60 hover:border-slate-700'
+                            ? 'border-blue-500 shadow-md shadow-blue-500/10 bg-slate-50' 
+                            : 'border-slate-200 bg-slate-50/60 hover:border-slate-300'
                         }`}
                       >
                         {camera.status === 'active' ? (
                           <>
                             {isSelected ? (
-                              <div className="w-full h-full flex flex-col items-center justify-center py-2 bg-blue-900/20 text-blue-400">
+                              <div className="w-full h-full flex flex-col items-center justify-center py-2 bg-blue-900/20 text-blue-600">
                                 <span className="material-symbols-outlined text-2xl mb-1 animate-pulse">visibility</span>
                                 <span className="text-[9px] font-mono font-bold tracking-widest">VIEWING</span>
                               </div>
                             ) : (
-                              <div className="w-full h-full flex flex-col items-center justify-center py-2 bg-slate-900 text-gray-500 group-hover:text-blue-400 transition-colors">
+                              <div className="w-full h-full flex flex-col items-center justify-center py-2 bg-white text-gray-500 group-hover:text-blue-600 transition-colors">
                                 <span className="material-symbols-outlined text-2xl mb-1">play_circle</span>
                                 <span className="text-[9px] font-mono font-bold tracking-widest">STANDBY</span>
                               </div>
                             )}
-                            <div className="absolute inset-0 bg-slate-950/40" />
+                            <div className="absolute inset-0 bg-slate-50/40" />
                             
-                            <div className="absolute top-1.5 left-1.5 z-10 font-mono text-[8px] bg-slate-950/80 px-1.5 py-0.5 rounded border border-slate-800 text-gray-300">
+                            <div className="absolute top-1.5 left-1.5 z-10 font-mono text-[8px] bg-slate-50/80 px-1.5 py-0.5 rounded border border-slate-200 text-slate-600">
                               {camera.name.toUpperCase()}
                             </div>
-                            <div className="absolute bottom-1.5 left-1.5 z-10 font-mono text-[8px] text-gray-400 truncate max-w-[80%]">
+                            <div className="absolute bottom-1.5 left-1.5 z-10 font-mono text-[8px] text-slate-500 truncate max-w-[80%]">
                               LIVE
                             </div>
                             {isSelected && (
@@ -912,7 +912,7 @@ const Dashboard: React.FC = () => {
                             )}
                           </>
                         ) : (
-                          <div className="w-full h-full flex flex-col items-center justify-center py-2 bg-slate-950/80 text-gray-700">
+                          <div className="w-full h-full flex flex-col items-center justify-center py-2 bg-slate-50/80 text-gray-700">
                             <span className="material-symbols-outlined text-lg mb-0.5">videocam_off</span>
                             <span className="text-[7px] font-mono font-bold tracking-wider">{camera.name.toUpperCase()} OFFLINE</span>
                           </div>
@@ -926,11 +926,11 @@ const Dashboard: React.FC = () => {
             </div>
 
             {/* Bottom Panel: Live Alert Center */}
-            <div className="mt-4 bg-slate-900 p-4 rounded-xl border border-slate-850 shadow-xl flex flex-col">
-              <div className="flex items-center justify-between mb-3 border-b border-slate-850 pb-2">
+            <div className="mt-4 bg-white p-4 rounded-xl border border-slate-200 shadow-xl flex flex-col">
+              <div className="flex items-center justify-between mb-3 border-b border-slate-200 pb-2">
                 <div className="flex items-center gap-2">
                   <span className="material-symbols-outlined text-red-500">warning</span>
-                  <h3 className="text-xs font-bold text-white uppercase tracking-wider">Active Security Alerts</h3>
+                  <h3 className="text-xs font-bold text-slate-900 uppercase tracking-wider">Active Security Alerts</h3>
                   <span className="bg-red-600 text-white px-2 py-0.5 rounded-full text-[9px] font-extrabold font-mono animate-pulse">
                     {filteredAlerts.filter(a => a.severity === 'critical').length} CRITICAL
                   </span>
@@ -947,16 +947,16 @@ const Dashboard: React.FC = () => {
                     key={alert.id}
                     className={`flex items-center justify-between gap-4 p-3 rounded-lg border-l-4 ${
                       alert.severity === 'critical' 
-                        ? 'bg-red-500/5 border-red-600 border-y border-r border-slate-850' 
-                        : 'bg-blue-500/5 border-blue-600 border-y border-r border-slate-850'
+                        ? 'bg-red-500/5 border-red-600 border-y border-r border-slate-200' 
+                        : 'bg-blue-500/5 border-blue-600 border-y border-r border-slate-200'
                     }`}
                   >
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-2">
-                        <span className="text-xs font-bold text-white truncate">{alert.title}</span>
+                        <span className="text-xs font-bold text-slate-900 truncate">{alert.title}</span>
                         <span className="font-mono text-[10px] text-gray-500 truncate">• {alert.location}</span>
                       </div>
-                      <p className="text-[11px] text-gray-400 mt-1 truncate">{alert.description}</p>
+                      <p className="text-[11px] text-slate-500 mt-1 truncate">{alert.description}</p>
                     </div>
 
                     <div className="flex gap-2 flex-shrink-0">
@@ -979,29 +979,29 @@ const Dashboard: React.FC = () => {
       {/* Face Capture Preview Modal */}
       {previewImage && (
         <div 
-          className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/80 backdrop-blur-sm p-4"
+          className="fixed inset-0 z-50 flex items-center justify-center bg-slate-50/80 backdrop-blur-sm p-4"
           onClick={() => setPreviewImage(null)}
         >
           <div 
-            className="relative bg-slate-900 border border-slate-800 rounded-2xl max-w-md w-full overflow-hidden shadow-2xl transition-all"
+            className="relative bg-white border border-slate-200 rounded-2xl max-w-md w-full overflow-hidden shadow-2xl transition-all"
             onClick={(e) => e.stopPropagation()}
           >
             {/* Modal Header */}
-            <div className="flex justify-between items-center px-6 py-4 border-b border-slate-800 bg-slate-900/80 backdrop-blur">
-              <h3 className="text-sm font-bold text-white flex items-center gap-2">
+            <div className="flex justify-between items-center px-6 py-4 border-b border-slate-200 bg-white/80 backdrop-blur">
+              <h3 className="text-sm font-bold text-slate-900 flex items-center gap-2">
                 <span className="material-symbols-outlined text-blue-500 text-lg">visibility</span>
                 Face Capture Preview
               </h3>
               <button 
                 onClick={() => setPreviewImage(null)}
-                className="text-gray-400 hover:text-white transition-colors focus:outline-none"
+                className="text-slate-500 hover:text-slate-900 transition-colors focus:outline-none"
               >
                 <span className="material-symbols-outlined text-lg">close</span>
               </button>
             </div>
             {/* Modal Content */}
             <div className="p-6 flex flex-col items-center">
-              <div className="relative w-full aspect-square rounded-xl overflow-hidden bg-slate-950 border border-slate-850 flex items-center justify-center shadow-inner group">
+              <div className="relative w-full aspect-square rounded-xl overflow-hidden bg-slate-50 border border-slate-200 flex items-center justify-center shadow-inner group">
                 <img 
                   src={previewImage.src} 
                   alt={previewImage.title}
@@ -1013,8 +1013,8 @@ const Dashboard: React.FC = () => {
               </div>
               
               <div className="w-full mt-4 text-center">
-                <h4 className="text-base font-bold text-white tracking-wide">{previewImage.title}</h4>
-                <p className="text-[11px] font-mono text-gray-400 mt-1 uppercase tracking-wider">{previewImage.subtitle}</p>
+                <h4 className="text-base font-bold text-slate-900 tracking-wide">{previewImage.title}</h4>
+                <p className="text-[11px] font-mono text-slate-500 mt-1 uppercase tracking-wider">{previewImage.subtitle}</p>
               </div>
             </div>
           </div>

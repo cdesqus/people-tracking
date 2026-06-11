@@ -183,7 +183,7 @@ const VisitorList: React.FC<VisitorListProps> = ({
           />
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">
+            <label className="block text-sm font-medium text-gray-700 dark:text-slate-600 mb-1.5">
               Status
             </label>
             <select
@@ -193,7 +193,7 @@ const VisitorList: React.FC<VisitorListProps> = ({
                   e.target.value as 'all' | 'checked_in' | 'checked_out' | 'expired'
                 )
               }
-              className="w-full px-3 py-2 border border-gray-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-800 text-gray-900 dark:text-white"
+              className="w-full px-3 py-2 border border-gray-300 dark:border-slate-300 rounded-lg bg-white dark:bg-slate-100 text-gray-900 dark:text-slate-900"
             >
               <option value="all">All Statuses</option>
               <option value="checked_in">Checked In</option>

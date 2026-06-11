@@ -54,11 +54,11 @@ const Input = forwardRef<HTMLInputElement, InputProps>(
       sizeStyles.padding,
       sizeStyles.fontSize,
       sizeStyles.height,
-      'bg-white dark:bg-slate-800',
-      'border border-gray-300 dark:border-slate-600',
+      'bg-white dark:bg-slate-100',
+      'border border-gray-300 dark:border-slate-300',
       'rounded-lg',
       'placeholder-gray-400 dark:placeholder-slate-500',
-      'text-gray-900 dark:text-white',
+      'text-gray-900 dark:text-slate-900',
       hasError ? COMMON_STYLES.errorBorder : '',
       disabled ? COMMON_STYLES.disabledInput : '',
       COMMON_STYLES.focusRing,
@@ -76,7 +76,7 @@ const Input = forwardRef<HTMLInputElement, InputProps>(
         {label && (
           <label
             htmlFor={rest.id}
-            className="mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-300"
+            className="mb-1.5 block text-sm font-medium text-gray-700 dark:text-slate-600"
           >
             {label}
             {rest.required && <span className="text-red-500 ml-0.5">*</span>}
@@ -85,7 +85,7 @@ const Input = forwardRef<HTMLInputElement, InputProps>(
 
         <div className="relative">
           {leftIcon && (
-            <div className="absolute left-3 top-1/2 -translate-y-1/2 flex items-center text-gray-500 dark:text-gray-400 pointer-events-none">
+            <div className="absolute left-3 top-1/2 -translate-y-1/2 flex items-center text-gray-500 dark:text-slate-500 pointer-events-none">
               {leftIcon}
             </div>
           )}
@@ -102,7 +102,7 @@ const Input = forwardRef<HTMLInputElement, InputProps>(
           />
 
           {rightIcon && (
-            <div className="absolute right-3 top-1/2 -translate-y-1/2 flex items-center text-gray-500 dark:text-gray-400 pointer-events-none">
+            <div className="absolute right-3 top-1/2 -translate-y-1/2 flex items-center text-gray-500 dark:text-slate-500 pointer-events-none">
               {rightIcon}
             </div>
           )}
@@ -121,7 +121,7 @@ const Input = forwardRef<HTMLInputElement, InputProps>(
         {helperText && !error && (
           <p
             id={`${rest.id}-helper`}
-            className="mt-1 text-sm text-gray-500 dark:text-gray-400"
+            className="mt-1 text-sm text-gray-500 dark:text-slate-500"
           >
             {helperText}
           </p>

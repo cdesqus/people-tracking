@@ -251,7 +251,7 @@ const ReportGenerator: React.FC = () => {
         {/* Export Options */}
         <div className="pt-4 border-t border-gray-200 dark:border-gray-700">
           <div className="flex flex-wrap gap-3 items-center">
-            <span className="text-sm font-medium text-gray-700 dark:text-gray-300">
+            <span className="text-sm font-medium text-gray-700 dark:text-slate-600">
               Export Report:
             </span>
             <Button

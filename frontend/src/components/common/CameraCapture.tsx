@@ -79,7 +79,7 @@ const CameraCapture: React.FC<CameraCaptureProps> = ({ onCapture, onClose }) => 
   };
 
   return (
-    <div className="flex flex-col items-center gap-4 bg-slate-50 dark:bg-slate-900/50 p-4 rounded-xl border border-slate-200 dark:border-slate-800 w-full">
+    <div className="flex flex-col items-center gap-4 bg-slate-50 dark:bg-white/50 p-4 rounded-xl border border-slate-200 dark:border-slate-200 w-full">
       {error ? (
         <div className="text-sm text-red-500 text-center py-6">
           <VideoOff className="w-10 h-10 mx-auto mb-2 text-red-500" />
@@ -89,7 +89,7 @@ const CameraCapture: React.FC<CameraCaptureProps> = ({ onCapture, onClose }) => 
           </Button>
         </div>
       ) : (
-        <div className="relative w-full max-w-sm aspect-video bg-black rounded-lg overflow-hidden border border-slate-300 dark:border-slate-700">
+        <div className="relative w-full max-w-sm aspect-video bg-black rounded-lg overflow-hidden border border-slate-300 dark:border-slate-300">
           <video
             ref={videoRef}
             autoPlay

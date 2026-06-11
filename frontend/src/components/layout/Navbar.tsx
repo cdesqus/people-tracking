@@ -47,7 +47,7 @@ const Navbar: React.FC = () => {
   };
 
   return (
-    <nav className="bg-gradient-to-r from-slate-900 to-slate-800 text-white shadow-lg sticky top-0 z-40">
+    <nav className="bg-white text-slate-900 border-b border-slate-200 shadow-sm sticky top-0 z-40">
       <div className="px-4 py-3 sm:px-6 sm:py-4">
         <div className="flex items-center justify-between h-16 gap-4">
           {/* Left: Hamburger + Logo */}
@@ -55,7 +55,7 @@ const Navbar: React.FC = () => {
             {/* Hamburger Menu */}
             <button
               onClick={toggle}
-              className="p-2 rounded-lg hover:bg-slate-700 transition-colors lg:hidden text-gray-300 hover:text-white"
+              className="p-2 rounded-lg hover:bg-slate-200 transition-colors lg:hidden text-slate-600 hover:text-slate-900"
               aria-label="Toggle sidebar"
             >
               {sidebarOpen ? <X size={24} /> : <Menu size={24} />}
@@ -81,7 +81,7 @@ const Navbar: React.FC = () => {
 
           {/* Center: Title */}
           <div className="hidden sm:block flex-1 text-center">
-            <h1 className="text-xl font-semibold text-gray-100">
+            <h1 className="text-xl font-semibold text-slate-800">
               Face Recognition Dashboard
             </h1>
           </div>
@@ -91,7 +91,7 @@ const Navbar: React.FC = () => {
             {/* Notifications - Hidden on mobile */}
             <button 
               onClick={() => navigate('/alerts')}
-              className="hidden sm:flex p-2 rounded-lg hover:bg-slate-700 transition-colors relative text-gray-300 hover:text-white"
+              className="hidden sm:flex p-2 rounded-lg hover:bg-slate-200 transition-colors relative text-slate-600 hover:text-slate-900"
               title="View Alerts"
             >
               <Bell size={20} />
@@ -99,7 +99,7 @@ const Navbar: React.FC = () => {
             </button>
 
             {/* Settings - Hidden on mobile */}
-            <button className="hidden sm:flex p-2 rounded-lg hover:bg-slate-700 transition-colors text-gray-300 hover:text-white">
+            <button className="hidden sm:flex p-2 rounded-lg hover:bg-slate-200 transition-colors text-slate-600 hover:text-slate-900">
               <Settings size={20} />
             </button>
 
@@ -107,7 +107,7 @@ const Navbar: React.FC = () => {
             <div className="relative">
               <button
                 onClick={() => setProfileDropdownOpen(!profileDropdownOpen)}
-                className="flex items-center gap-2 px-3 py-2 rounded-lg hover:bg-slate-700 transition-colors text-gray-300 hover:text-white"
+                className="flex items-center gap-2 px-3 py-2 rounded-lg hover:bg-slate-200 transition-colors text-slate-600 hover:text-slate-900"
               >
                 <div
                   className={`w-9 h-9 rounded-lg ${getRoleColor(
@@ -117,10 +117,10 @@ const Navbar: React.FC = () => {
                   {getInitials(user?.full_name || 'User')}
                 </div>
                 <div className="hidden sm:flex flex-col items-start gap-0">
-                  <span className="text-xs font-medium text-gray-200">
+                  <span className="text-xs font-medium text-slate-700">
                     {user?.full_name || 'User'}
                   </span>
-                  <span className="text-xs text-gray-400 capitalize">
+                  <span className="text-xs text-slate-500 capitalize">
                     {user?.role || 'viewer'}
                   </span>
                 </div>
@@ -141,7 +141,7 @@ const Navbar: React.FC = () => {
                       {user?.full_name || 'User'}
                     </p>
                     <p className="text-xs text-gray-500">{user?.email}</p>
-                    <p className="text-xs text-gray-400 capitalize mt-1">
+                    <p className="text-xs text-slate-500 capitalize mt-1">
                       Role: {user?.role || 'viewer'}
                     </p>
                   </div>
@@ -178,7 +178,7 @@ const Navbar: React.FC = () => {
             {/* Mobile Menu Toggle */}
             <button
               onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-              className="sm:hidden p-2 rounded-lg hover:bg-slate-700 transition-colors text-gray-300 hover:text-white"
+              className="sm:hidden p-2 rounded-lg hover:bg-slate-200 transition-colors text-slate-600 hover:text-slate-900"
               aria-label="Toggle mobile menu"
             >
               {mobileMenuOpen ? <X size={24} /> : <Menu size={24} />}
@@ -188,21 +188,21 @@ const Navbar: React.FC = () => {
 
         {/* Mobile Menu - Only show on mobile */}
         {mobileMenuOpen && (
-          <div className="sm:hidden border-t border-slate-700 mt-4 pt-4 pb-2 px-2">
-            <div className="rounded-lg bg-slate-800 p-3 mb-2">
-              <p className="text-xs font-medium text-gray-300">Logged in as:</p>
-              <p className="text-sm font-semibold text-white mt-1">
+          <div className="sm:hidden border-t border-slate-300 mt-4 pt-4 pb-2 px-2">
+            <div className="rounded-lg bg-slate-100 p-3 mb-2">
+              <p className="text-xs font-medium text-slate-600">Logged in as:</p>
+              <p className="text-sm font-semibold text-slate-900 mt-1">
                 {user?.full_name}
               </p>
-              <p className="text-xs text-gray-400 capitalize">
+              <p className="text-xs text-slate-500 capitalize">
                 {user?.role}
               </p>
             </div>
-            <button className="w-full text-left px-3 py-2 text-sm text-gray-300 hover:text-white hover:bg-slate-700 rounded-md flex items-center gap-2 transition-colors">
+            <button className="w-full text-left px-3 py-2 text-sm text-slate-600 hover:text-slate-900 hover:bg-slate-200 rounded-md flex items-center gap-2 transition-colors">
               <Bell size={16} />
               <span>Notifications</span>
             </button>
-            <button className="w-full text-left px-3 py-2 text-sm text-gray-300 hover:text-white hover:bg-slate-700 rounded-md flex items-center gap-2 transition-colors">
+            <button className="w-full text-left px-3 py-2 text-sm text-slate-600 hover:text-slate-900 hover:bg-slate-200 rounded-md flex items-center gap-2 transition-colors">
               <Settings size={16} />
               <span>Settings</span>
             </button>

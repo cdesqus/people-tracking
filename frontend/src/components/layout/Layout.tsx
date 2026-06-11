@@ -38,7 +38,7 @@ const Layout: React.FC = () => {
   }, [sidebarOpen]);
 
   return (
-    <div className="flex flex-col h-screen bg-gray-50 dark:bg-slate-950 text-gray-900 dark:text-gray-100 transition-colors duration-200 overflow-hidden">
+    <div className="flex flex-col h-screen bg-gray-50 dark:bg-slate-50 text-gray-900 dark:text-slate-800 transition-colors duration-200 overflow-hidden">
       {/* Navbar */}
       <Navbar />
 

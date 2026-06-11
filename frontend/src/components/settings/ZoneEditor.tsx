@@ -157,12 +157,12 @@ const ZoneEditor: React.FC<ZoneEditorProps> = ({ isOpen, onClose, onSave, camera
   return (
     <Modal isOpen={isOpen} onClose={onClose} title={`Draw Intrusion Zone - ${camera.name}`} size="lg">
       <div className="space-y-4">
-        <p className="text-sm text-gray-600 dark:text-gray-400">
+        <p className="text-sm text-gray-600 dark:text-slate-500">
           Click on the image to draw a polygon. Click near the starting point to close the shape. 
           Any person entering these red zones will trigger an alert.
         </p>
 
-        <div className="relative border border-gray-300 dark:border-slate-700 rounded-lg overflow-hidden bg-black flex justify-center items-center">
+        <div className="relative border border-gray-300 dark:border-slate-300 rounded-lg overflow-hidden bg-black flex justify-center items-center">
           <img
             ref={imgRef}
             src={`${API_BASE_URL}/cameras/${camera.id}/snapshot?t=${new Date().getTime()}`}
@@ -179,7 +179,7 @@ const ZoneEditor: React.FC<ZoneEditorProps> = ({ isOpen, onClose, onSave, camera
           />
         </div>
 
-        <div className="flex justify-between items-center mt-4 pt-4 border-t border-gray-200 dark:border-slate-700">
+        <div className="flex justify-between items-center mt-4 pt-4 border-t border-gray-200 dark:border-slate-300">
           <Button variant="secondary" onClick={handleClear} size="sm">
             Clear All Zones
           </Button>

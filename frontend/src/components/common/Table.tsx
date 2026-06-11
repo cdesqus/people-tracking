@@ -75,25 +75,25 @@ const Table: React.FC<TableProps> = ({
 
   if (!data || data.length === 0) {
     return (
-      <div className="w-full p-8 text-center text-gray-500 dark:text-gray-400">
+      <div className="w-full p-8 text-center text-gray-500 dark:text-slate-500">
         {emptyMessage}
       </div>
     );
   }
 
   return (
-    <div className="overflow-auto max-h-[calc(100vh-220px)] rounded-lg border border-gray-200 dark:border-slate-700 relative">
+    <div className="overflow-auto max-h-[calc(100vh-220px)] rounded-lg border border-gray-200 dark:border-slate-300 relative">
       <table
-        className={`w-full text-sm text-gray-900 dark:text-white ${className}`}
+        className={`w-full text-sm text-gray-900 dark:text-slate-900 ${className}`}
         role="grid"
         {...rest}
       >
-        <thead className="bg-gray-50 dark:bg-slate-700 border-b border-gray-200 dark:border-slate-600 sticky top-0 z-10 shadow-[inset_0_-1px_0_rgba(0,0,0,0.1)]">
+        <thead className="bg-gray-50 dark:bg-slate-200 border-b border-gray-200 dark:border-slate-300 sticky top-0 z-10 shadow-[inset_0_-1px_0_rgba(0,0,0,0.1)]">
           <tr>
             {columns.map((column) => (
               <th
                 key={column.key}
-                className="px-6 py-3 font-semibold text-left text-gray-700 dark:text-gray-200 sticky top-0 bg-gray-50 dark:bg-slate-700 z-10"
+                className="px-6 py-3 font-semibold text-left text-gray-700 dark:text-slate-700 sticky top-0 bg-gray-50 dark:bg-slate-200 z-10"
                 style={{ width: column.width }}
                 scope="col"
               >
@@ -142,13 +142,13 @@ const Table: React.FC<TableProps> = ({
           {data.map((row, rowIndex) => (
             <tr
               key={rowIndex}
-              className={`border-b border-gray-200 dark:border-slate-700 ${
+              className={`border-b border-gray-200 dark:border-slate-300 ${
                 striped && rowIndex % 2 === 0
-                  ? 'bg-gray-50 dark:bg-slate-800/50'
+                  ? 'bg-gray-50 dark:bg-slate-100/50'
                   : ''
               } ${
                 hoverable
-                  ? `hover:bg-gray-100 dark:hover:bg-slate-700 ${TRANSITIONS.base}`
+                  ? `hover:bg-gray-100 dark:hover:bg-slate-200 ${TRANSITIONS.base}`
                   : ''
               } ${onRowClick ? 'cursor-pointer' : ''}`}
               onClick={() => onRowClick?.(row)}

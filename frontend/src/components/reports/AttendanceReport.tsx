@@ -224,7 +224,7 @@ const AttendanceReport: React.FC = () => {
           <div className="p-6 h-64 flex flex-col gap-2">
             {chartData.slice(0, 7).map((item, idx) => (
               <div key={idx} className="flex items-center gap-3">
-                <span className="text-sm font-medium w-24 text-gray-600 dark:text-gray-400">
+                <span className="text-sm font-medium w-24 text-gray-600 dark:text-slate-500">
                   {item.date}
                 </span>
                 <div className="flex-1 bg-gray-200 dark:bg-gray-700 rounded-full h-6 overflow-hidden">
@@ -233,7 +233,7 @@ const AttendanceReport: React.FC = () => {
                     style={{ width: `${(item.count / Math.max(...chartData.map(d => d.count))) * 100}%` }}
                   />
                 </div>
-                <span className="text-sm font-semibold text-gray-900 dark:text-white w-12">
+                <span className="text-sm font-semibold text-gray-900 dark:text-slate-900 w-12">
                   {item.count}
                 </span>
               </div>
@@ -255,7 +255,7 @@ const AttendanceReport: React.FC = () => {
               );
               return (
                 <div key={dept} className="flex items-center gap-3">
-                  <span className="text-sm font-medium w-24 text-gray-600 dark:text-gray-400">
+                  <span className="text-sm font-medium w-24 text-gray-600 dark:text-slate-500">
                     {dept}
                   </span>
                   <div className="flex-1 bg-gray-200 dark:bg-gray-700 rounded-full h-6 overflow-hidden">
@@ -264,7 +264,7 @@ const AttendanceReport: React.FC = () => {
                       style={{ width: `${(count / Math.max(max, 1)) * 100}%` }}
                     />
                   </div>
-                  <span className="text-sm font-semibold text-gray-900 dark:text-white w-12">
+                  <span className="text-sm font-semibold text-gray-900 dark:text-slate-900 w-12">
                     {count}
                   </span>
                 </div>

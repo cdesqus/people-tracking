@@ -102,7 +102,7 @@ const VisitorReport: React.FC = () => {
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         <Card className="bg-blue-50 dark:bg-blue-900/20 border-blue-200 dark:border-blue-800">
           <div className="p-6">
-            <p className="text-sm font-medium text-blue-600 dark:text-blue-400">
+            <p className="text-sm font-medium text-blue-600 dark:text-blue-600">
               Total Visitors
             </p>
             <p className="text-3xl font-bold text-blue-700 dark:text-blue-300 mt-2">
@@ -194,11 +194,11 @@ const VisitorReport: React.FC = () => {
                           className="w-3 h-3 rounded-full"
                           style={{ backgroundColor: colors[idx % colors.length] }}
                         />
-                        <span className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                        <span className="text-sm font-medium text-gray-700 dark:text-slate-600">
                           {org}
                         </span>
                       </div>
-                      <span className="text-sm font-semibold text-gray-900 dark:text-white">
+                      <span className="text-sm font-semibold text-gray-900 dark:text-slate-900">
                         {percent}%
                       </span>
                     </div>
@@ -211,7 +211,7 @@ const VisitorReport: React.FC = () => {
                         }}
                       />
                     </div>
-                    <span className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                    <span className="text-xs text-gray-500 dark:text-slate-500 mt-1">
                       {count} visitors
                     </span>
                   </div>
@@ -233,7 +233,7 @@ const VisitorReport: React.FC = () => {
               );
               return (
                 <div key={idx} className="flex items-center gap-3">
-                  <span className="text-sm font-medium w-24 text-gray-600 dark:text-gray-400">
+                  <span className="text-sm font-medium w-24 text-gray-600 dark:text-slate-500">
                     {host}
                   </span>
                   <div className="flex-1 bg-gray-200 dark:bg-gray-700 rounded-full h-6 overflow-hidden">
@@ -244,7 +244,7 @@ const VisitorReport: React.FC = () => {
                       }}
                     />
                   </div>
-                  <span className="text-sm font-semibold text-gray-900 dark:text-white w-12">
+                  <span className="text-sm font-semibold text-gray-900 dark:text-slate-900 w-12">
                     {count}
                   </span>
                 </div>

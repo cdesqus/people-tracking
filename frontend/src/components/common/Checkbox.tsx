@@ -59,7 +59,7 @@ const Checkbox = forwardRef<HTMLInputElement, CheckboxProps>(
               className={`w-11 h-6 rounded-full border-2 transition-colors ${TRANSITIONS.base} ${
                 rest.checked
                   ? 'bg-sky-500 border-sky-500 dark:bg-sky-600'
-                  : 'bg-gray-300 border-gray-300 dark:bg-slate-600 dark:border-slate-600'
+                  : 'bg-gray-300 border-gray-300 dark:bg-slate-600 dark:border-slate-300'
               } ${disabled ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer peer-focus:ring-2 peer-focus:ring-sky-500 peer-focus:ring-offset-2'}`}
             >
               <div
@@ -74,7 +74,7 @@ const Checkbox = forwardRef<HTMLInputElement, CheckboxProps>(
             <div>
               <label
                 htmlFor={inputId}
-                className={`text-sm font-medium text-gray-700 dark:text-gray-300 ${
+                className={`text-sm font-medium text-gray-700 dark:text-slate-600 ${
                   disabled ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'
                 }`}
               >
@@ -99,7 +99,7 @@ const Checkbox = forwardRef<HTMLInputElement, CheckboxProps>(
             ref={ref}
             id={inputId}
             type="checkbox"
-            className={`w-5 h-5 rounded border-2 border-gray-300 dark:border-slate-600 cursor-pointer accent-sky-500 ${TRANSITIONS.base} ${
+            className={`w-5 h-5 rounded border-2 border-gray-300 dark:border-slate-300 cursor-pointer accent-sky-500 ${TRANSITIONS.base} ${
               error ? 'border-red-500' : ''
             } ${disabled ? 'opacity-50 cursor-not-allowed' : ''} ${className}`}
             disabled={disabled}
@@ -112,7 +112,7 @@ const Checkbox = forwardRef<HTMLInputElement, CheckboxProps>(
           <div className="flex-1">
             <label
               htmlFor={inputId}
-              className={`text-sm font-medium text-gray-700 dark:text-gray-300 ${
+              className={`text-sm font-medium text-gray-700 dark:text-slate-600 ${
                 disabled ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'
               }`}
             >

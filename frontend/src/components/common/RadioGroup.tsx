@@ -58,7 +58,7 @@ const RadioGroup: React.FC<RadioGroupProps> = ({
       {...rest}
     >
       {label && (
-        <legend className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">
+        <legend className="text-sm font-medium text-gray-700 dark:text-slate-600 mb-3">
           {label}
           {rest.required && <span className="text-red-500 ml-0.5">*</span>}
         </legend>
@@ -97,7 +97,7 @@ const RadioGroup: React.FC<RadioGroupProps> = ({
               <div className="flex-1">
                 <label
                   htmlFor={optionId}
-                  className={`text-sm font-medium text-gray-700 dark:text-gray-300 ${
+                  className={`text-sm font-medium text-gray-700 dark:text-slate-600 ${
                     option.disabled ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'
                   }`}
                 >
@@ -107,7 +107,7 @@ const RadioGroup: React.FC<RadioGroupProps> = ({
                 {option.description && (
                   <p
                     id={`${optionId}-description`}
-                    className="text-xs text-gray-500 dark:text-gray-400 mt-1"
+                    className="text-xs text-gray-500 dark:text-slate-500 mt-1"
                   >
                     {option.description}
                   </p>

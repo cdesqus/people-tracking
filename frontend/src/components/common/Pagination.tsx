@@ -111,7 +111,7 @@ const Pagination: React.FC<PaginationProps> = ({
       {...rest}
     >
       {/* Left info section */}
-      <div className="text-sm text-gray-600 dark:text-gray-400">
+      <div className="text-sm text-gray-600 dark:text-slate-500">
         {totalItems && (
           <p>
             Showing page {currentPage} of {totalPages}
@@ -126,10 +126,10 @@ const Pagination: React.FC<PaginationProps> = ({
         <button
           onClick={handlePrevious}
           disabled={currentPage === 1}
-          className={`px-3 py-2 rounded-lg border border-gray-300 dark:border-slate-600 text-gray-900 dark:text-white text-sm font-medium ${
+          className={`px-3 py-2 rounded-lg border border-gray-300 dark:border-slate-300 text-gray-900 dark:text-slate-900 text-sm font-medium ${
             currentPage === 1
               ? 'opacity-50 cursor-not-allowed'
-              : 'hover:bg-gray-100 dark:hover:bg-slate-700'
+              : 'hover:bg-gray-100 dark:hover:bg-slate-200'
           } ${TRANSITIONS.base}`}
           aria-label="Previous page"
         >
@@ -155,7 +155,7 @@ const Pagination: React.FC<PaginationProps> = ({
               return (
                 <span
                   key={`ellipsis-${index}`}
-                  className="px-2 py-2 text-gray-600 dark:text-gray-400"
+                  className="px-2 py-2 text-gray-600 dark:text-slate-500"
                 >
                   {page}
                 </span>
@@ -170,7 +170,7 @@ const Pagination: React.FC<PaginationProps> = ({
                 className={`px-3 py-2 rounded-lg text-sm font-medium border ${
                   isActive
                     ? 'bg-sky-500 text-white border-sky-500'
-                    : 'border-gray-300 dark:border-slate-600 text-gray-900 dark:text-white hover:bg-gray-100 dark:hover:bg-slate-700'
+                    : 'border-gray-300 dark:border-slate-300 text-gray-900 dark:text-slate-900 hover:bg-gray-100 dark:hover:bg-slate-200'
                 } ${TRANSITIONS.base}`}
                 aria-current={isActive ? 'page' : undefined}
               >
@@ -184,10 +184,10 @@ const Pagination: React.FC<PaginationProps> = ({
         <button
           onClick={handleNext}
           disabled={currentPage === totalPages}
-          className={`px-3 py-2 rounded-lg border border-gray-300 dark:border-slate-600 text-gray-900 dark:text-white text-sm font-medium ${
+          className={`px-3 py-2 rounded-lg border border-gray-300 dark:border-slate-300 text-gray-900 dark:text-slate-900 text-sm font-medium ${
             currentPage === totalPages
               ? 'opacity-50 cursor-not-allowed'
-              : 'hover:bg-gray-100 dark:hover:bg-slate-700'
+              : 'hover:bg-gray-100 dark:hover:bg-slate-200'
           } ${TRANSITIONS.base}`}
           aria-label="Next page"
         >
@@ -213,7 +213,7 @@ const Pagination: React.FC<PaginationProps> = ({
           <div className="flex items-center gap-2 text-sm">
             <label
               htmlFor="page-size"
-              className="text-gray-600 dark:text-gray-400"
+              className="text-gray-600 dark:text-slate-500"
             >
               Per page:
             </label>
@@ -223,7 +223,7 @@ const Pagination: React.FC<PaginationProps> = ({
               onChange={(e) => {
                 // Implement page size change in parent
               }}
-              className="px-2 py-1 border border-gray-300 dark:border-slate-600 rounded bg-white dark:bg-slate-800 text-gray-900 dark:text-white text-sm"
+              className="px-2 py-1 border border-gray-300 dark:border-slate-300 rounded bg-white dark:bg-slate-100 text-gray-900 dark:text-slate-900 text-sm"
             >
               <option value={5}>5</option>
               <option value={10}>10</option>
@@ -237,7 +237,7 @@ const Pagination: React.FC<PaginationProps> = ({
           <div className="flex items-center gap-2 text-sm">
             <label
               htmlFor="quick-jump"
-              className="text-gray-600 dark:text-gray-400"
+              className="text-gray-600 dark:text-slate-500"
             >
               Go to:
             </label>
@@ -250,7 +250,7 @@ const Pagination: React.FC<PaginationProps> = ({
                 value={jumpPage}
                 onChange={(e) => setJumpPage(e.target.value)}
                 onKeyPress={(e) => e.key === 'Enter' && handleJump()}
-                className="w-12 px-2 py-1 border border-gray-300 dark:border-slate-600 rounded bg-white dark:bg-slate-800 text-gray-900 dark:text-white text-sm"
+                className="w-12 px-2 py-1 border border-gray-300 dark:border-slate-300 rounded bg-white dark:bg-slate-100 text-gray-900 dark:text-slate-900 text-sm"
               />
               <button
                 onClick={handleJump}

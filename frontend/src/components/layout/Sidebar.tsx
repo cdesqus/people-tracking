@@ -120,14 +120,14 @@ const Sidebar: React.FC = () => {
     <>
       {/* Desktop Sidebar */}
       <aside
-        className={`hidden lg:flex flex-col bg-slate-900 text-gray-100 shadow-xl transition-all duration-300 ease-in-out ${
+        className={`hidden lg:flex flex-col bg-white text-slate-800 shadow-xl transition-all duration-300 ease-in-out ${
           sidebarOpen ? 'w-64' : 'w-20'
         }`}
       >
         {/* Logo Section (Click to Toggle) */}
         <div 
           onClick={toggle}
-          className="flex-shrink-0 px-4 py-6 border-b border-slate-800 flex items-center justify-center cursor-pointer hover:bg-slate-800/50 transition-colors"
+          className="flex-shrink-0 px-4 py-6 border-b border-slate-200 flex items-center justify-center cursor-pointer hover:bg-slate-100/50 transition-colors"
           title="Toggle Sidebar"
         >
           <div className="flex items-center gap-3">
@@ -136,7 +136,7 @@ const Sidebar: React.FC = () => {
             </div>
             {sidebarOpen && (
               <div className="flex flex-col gap-0">
-                <span className="text-sm font-bold text-gray-200 tracking-wider">
+                <span className="text-sm font-bold text-slate-700 tracking-wider">
                   DASHBOARD
                 </span>
               </div>
@@ -157,7 +157,7 @@ const Sidebar: React.FC = () => {
                 className={`group flex items-center gap-3 px-4 py-3 rounded-lg transition-all duration-200 relative ${
                   active
                     ? 'bg-blue-600 text-white shadow-md'
-                    : 'text-gray-400 hover:text-gray-200 hover:bg-slate-800'
+                    : 'text-slate-500 hover:text-slate-700 hover:bg-slate-100'
                 }`}
                 title={!sidebarOpen ? item.label : undefined}
               >
@@ -184,7 +184,7 @@ const Sidebar: React.FC = () => {
         </nav>
 
         {/* Footer */}
-        <div className="flex-shrink-0 px-4 py-4 border-t border-slate-800">
+        <div className="flex-shrink-0 px-4 py-4 border-t border-slate-200">
           {sidebarOpen ? (
             <div className="text-center">
               <p className="text-xs text-gray-500 font-medium">Version</p>
@@ -200,7 +200,7 @@ const Sidebar: React.FC = () => {
       </aside>
 
       {/* Mobile Bottom Navigation */}
-      <nav className="fixed bottom-0 left-0 right-0 bg-slate-900 border-t border-slate-800 flex lg:hidden justify-around items-center h-20 z-40 shadow-xl">
+      <nav className="fixed bottom-0 left-0 right-0 bg-white border-t border-slate-200 flex lg:hidden justify-around items-center h-20 z-40 shadow-xl">
         {menuItems.slice(0, 5).map((item) => {
           const Icon = item.icon;
           const active = isActive(item.path);
@@ -212,7 +212,7 @@ const Sidebar: React.FC = () => {
               className={`flex flex-col items-center gap-1 px-4 py-3 flex-1 transition-all relative ${
                 active
                   ? 'text-blue-500'
-                  : 'text-gray-400 hover:text-gray-300'
+                  : 'text-slate-500 hover:text-slate-600'
               }`}
               title={item.label}
             >

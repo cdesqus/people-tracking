@@ -98,7 +98,7 @@ const FileUpload = forwardRef<HTMLInputElement, FileUploadProps>(
         {label && (
           <label
             htmlFor={inputId}
-            className="mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-300"
+            className="mb-1.5 block text-sm font-medium text-gray-700 dark:text-slate-600"
           >
             {label}
             {rest.required && <span className="text-red-500 ml-0.5">*</span>}
@@ -109,7 +109,7 @@ const FileUpload = forwardRef<HTMLInputElement, FileUploadProps>(
           className={`border-2 border-dashed rounded-lg p-6 text-center ${
             error || localError
               ? 'border-red-300 dark:border-red-600 bg-red-50 dark:bg-red-900/20'
-              : 'border-gray-300 dark:border-slate-600 bg-gray-50 dark:bg-slate-800 hover:border-gray-400 dark:hover:border-slate-500'
+              : 'border-gray-300 dark:border-slate-300 bg-gray-50 dark:bg-slate-100 hover:border-gray-400 dark:hover:border-slate-500'
           } ${TRANSITIONS.base} ${disabled ? 'opacity-50 cursor-not-allowed' : ''}`}
         >
           <input
@@ -154,10 +154,10 @@ const FileUpload = forwardRef<HTMLInputElement, FileUploadProps>(
               </div>
 
               <div>
-                <p className="text-sm font-medium text-gray-900 dark:text-white">
+                <p className="text-sm font-medium text-gray-900 dark:text-slate-900">
                   {file.name}
                 </p>
-                <p className="text-xs text-gray-600 dark:text-gray-400">
+                <p className="text-xs text-gray-600 dark:text-slate-500">
                   {(file.size / 1024).toFixed(2)} KB
                 </p>
               </div>
@@ -194,7 +194,7 @@ const FileUpload = forwardRef<HTMLInputElement, FileUploadProps>(
               onClick={() => !disabled && inputRef.current?.click()}
             >
               <svg
-                className="mx-auto h-12 w-12 text-gray-400 dark:text-gray-500"
+                className="mx-auto h-12 w-12 text-slate-500 dark:text-gray-500"
                 stroke="currentColor"
                 fill="none"
                 viewBox="0 0 48 48"
@@ -213,10 +213,10 @@ const FileUpload = forwardRef<HTMLInputElement, FileUploadProps>(
                 />
               </svg>
 
-              <p className="text-sm font-medium text-gray-900 dark:text-white mt-2">
+              <p className="text-sm font-medium text-gray-900 dark:text-slate-900 mt-2">
                 Click to upload
               </p>
-              <p className="text-xs text-gray-500 dark:text-gray-400">
+              <p className="text-xs text-gray-500 dark:text-slate-500">
                 or drag and drop
               </p>
             </div>
@@ -234,7 +234,7 @@ const FileUpload = forwardRef<HTMLInputElement, FileUploadProps>(
         )}
 
         {maxSize && !error && !localError && (
-          <p className="text-xs text-gray-500 dark:text-gray-400 mt-2">
+          <p className="text-xs text-gray-500 dark:text-slate-500 mt-2">
             Max file size: {(maxSize / 1024 / 1024).toFixed(2)}MB
           </p>
         )}

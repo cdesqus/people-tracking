@@ -68,7 +68,7 @@ const DatePicker = forwardRef<HTMLInputElement, DatePickerProps>(
         {label && (
           <label
             htmlFor={inputId}
-            className="mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-300"
+            className="mb-1.5 block text-sm font-medium text-gray-700 dark:text-slate-600"
           >
             {label}
             {rest.required && <span className="text-red-500 ml-0.5">*</span>}
@@ -87,14 +87,14 @@ const DatePicker = forwardRef<HTMLInputElement, DatePickerProps>(
             disabled={disabled}
             aria-invalid={!!error}
             aria-describedby={error ? `${inputId}-error` : undefined}
-            className={`w-full px-4 py-2 h-10 bg-white dark:bg-slate-800 border rounded-lg text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-slate-500 ${
+            className={`w-full px-4 py-2 h-10 bg-white dark:bg-slate-100 border rounded-lg text-gray-900 dark:text-slate-900 placeholder-gray-400 dark:placeholder-slate-500 ${
               error ? COMMON_STYLES.errorBorder : COMMON_STYLES.inputBorder
             } ${disabled ? COMMON_STYLES.disabledInput : ''} ${COMMON_STYLES.focusRing} ${TRANSITIONS.base} appearance-none ${className}`}
             {...rest}
           />
 
           {/* Calendar icon */}
-          <div className="absolute right-3 top-1/2 -translate-y-1/2 flex items-center text-gray-500 dark:text-gray-400 pointer-events-none">
+          <div className="absolute right-3 top-1/2 -translate-y-1/2 flex items-center text-gray-500 dark:text-slate-500 pointer-events-none">
             <svg
               className="w-5 h-5"
               fill="none"
@@ -122,7 +122,7 @@ const DatePicker = forwardRef<HTMLInputElement, DatePickerProps>(
         )}
 
         {range && (
-          <p className="text-xs text-gray-500 dark:text-gray-400 mt-2">
+          <p className="text-xs text-gray-500 dark:text-slate-500 mt-2">
             Range selection - set start and end dates separately
           </p>
         )}

@@ -77,10 +77,10 @@ const NotificationSettings: React.FC = () => {
         <div className="space-y-4">
           <div className="flex items-center justify-between p-4 border border-gray-200 dark:border-gray-700 rounded-lg">
             <div>
-              <p className="font-medium text-gray-900 dark:text-white">
+              <p className="font-medium text-gray-900 dark:text-slate-900">
                 Enable Email Notifications
               </p>
-              <p className="text-sm text-gray-600 dark:text-gray-400">
+              <p className="text-sm text-gray-600 dark:text-slate-500">
                 Receive alerts via email
               </p>
             </div>
@@ -116,7 +116,7 @@ const NotificationSettings: React.FC = () => {
                     })
                   }
                 />
-                <label className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                <label className="text-sm font-medium text-gray-700 dark:text-slate-600">
                   Send alerts
                 </label>
               </div>
@@ -137,7 +137,7 @@ const NotificationSettings: React.FC = () => {
                     })
                   }
                 />
-                <label className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                <label className="text-sm font-medium text-gray-700 dark:text-slate-600">
                   Send daily report
                 </label>
               </div>
@@ -158,7 +158,7 @@ const NotificationSettings: React.FC = () => {
                     })
                   }
                 />
-                <label className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                <label className="text-sm font-medium text-gray-700 dark:text-slate-600">
                   Send weekly summary
                 </label>
               </div>
@@ -185,7 +185,7 @@ const NotificationSettings: React.FC = () => {
             }
             placeholder="https://hooks.slack.com/services/..."
           />
-          <p className="text-xs text-gray-500 dark:text-gray-400">
+          <p className="text-xs text-gray-500 dark:text-slate-500">
             Get your webhook URL from Slack app configuration
           </p>
         </div>

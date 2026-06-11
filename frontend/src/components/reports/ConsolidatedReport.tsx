@@ -18,7 +18,7 @@ const ConsolidatedReport: React.FC = () => {
     return (
       <div className="flex items-center justify-center p-12">
         <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-blue-500"></div>
-        <span className="ml-3 text-gray-600 dark:text-gray-400">Loading consolidated analytics...</span>
+        <span className="ml-3 text-gray-600 dark:text-slate-500">Loading consolidated analytics...</span>
       </div>
     );
   }
@@ -26,7 +26,7 @@ const ConsolidatedReport: React.FC = () => {
   if (!consolidatedData) {
     return (
       <Card className="text-center p-8">
-        <p className="text-gray-500 dark:text-gray-400">
+        <p className="text-gray-500 dark:text-slate-500">
           No consolidated report generated yet. Click "Generate Report" above to load data.
         </p>
       </Card>
@@ -165,7 +165,7 @@ const ConsolidatedReport: React.FC = () => {
           'br-mdn': 'MDN',
           'br-ygk': 'YGK',
         };
-        return <span className="font-semibold text-gray-700 dark:text-gray-300">{map[val] || val.toUpperCase()}</span>;
+        return <span className="font-semibold text-gray-700 dark:text-slate-600">{map[val] || val.toUpperCase()}</span>;
       },
     },
     {
@@ -196,7 +196,7 @@ const ConsolidatedReport: React.FC = () => {
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
         <Card className="bg-blue-50 dark:bg-blue-900/20 border-blue-200 dark:border-blue-800">
           <div className="p-6">
-            <p className="text-sm font-medium text-blue-600 dark:text-blue-400">
+            <p className="text-sm font-medium text-blue-600 dark:text-blue-600">
               Total Visitors Group
             </p>
             <p className="text-3xl font-bold text-blue-700 dark:text-blue-300 mt-2">
@@ -255,13 +255,13 @@ const ConsolidatedReport: React.FC = () => {
       <div className="flex flex-col space-y-4">
         <Card title="Operational Log Itemization">
           <div className="mb-4 flex flex-wrap gap-2 items-center">
-            <span className="text-sm font-medium text-gray-700 dark:text-gray-400 mr-2">Filter Region:</span>
+            <span className="text-sm font-medium text-gray-700 dark:text-slate-500 mr-2">Filter Region:</span>
             <button
               onClick={() => setSelectedBranch('all')}
               className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-all ${
                 selectedBranch === 'all'
                   ? 'bg-blue-600 text-white'
-                  : 'bg-gray-100 text-gray-700 hover:bg-gray-200 dark:bg-gray-800 dark:text-gray-300 dark:hover:bg-gray-700'
+                  : 'bg-gray-100 text-gray-700 hover:bg-gray-200 dark:bg-gray-800 dark:text-slate-600 dark:hover:bg-gray-700'
               }`}
             >
               All Regions
@@ -273,7 +273,7 @@ const ConsolidatedReport: React.FC = () => {
                 className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-all ${
                   selectedBranch === code
                     ? 'bg-blue-600 text-white'
-                    : 'bg-gray-100 text-gray-700 hover:bg-gray-200 dark:bg-gray-800 dark:text-gray-300 dark:hover:bg-gray-700'
+                    : 'bg-gray-100 text-gray-700 hover:bg-gray-200 dark:bg-gray-800 dark:text-slate-600 dark:hover:bg-gray-700'
                 }`}
               >
                 {data.name.split(' ')[0]}

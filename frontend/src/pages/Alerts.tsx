@@ -115,7 +115,7 @@ const Alerts: React.FC = () => {
       key: 'type',
       label: 'Alert Type',
       render: (value: string, row: Alert) => (
-        <span className="font-mono text-xs uppercase tracking-wider font-semibold text-gray-700 dark:text-gray-300">
+        <span className="font-mono text-xs uppercase tracking-wider font-semibold text-gray-700 dark:text-slate-600">
           {value.replace('_', ' ')}
         </span>
       ),
@@ -125,7 +125,7 @@ const Alerts: React.FC = () => {
       label: 'Description',
       render: (value: string, row: Alert) => (
         <div>
-          <p className="font-semibold text-gray-900 dark:text-white">{value}</p>
+          <p className="font-semibold text-gray-900 dark:text-slate-900">{value}</p>
           <p className="text-xs text-gray-500 mt-0.5">{row.description}</p>
         </div>
       ),
@@ -134,7 +134,7 @@ const Alerts: React.FC = () => {
       key: 'camera_id',
       label: 'Camera Source',
       render: (value: string) => (
-        <span className="text-xs font-mono bg-gray-100 dark:bg-slate-800 px-2.5 py-1 rounded text-gray-600 dark:text-gray-400 font-bold border border-gray-200 dark:border-slate-700">
+        <span className="text-xs font-mono bg-gray-100 dark:bg-slate-100 px-2.5 py-1 rounded text-gray-600 dark:text-slate-500 font-bold border border-gray-200 dark:border-slate-300">
           {value || 'SYSTEM'}
         </span>
       ),
@@ -189,8 +189,8 @@ const Alerts: React.FC = () => {
     <div className="p-6 max-w-7xl mx-auto w-full space-y-6">
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
-          <h1 className="text-3xl font-bold text-gray-900 dark:text-white">Security Alerts</h1>
-          <p className="text-gray-600 dark:text-gray-400 mt-1">
+          <h1 className="text-3xl font-bold text-gray-900 dark:text-slate-900">Security Alerts</h1>
+          <p className="text-gray-600 dark:text-slate-500 mt-1">
             Real-time security threats, camera status deviations, and unauthorized detections
           </p>
         </div>

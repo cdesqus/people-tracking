@@ -203,10 +203,10 @@ const VisitorsPage: React.FC = () => {
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
-          <h1 className="text-3xl font-bold text-gray-900 dark:text-white">
+          <h1 className="text-3xl font-bold text-gray-900 dark:text-slate-900">
             Visitor Management
           </h1>
-          <p className="text-gray-600 dark:text-gray-400 mt-1">
+          <p className="text-gray-600 dark:text-slate-500 mt-1">
             Manage visitor check-ins, check-outs, and track movements
           </p>
         </div>
@@ -237,7 +237,7 @@ const VisitorsPage: React.FC = () => {
           <h4 className="text-sm font-semibold text-blue-900 dark:text-blue-200 mb-1">
             Checked Out
           </h4>
-          <p className="text-2xl font-bold text-blue-600 dark:text-blue-400">
+          <p className="text-2xl font-bold text-blue-600 dark:text-blue-600">
             {stats.checkedOut}
           </p>
         </Card>

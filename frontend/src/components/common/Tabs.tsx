@@ -58,15 +58,15 @@ const Tabs: React.FC<TabsProps> = ({
       return `${baseClasses} rounded-full ${
         isActive
           ? 'bg-sky-500 text-white'
-          : 'text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-slate-700'
+          : 'text-gray-700 dark:text-slate-600 hover:bg-gray-100 dark:hover:bg-slate-200'
       }`;
     }
 
     if (variant === 'card') {
-      return `${baseClasses} border border-gray-200 dark:border-slate-700 rounded-t-lg ${
+      return `${baseClasses} border border-gray-200 dark:border-slate-300 rounded-t-lg ${
         isActive
-          ? 'bg-white dark:bg-slate-800 border-b-0 text-gray-900 dark:text-white'
-          : 'bg-gray-50 dark:bg-slate-700 text-gray-700 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-slate-600'
+          ? 'bg-white dark:bg-slate-100 border-b-0 text-gray-900 dark:text-slate-900'
+          : 'bg-gray-50 dark:bg-slate-200 text-gray-700 dark:text-slate-500 hover:bg-gray-100 dark:hover:bg-slate-600'
       }`;
     }
 
@@ -74,7 +74,7 @@ const Tabs: React.FC<TabsProps> = ({
     return `${baseClasses} border-b-2 ${
       isActive
         ? 'border-sky-500 text-sky-600 dark:text-sky-400'
-        : 'border-transparent text-gray-700 dark:text-gray-400 hover:border-gray-300 dark:hover:border-slate-600'
+        : 'border-transparent text-gray-700 dark:text-slate-500 hover:border-gray-300 dark:hover:border-slate-300'
     }`;
   };
 
@@ -82,7 +82,7 @@ const Tabs: React.FC<TabsProps> = ({
     <div className={`w-full ${className}`} {...rest}>
       {/* Tab list */}
       <div
-        className={`flex flex-wrap gap-1 border-b border-gray-200 dark:border-slate-700 ${
+        className={`flex flex-wrap gap-1 border-b border-gray-200 dark:border-slate-300 ${
           variant === 'card' ? 'gap-0 -mb-px' : ''
         }`}
         role="tablist"

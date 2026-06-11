@@ -77,7 +77,7 @@ const RecentDetections: React.FC<RecentDetectionsProps> = ({
       render: (value: string) => (
         <div className="flex flex-col">
           <span className="font-medium">{formatRelativeTime(value)}</span>
-          <span className="text-xs text-gray-500 dark:text-gray-400">
+          <span className="text-xs text-gray-500 dark:text-slate-500">
             {formatDateTime(value)}
           </span>
         </div>
@@ -91,7 +91,7 @@ const RecentDetections: React.FC<RecentDetectionsProps> = ({
         <div className="flex flex-col">
           <span className="font-medium">{value}</span>
           {row.personId && (
-            <span className="text-xs text-gray-500 dark:text-gray-400">
+            <span className="text-xs text-gray-500 dark:text-slate-500">
               ID: {row.personId}
             </span>
           )}

@@ -56,10 +56,10 @@ const DataRetentionPolicy: React.FC = () => {
   }> = ({ label, description, value, min, max, onChange }) => (
     <div className="p-4 border border-gray-200 dark:border-gray-700 rounded-lg">
       <div className="flex items-center justify-between mb-2">
-        <label className="text-sm font-medium text-gray-700 dark:text-gray-300">
+        <label className="text-sm font-medium text-gray-700 dark:text-slate-600">
           {label}
         </label>
-        <span className="text-lg font-bold text-gray-900 dark:text-white">
+        <span className="text-lg font-bold text-gray-900 dark:text-slate-900">
           {value} days
         </span>
       </div>
@@ -72,7 +72,7 @@ const DataRetentionPolicy: React.FC = () => {
         onChange={(e) => onChange(parseInt(e.target.value))}
         className="w-full h-2 bg-gray-200 dark:bg-gray-700 rounded-lg appearance-none cursor-pointer accent-blue-500"
       />
-      <p className="text-xs text-gray-500 dark:text-gray-400 mt-2">
+      <p className="text-xs text-gray-500 dark:text-slate-500 mt-2">
         {description}
       </p>
     </div>
@@ -139,10 +139,10 @@ const DataRetentionPolicy: React.FC = () => {
       <Card title="Automatic Cleanup" subtitle="Automatically delete old data">
         <div className="flex items-center justify-between p-4 border border-gray-200 dark:border-gray-700 rounded-lg">
           <div>
-            <p className="font-medium text-gray-900 dark:text-white">
+            <p className="font-medium text-gray-900 dark:text-slate-900">
               Auto-Delete Old Data
             </p>
-            <p className="text-sm text-gray-600 dark:text-gray-400">
+            <p className="text-sm text-gray-600 dark:text-slate-500">
               Automatically delete files older than the retention period
             </p>
           </div>
@@ -165,13 +165,13 @@ const DataRetentionPolicy: React.FC = () => {
       <Card title="Retention Summary" subtitle="Overview of your retention policy">
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           <div className="p-4 bg-blue-50 dark:bg-blue-900/20 rounded-lg border border-blue-200 dark:border-blue-800">
-            <p className="text-sm text-blue-600 dark:text-blue-400 font-medium">
+            <p className="text-sm text-blue-600 dark:text-blue-600 font-medium">
               Face Images
             </p>
             <p className="text-2xl font-bold text-blue-700 dark:text-blue-300 mt-1">
               {settings.dataRetention.faceImageDays} days
             </p>
-            <p className="text-xs text-blue-600 dark:text-blue-400 mt-2">
+            <p className="text-xs text-blue-600 dark:text-blue-600 mt-2">
               ~{(settings.dataRetention.faceImageDays / 30).toFixed(1)} months
             </p>
           </div>

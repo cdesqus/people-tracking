@@ -91,20 +91,4 @@
   --transition-slow: 300ms ease-in-out;
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --color-bg: #0f172a;
-    --color-bg-light: #1e293b;
-    --color-bg-dark: #334155;
-    --color-bg-elevation: #1e293b;
 
-    --color-text: #f3f4f6;
-    --color-text-secondary: #d1d5db;
-    --color-text-tertiary: #9ca3af;
-    --color-text-light: #0f172a;
-
-    --color-border: #334155;
-    --color-border-light: #475569;
-    --color-border-dark: #1e293b;
-  }
-}

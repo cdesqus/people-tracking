@@ -68,30 +68,30 @@ const VisitorModal: React.FC<VisitorModalProps> = ({
           <img
             src={visitor.photo_url}
             alt={visitor.name}
-            className="w-32 h-32 rounded-lg object-cover border-2 border-gray-200 dark:border-slate-600"
+            className="w-32 h-32 rounded-lg object-cover border-2 border-gray-200 dark:border-slate-300"
           />
         )}
 
         <div className="flex-1">
-          <h3 className="text-2xl font-semibold text-gray-900 dark:text-white mb-2">
+          <h3 className="text-2xl font-semibold text-gray-900 dark:text-slate-900 mb-2">
             {visitor.name}
           </h3>
           <div className="space-y-2">
             <div className="flex items-center justify-between">
-              <span className="text-sm text-gray-600 dark:text-gray-400">Status:</span>
+              <span className="text-sm text-gray-600 dark:text-slate-500">Status:</span>
               <Badge color={statusColorMap[visitor.status] || 'gray'}>
                 {visitor.status.replace('_', ' ')}
               </Badge>
             </div>
             <div className="flex items-center justify-between">
-              <span className="text-sm text-gray-600 dark:text-gray-400">Duration:</span>
-              <span className="font-semibold text-gray-900 dark:text-white">
+              <span className="text-sm text-gray-600 dark:text-slate-500">Duration:</span>
+              <span className="font-semibold text-gray-900 dark:text-slate-900">
                 {calculateDuration(visitor.check_in_time, visitor.check_out_time)}
               </span>
             </div>
             <div className="flex items-center justify-between">
-              <span className="text-sm text-gray-600 dark:text-gray-400">Badge #:</span>
-              <span className="font-semibold text-gray-900 dark:text-white">
+              <span className="text-sm text-gray-600 dark:text-slate-500">Badge #:</span>
+              <span className="font-semibold text-gray-900 dark:text-slate-900">
                 {visitor.badge_number || 'N/A'}
               </span>
             </div>
@@ -102,7 +102,7 @@ const VisitorModal: React.FC<VisitorModalProps> = ({
       {/* QR Code */}
       {visitor.qr_code && (
         <div className="flex justify-center">
-          <div className="border-2 border-gray-300 dark:border-slate-600 rounded-lg p-4">
+          <div className="border-2 border-gray-300 dark:border-slate-300 rounded-lg p-4">
             <img
               src={visitor.qr_code}
               alt="QR Code"
@@ -113,71 +113,71 @@ const VisitorModal: React.FC<VisitorModalProps> = ({
       )}
 
       {/* Detailed Information */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-4 border-t border-gray-200 dark:border-slate-700">
-        <Card className="p-4 bg-gray-50 dark:bg-slate-700/50">
-          <h4 className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-4 border-t border-gray-200 dark:border-slate-300">
+        <Card className="p-4 bg-gray-50 dark:bg-slate-200/50">
+          <h4 className="text-sm font-semibold text-gray-700 dark:text-slate-600 mb-2">
             Organization
           </h4>
-          <p className="text-gray-900 dark:text-white">{visitor.organization}</p>
+          <p className="text-gray-900 dark:text-slate-900">{visitor.organization}</p>
         </Card>
 
-        <Card className="p-4 bg-gray-50 dark:bg-slate-700/50">
-          <h4 className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">
+        <Card className="p-4 bg-gray-50 dark:bg-slate-200/50">
+          <h4 className="text-sm font-semibold text-gray-700 dark:text-slate-600 mb-2">
             Host
           </h4>
-          <p className="text-gray-900 dark:text-white">{visitor.host}</p>
+          <p className="text-gray-900 dark:text-slate-900">{visitor.host}</p>
         </Card>
 
-        <Card className="p-4 bg-gray-50 dark:bg-slate-700/50">
-          <h4 className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">
+        <Card className="p-4 bg-gray-50 dark:bg-slate-200/50">
+          <h4 className="text-sm font-semibold text-gray-700 dark:text-slate-600 mb-2">
             Email
           </h4>
-          <p className="text-gray-900 dark:text-white break-all">
+          <p className="text-gray-900 dark:text-slate-900 break-all">
             {visitor.email || '-'}
           </p>
         </Card>
 
-        <Card className="p-4 bg-gray-50 dark:bg-slate-700/50">
-          <h4 className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">
+        <Card className="p-4 bg-gray-50 dark:bg-slate-200/50">
+          <h4 className="text-sm font-semibold text-gray-700 dark:text-slate-600 mb-2">
             Phone
           </h4>
-          <p className="text-gray-900 dark:text-white">{visitor.phone}</p>
+          <p className="text-gray-900 dark:text-slate-900">{visitor.phone}</p>
         </Card>
 
-        <Card className="p-4 bg-gray-50 dark:bg-slate-700/50">
-          <h4 className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">
+        <Card className="p-4 bg-gray-50 dark:bg-slate-200/50">
+          <h4 className="text-sm font-semibold text-gray-700 dark:text-slate-600 mb-2">
             Check-In Time
           </h4>
-          <p className="text-gray-900 dark:text-white text-sm">
+          <p className="text-gray-900 dark:text-slate-900 text-sm">
             {new Date(visitor.check_in_time).toLocaleString()}
           </p>
         </Card>
 
-        <Card className="p-4 bg-gray-50 dark:bg-slate-700/50">
-          <h4 className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">
+        <Card className="p-4 bg-gray-50 dark:bg-slate-200/50">
+          <h4 className="text-sm font-semibold text-gray-700 dark:text-slate-600 mb-2">
             Expected Checkout
           </h4>
-          <p className="text-gray-900 dark:text-white text-sm">
+          <p className="text-gray-900 dark:text-slate-900 text-sm">
             {visitor.expected_checkout
               ? new Date(visitor.expected_checkout).toLocaleString()
               : 'N/A'}
           </p>
         </Card>
 
-        <Card className="p-4 bg-gray-50 dark:bg-slate-700/50">
-          <h4 className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">
+        <Card className="p-4 bg-gray-50 dark:bg-slate-200/50">
+          <h4 className="text-sm font-semibold text-gray-700 dark:text-slate-600 mb-2">
             Current Location
           </h4>
-          <p className="text-gray-900 dark:text-white">
+          <p className="text-gray-900 dark:text-slate-900">
             {visitor.current_location || 'Unknown'}
           </p>
         </Card>
 
-        <Card className="p-4 bg-gray-50 dark:bg-slate-700/50">
-          <h4 className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">
+        <Card className="p-4 bg-gray-50 dark:bg-slate-200/50">
+          <h4 className="text-sm font-semibold text-gray-700 dark:text-slate-600 mb-2">
             Purpose
           </h4>
-          <p className="text-gray-900 dark:text-white text-sm">
+          <p className="text-gray-900 dark:text-slate-900 text-sm">
             {visitor.purpose}
           </p>
         </Card>
@@ -249,7 +249,7 @@ const VisitorModal: React.FC<VisitorModalProps> = ({
         )}
 
         {/* Action Buttons */}
-        <div className="flex gap-3 justify-end pt-4 border-t border-gray-200 dark:border-slate-700 flex-wrap">
+        <div className="flex gap-3 justify-end pt-4 border-t border-gray-200 dark:border-slate-300 flex-wrap">
           <Button variant="secondary" onClick={onClose} disabled={isLoading}>
             Close
           </Button>

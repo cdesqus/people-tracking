@@ -37,13 +37,13 @@ const DashboardOverview: React.FC<OverviewProps> = ({
         <div className="p-6">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm font-medium text-gray-600 dark:text-gray-400">
+              <p className="text-sm font-medium text-gray-600 dark:text-slate-500">
                 Current Occupancy
               </p>
-              <p className="text-3xl font-bold text-gray-900 dark:text-white mt-2">
+              <p className="text-3xl font-bold text-gray-900 dark:text-slate-900 mt-2">
                 {loading ? '-' : occupancy}
               </p>
-              <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+              <p className="text-xs text-gray-500 dark:text-slate-500 mt-1">
                 People detected
               </p>
             </div>
@@ -66,18 +66,18 @@ const DashboardOverview: React.FC<OverviewProps> = ({
         <div className="p-6">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm font-medium text-gray-600 dark:text-gray-400">
+              <p className="text-sm font-medium text-gray-600 dark:text-slate-500">
                 Active Cameras
               </p>
               <div className="flex items-baseline gap-1 mt-2">
-                <p className="text-3xl font-bold text-gray-900 dark:text-white">
+                <p className="text-3xl font-bold text-gray-900 dark:text-slate-900">
                   {loading ? '-' : activeCameras}
                 </p>
-                <p className="text-lg font-medium text-gray-500 dark:text-gray-400">
+                <p className="text-lg font-medium text-gray-500 dark:text-slate-500">
                   /{totalCameras}
                 </p>
               </div>
-              <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+              <p className="text-xs text-gray-500 dark:text-slate-500 mt-1">
                 Online / Total
               </p>
             </div>
@@ -100,10 +100,10 @@ const DashboardOverview: React.FC<OverviewProps> = ({
         <div className="p-6">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm font-medium text-gray-600 dark:text-gray-400">
+              <p className="text-sm font-medium text-gray-600 dark:text-slate-500">
                 Active Alerts
               </p>
-              <p className="text-3xl font-bold text-gray-900 dark:text-white mt-2">
+              <p className="text-3xl font-bold text-gray-900 dark:text-slate-900 mt-2">
                 {loading ? '-' : activeAlerts}
               </p>
               <div className="mt-1">
@@ -143,13 +143,13 @@ const DashboardOverview: React.FC<OverviewProps> = ({
         <div className="p-6">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm font-medium text-gray-600 dark:text-gray-400">
+              <p className="text-sm font-medium text-gray-600 dark:text-slate-500">
                 Current Visitors
               </p>
-              <p className="text-3xl font-bold text-gray-900 dark:text-white mt-2">
+              <p className="text-3xl font-bold text-gray-900 dark:text-slate-900 mt-2">
                 {loading ? '-' : currentVisitors}
               </p>
-              <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+              <p className="text-xs text-gray-500 dark:text-slate-500 mt-1">
                 Known individuals
               </p>
             </div>
@@ -160,7 +160,7 @@ const DashboardOverview: React.FC<OverviewProps> = ({
           {/* Status indicator */}
           <div className="mt-4 flex items-center gap-2">
             <div className="h-2 w-2 bg-green-500 rounded-full animate-pulse" />
-            <p className="text-xs text-gray-600 dark:text-gray-400">
+            <p className="text-xs text-gray-600 dark:text-slate-500">
               Live tracking enabled
             </p>
           </div>

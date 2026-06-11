@@ -92,7 +92,7 @@ const Dropdown: React.FC<DropdownProps> = ({
       {isOpen && (
         <div
           ref={menuRef}
-          className={`absolute top-full mt-1 min-w-48 bg-white dark:bg-slate-800 border border-gray-200 dark:border-slate-700 rounded-lg shadow-lg ${Z_INDEX.dropdown} ${
+          className={`absolute top-full mt-1 min-w-48 bg-white dark:bg-slate-100 border border-gray-200 dark:border-slate-300 rounded-lg shadow-lg ${Z_INDEX.dropdown} ${
             align === 'right' ? 'right-0' : 'left-0'
           } py-1 z-50 ${TRANSITIONS.base}`}
           role="menu"
@@ -102,7 +102,7 @@ const Dropdown: React.FC<DropdownProps> = ({
               return (
                 <div
                   key={index}
-                  className="my-1 border-t border-gray-200 dark:border-slate-700"
+                  className="my-1 border-t border-gray-200 dark:border-slate-300"
                   role="separator"
                 />
               );
@@ -115,8 +115,8 @@ const Dropdown: React.FC<DropdownProps> = ({
                 disabled={item.disabled}
                 className={`w-full text-left px-4 py-2 text-sm flex items-center gap-3 ${
                   item.disabled
-                    ? 'opacity-50 cursor-not-allowed text-gray-400'
-                    : 'text-gray-900 dark:text-white hover:bg-gray-100 dark:hover:bg-slate-700'
+                    ? 'opacity-50 cursor-not-allowed text-slate-500'
+                    : 'text-gray-900 dark:text-slate-900 hover:bg-gray-100 dark:hover:bg-slate-200'
                 } ${TRANSITIONS.base}`}
                 role="menuitem"
                 aria-disabled={item.disabled}

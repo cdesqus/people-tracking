@@ -42,12 +42,12 @@ const Loading: React.FC<LoadingProps> = ({
         aria-label="Loading skeleton"
         {...rest}
       >
-        <div className="h-12 bg-gray-200 dark:bg-slate-700 rounded-lg" />
+        <div className="h-12 bg-gray-200 dark:bg-slate-200 rounded-lg" />
         <div className="space-y-3">
-          <div className="h-4 bg-gray-200 dark:bg-slate-700 rounded w-5/6" />
-          <div className="h-4 bg-gray-200 dark:bg-slate-700 rounded w-4/6" />
+          <div className="h-4 bg-gray-200 dark:bg-slate-200 rounded w-5/6" />
+          <div className="h-4 bg-gray-200 dark:bg-slate-200 rounded w-4/6" />
         </div>
-        <div className="h-8 bg-gray-200 dark:bg-slate-700 rounded w-1/4" />
+        <div className="h-8 bg-gray-200 dark:bg-slate-200 rounded w-1/4" />
       </div>
     );
   }
@@ -63,13 +63,13 @@ const Loading: React.FC<LoadingProps> = ({
         {...rest}
       >
         <div className="flex items-center gap-3">
-          <div className="flex-1 h-2 bg-gray-200 dark:bg-slate-700 rounded-full overflow-hidden">
+          <div className="flex-1 h-2 bg-gray-200 dark:bg-slate-200 rounded-full overflow-hidden">
             <div
               className="h-full bg-gradient-to-r from-sky-400 to-sky-600 transition-all duration-300 ease-out"
               style={{ width: `${Math.min(progress, 100)}%` }}
             />
           </div>
-          <span className="text-sm font-medium text-gray-600 dark:text-gray-400 min-w-12 text-right">
+          <span className="text-sm font-medium text-gray-600 dark:text-slate-500 min-w-12 text-right">
             {Math.round(progress)}%
           </span>
         </div>
@@ -87,7 +87,7 @@ const Loading: React.FC<LoadingProps> = ({
     >
       <Spinner size={size} />
       {text && (
-        <p className="text-gray-600 dark:text-gray-400 text-sm font-medium">
+        <p className="text-gray-600 dark:text-slate-500 text-sm font-medium">
           {text}
         </p>
       )}

@@ -59,8 +59,8 @@ const Card = React.forwardRef<HTMLDivElement, CardProps>(
     const shadowClass = CARD_SHADOWS[shadow];
 
     const cardClasses = [
-      'bg-white dark:bg-slate-800',
-      'border border-gray-200 dark:border-slate-700',
+      'bg-white dark:bg-slate-100',
+      'border border-gray-200 dark:border-slate-300',
       'rounded-lg',
       shadowClass,
       clickable
@@ -90,15 +90,15 @@ const Card = React.forwardRef<HTMLDivElement, CardProps>(
         {...rest}
       >
         {(title || subtitle || actions) && (
-          <div className="px-6 py-4 border-b border-gray-200 dark:border-slate-700 flex items-start justify-between">
+          <div className="px-6 py-4 border-b border-gray-200 dark:border-slate-300 flex items-start justify-between">
             <div>
               {title && (
-                <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
+                <h3 className="text-lg font-semibold text-gray-900 dark:text-slate-900">
                   {title}
                 </h3>
               )}
               {subtitle && (
-                <p className="text-sm text-gray-600 dark:text-gray-400 mt-0.5">
+                <p className="text-sm text-gray-600 dark:text-slate-500 mt-0.5">
                   {subtitle}
                 </p>
               )}

@@ -283,7 +283,7 @@ const CamerasPage: React.FC = () => {
       render: (value: string, row: Camera) => (
         <div className="flex items-center gap-2">
           <span className="material-symbols-outlined text-[20px] text-gray-500">videocam</span>
-          <span className="font-medium text-gray-900 dark:text-white">{value}</span>
+          <span className="font-medium text-gray-900 dark:text-slate-900">{value}</span>
         </div>
       ),
     },
@@ -294,7 +294,7 @@ const CamerasPage: React.FC = () => {
       render: (value: string) => {
         const branchObj = branches.find(b => b.id === value);
         return (
-          <span className="text-xs font-semibold text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-900/30 px-2.5 py-1 rounded-full border border-blue-100 dark:border-blue-800/40">
+          <span className="text-xs font-semibold text-blue-600 dark:text-blue-600 bg-blue-50 dark:bg-blue-900/30 px-2.5 py-1 rounded-full border border-blue-100 dark:border-blue-800/40">
             {branchObj ? `${branchObj.name} (${branchObj.code})` : 'Headquarters'}
           </span>
         );
@@ -309,7 +309,7 @@ const CamerasPage: React.FC = () => {
       key: 'stream_url',
       label: 'Stream URL',
       render: (value: string) => (
-        <code className="text-xs bg-gray-100 dark:bg-slate-700 px-2 py-1 rounded text-slate-600 dark:text-slate-300 font-mono select-all">
+        <code className="text-xs bg-gray-100 dark:bg-slate-200 px-2 py-1 rounded text-slate-600 dark:text-slate-600 font-mono select-all">
           {value}
         </code>
       ),
@@ -379,10 +379,10 @@ const CamerasPage: React.FC = () => {
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
-          <h1 className="text-3xl font-bold text-gray-900 dark:text-white">
+          <h1 className="text-3xl font-bold text-gray-900 dark:text-slate-900">
             Camera Management
           </h1>
-          <p className="text-gray-600 dark:text-gray-400 mt-1">
+          <p className="text-gray-600 dark:text-slate-500 mt-1">
             Configure, manage and monitor live CCTV camera streams
           </p>
         </div>
@@ -392,8 +392,8 @@ const CamerasPage: React.FC = () => {
       </div>
 
       {/* Branch Filters */}
-      <div className="flex flex-col sm:flex-row gap-3 items-start sm:items-center justify-between bg-white dark:bg-slate-900 p-4 rounded-xl border border-gray-200 dark:border-slate-800 shadow-sm">
-        <div className="text-sm font-semibold text-gray-700 dark:text-gray-300">
+      <div className="flex flex-col sm:flex-row gap-3 items-start sm:items-center justify-between bg-white dark:bg-white p-4 rounded-xl border border-gray-200 dark:border-slate-200 shadow-sm">
+        <div className="text-sm font-semibold text-gray-700 dark:text-slate-600">
           Filter by Branch Location:
         </div>
         <div className="flex gap-2 flex-wrap">
@@ -402,7 +402,7 @@ const CamerasPage: React.FC = () => {
             className={`px-3 py-1.5 rounded-lg text-xs font-semibold tracking-wide uppercase transition-all ${
               selectedBranchFilter === 'all'
                 ? 'bg-blue-600 text-white'
-                : 'bg-gray-100 dark:bg-slate-800 text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white'
+                : 'bg-gray-100 dark:bg-slate-100 text-gray-600 dark:text-slate-500 hover:text-gray-900 dark:hover:text-white'
             }`}
           >
             All Branches
@@ -414,7 +414,7 @@ const CamerasPage: React.FC = () => {
               className={`px-3 py-1.5 rounded-lg text-xs font-semibold tracking-wide uppercase transition-all ${
                 selectedBranchFilter === b.id
                   ? 'bg-blue-600 text-white'
-                  : 'bg-gray-100 dark:bg-slate-800 text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white'
+                  : 'bg-gray-100 dark:bg-slate-100 text-gray-600 dark:text-slate-500 hover:text-gray-900 dark:hover:text-white'
               }`}
             >
               {b.code}
@@ -511,14 +511,14 @@ const CamerasPage: React.FC = () => {
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">
+            <label className="block text-sm font-medium text-gray-700 dark:text-slate-600 mb-1.5">
               Branch Location
             </label>
             <select
               name="branch"
               value={formData.branch}
               onChange={handleInputChange}
-              className="w-full px-3 py-2 border border-gray-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-800 text-gray-900 dark:text-white mb-4"
+              className="w-full px-3 py-2 border border-gray-300 dark:border-slate-300 rounded-lg bg-white dark:bg-slate-100 text-gray-900 dark:text-slate-900 mb-4"
             >
               {branches.map((b) => (
                 <option key={b.id} value={b.id}>
@@ -529,14 +529,14 @@ const CamerasPage: React.FC = () => {
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">
+            <label className="block text-sm font-medium text-gray-700 dark:text-slate-600 mb-1.5">
               Status
             </label>
             <select
               name="status"
               value={formData.status}
               onChange={handleInputChange}
-              className="w-full px-3 py-2 border border-gray-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-800 text-gray-900 dark:text-white"
+              className="w-full px-3 py-2 border border-gray-300 dark:border-slate-300 rounded-lg bg-white dark:bg-slate-100 text-gray-900 dark:text-slate-900"
             >
               <option value="active">Active (Online)</option>
               <option value="inactive">Inactive (Offline)</option>
@@ -544,7 +544,7 @@ const CamerasPage: React.FC = () => {
             </select>
           </div>
 
-          <div className="flex gap-3 justify-end pt-4 border-t border-gray-200 dark:border-slate-700">
+          <div className="flex gap-3 justify-end pt-4 border-t border-gray-200 dark:border-slate-300">
             <Button
               variant="secondary"
               onClick={() => setShowModal(false)}
@@ -568,11 +568,11 @@ const CamerasPage: React.FC = () => {
           onClose={() => setShowDeleteConfirm(false)}
         >
           <div className="space-y-4">
-            <p className="text-sm text-gray-600 dark:text-gray-400">
+            <p className="text-sm text-gray-600 dark:text-slate-500">
               Are you sure you want to delete camera <strong>{selectedCamera.name}</strong>? This will stop stream ingestion and remove its historical logs.
             </p>
 
-            <div className="flex gap-3 justify-end pt-4 border-t border-gray-200 dark:border-slate-700">
+            <div className="flex gap-3 justify-end pt-4 border-t border-gray-200 dark:border-slate-300">
               <Button
                 variant="secondary"
                 onClick={() => setShowDeleteConfirm(false)}

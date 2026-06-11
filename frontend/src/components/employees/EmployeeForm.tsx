@@ -135,13 +135,13 @@ const EmployeeForm: React.FC<EmployeeFormProps> = ({
   return (
     <div className="w-full">
       <form onSubmit={handleSubmit} className="space-y-6">
-        <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
+        <h3 className="text-lg font-semibold text-gray-900 dark:text-slate-900">
           Register New Employee
         </h3>
 
         {/* Photo Selection Tabs */}
         <div className="space-y-4">
-          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+          <label className="block text-sm font-medium text-gray-700 dark:text-slate-600">
             Employee Photo Source
           </label>
           <div className="flex gap-2 max-w-sm">
@@ -155,7 +155,7 @@ const EmployeeForm: React.FC<EmployeeFormProps> = ({
               className={`flex-1 py-2 px-4 text-xs font-semibold rounded-lg border transition-all flex items-center justify-center gap-1.5 ${
                 photoSource === 'upload'
                   ? 'bg-blue-600 border-blue-600 text-white shadow-md'
-                  : 'bg-white dark:bg-slate-800 border-gray-300 dark:border-slate-700 text-gray-700 dark:text-gray-300'
+                  : 'bg-white dark:bg-slate-100 border-gray-300 dark:border-slate-300 text-gray-700 dark:text-slate-600'
               }`}
             >
               <Upload className="w-4 h-4" />
@@ -171,7 +171,7 @@ const EmployeeForm: React.FC<EmployeeFormProps> = ({
               className={`flex-1 py-2 px-4 text-xs font-semibold rounded-lg border transition-all flex items-center justify-center gap-1.5 ${
                 photoSource === 'camera'
                   ? 'bg-blue-600 border-blue-600 text-white shadow-md'
-                  : 'bg-white dark:bg-slate-800 border-gray-300 dark:border-slate-700 text-gray-700 dark:text-gray-300'
+                  : 'bg-white dark:bg-slate-100 border-gray-300 dark:border-slate-300 text-gray-700 dark:text-slate-600'
               }`}
             >
               <Camera className="w-4 h-4" />
@@ -203,7 +203,7 @@ const EmployeeForm: React.FC<EmployeeFormProps> = ({
 
           {photoPreview && (
             <div className="flex flex-col items-center gap-1 mt-2">
-              <span className="text-[10px] text-gray-400 font-mono uppercase">Photo Preview</span>
+              <span className="text-[10px] text-slate-500 font-mono uppercase">Photo Preview</span>
               <img
                 src={photoPreview}
                 alt="Preview"
@@ -268,14 +268,14 @@ const EmployeeForm: React.FC<EmployeeFormProps> = ({
           />
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">
+            <label className="block text-sm font-medium text-gray-700 dark:text-slate-600 mb-1.5">
               Status
             </label>
             <select
               name="status"
               value={formData.status}
               onChange={handleInputChange}
-              className="w-full px-3 py-2 border border-gray-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-800 text-gray-900 dark:text-white"
+              className="w-full px-3 py-2 border border-gray-300 dark:border-slate-300 rounded-lg bg-white dark:bg-slate-100 text-gray-900 dark:text-slate-900"
             >
               <option value="active">Active</option>
               <option value="inactive">Inactive</option>
@@ -285,7 +285,7 @@ const EmployeeForm: React.FC<EmployeeFormProps> = ({
         </div>
 
         {/* Buttons */}
-        <div className="flex gap-3 justify-end pt-4 border-t border-gray-200 dark:border-slate-700">
+        <div className="flex gap-3 justify-end pt-4 border-t border-gray-200 dark:border-slate-300">
           {onCancel && (
             <Button variant="secondary" onClick={onCancel} disabled={isLoading || submitting}>
               Cancel

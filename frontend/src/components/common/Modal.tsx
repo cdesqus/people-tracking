@@ -86,25 +86,25 @@ const Modal: React.FC<ModalProps> = ({
       {/* Modal container */}
       <div className="fixed inset-0 flex items-center justify-center p-4">
         <div
-          className={`bg-white dark:bg-slate-800 rounded-lg shadow-xl ${modalSizeClass} w-full max-h-[90vh] overflow-y-auto ${TRANSITIONS.base}`}
+          className={`bg-white dark:bg-slate-100 rounded-lg shadow-xl ${modalSizeClass} w-full max-h-[90vh] overflow-y-auto ${TRANSITIONS.base}`}
           onClick={(e) => e.stopPropagation()}
         >
           {/* Header */}
           {header ? (
-            <div className="px-6 py-4 border-b border-gray-200 dark:border-slate-700">
+            <div className="px-6 py-4 border-b border-gray-200 dark:border-slate-300">
               {header}
             </div>
           ) : title ? (
-            <div className="flex items-center justify-between px-6 py-4 border-b border-gray-200 dark:border-slate-700">
+            <div className="flex items-center justify-between px-6 py-4 border-b border-gray-200 dark:border-slate-300">
               <h2
                 id="modal-title"
-                className="text-xl font-semibold text-gray-900 dark:text-white"
+                className="text-xl font-semibold text-gray-900 dark:text-slate-900"
               >
                 {title}
               </h2>
               <button
                 onClick={onClose}
-                className="inline-flex items-center justify-center w-8 h-8 text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200 rounded-md hover:bg-gray-100 dark:hover:bg-slate-700 transition-colors"
+                className="inline-flex items-center justify-center w-8 h-8 text-gray-500 hover:text-gray-700 dark:text-slate-500 dark:hover:text-slate-700 rounded-md hover:bg-gray-100 dark:hover:bg-slate-200 transition-colors"
                 aria-label="Close modal"
               >
                 <svg
@@ -125,13 +125,13 @@ const Modal: React.FC<ModalProps> = ({
           ) : null}
 
           {/* Body */}
-          <div className="px-6 py-4 text-gray-900 dark:text-white">
+          <div className="px-6 py-4 text-gray-900 dark:text-slate-900">
             {children}
           </div>
 
           {/* Footer */}
           {footer && (
-            <div className="px-6 py-4 border-t border-gray-200 dark:border-slate-700 bg-gray-50 dark:bg-slate-700/50 flex items-center justify-end gap-3 rounded-b-lg">
+            <div className="px-6 py-4 border-t border-gray-200 dark:border-slate-300 bg-gray-50 dark:bg-slate-200/50 flex items-center justify-end gap-3 rounded-b-lg">
               {footer}
             </div>
           )}

@@ -94,14 +94,14 @@ const ComponentShowcase: React.FC = () => {
   ];
 
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-slate-900 p-8">
+    <div className="min-h-screen bg-gray-50 dark:bg-white p-8">
       <div className="max-w-6xl mx-auto">
         {/* Header */}
         <div className="mb-12">
-          <h1 className="text-4xl font-bold text-gray-900 dark:text-white mb-2">
+          <h1 className="text-4xl font-bold text-gray-900 dark:text-slate-900 mb-2">
             Component Showcase
           </h1>
-          <p className="text-gray-600 dark:text-gray-400">
+          <p className="text-gray-600 dark:text-slate-500">
             Demo page showing all available components. Remove before production.
           </p>
         </div>

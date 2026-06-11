@@ -75,7 +75,7 @@ const Login: React.FC = () => {
   };
 
   return (
-    <div className="relative min-h-screen flex items-center justify-center bg-slate-950 overflow-hidden font-sans">
+    <div className="relative min-h-screen flex items-center justify-center bg-slate-50 overflow-hidden font-sans">
       <Toaster position="top-right" reverseOrder={false} />
 
       {/* Modern Neon Glow Background Orbs */}
@@ -87,17 +87,17 @@ const Login: React.FC = () => {
 
       <div className="w-full max-w-md p-8 sm:p-10 relative z-10">
         {/* Glassmorphic Container Card */}
-        <div className="backdrop-blur-xl bg-slate-900/60 border border-slate-800 rounded-3xl shadow-2xl p-8 transition-all hover:border-slate-700/60 duration-300">
+        <div className="backdrop-blur-xl bg-white/60 border border-slate-200 rounded-3xl shadow-2xl p-8 transition-all hover:border-slate-300/60 duration-300">
           
           {/* Logo / Title Area */}
           <div className="flex flex-col items-center mb-8">
             <div className="w-14 h-14 rounded-2xl bg-gradient-to-tr from-blue-600 to-indigo-500 flex items-center justify-center shadow-lg shadow-blue-500/20 mb-4 animate-bounce duration-3000">
               <Shield className="w-7 h-7 text-white" />
             </div>
-            <h2 className="text-2xl sm:text-3xl font-extrabold text-white tracking-tight">
+            <h2 className="text-2xl sm:text-3xl font-extrabold text-slate-900 tracking-tight">
               CCTV AI Sentinel
             </h2>
-            <p className="text-sm text-slate-400 mt-1">
+            <p className="text-sm text-slate-500 mt-1">
               Enter your credentials to access the console
             </p>
           </div>
@@ -114,7 +114,7 @@ const Login: React.FC = () => {
 
             {/* Email/Username Input */}
             <div className="space-y-2">
-              <label className="block text-xs font-semibold text-slate-300 uppercase tracking-wider">
+              <label className="block text-xs font-semibold text-slate-600 uppercase tracking-wider">
                 Username or Email
               </label>
               <div className="relative">
@@ -127,7 +127,7 @@ const Login: React.FC = () => {
                   value={emailOrUsername}
                   onChange={(e) => setEmailOrUsername(e.target.value)}
                   placeholder="Username or email"
-                  className="w-full pl-11 pr-4 py-3 bg-slate-950/80 border border-slate-800 focus:border-blue-500 rounded-xl text-white placeholder-slate-600 focus:outline-none focus:ring-1 focus:ring-blue-500/30 transition-all font-medium text-sm"
+                  className="w-full pl-11 pr-4 py-3 bg-slate-50/80 border border-slate-200 focus:border-blue-500 rounded-xl text-slate-900 placeholder-slate-500 focus:outline-none focus:ring-1 focus:ring-blue-500/30 transition-all font-medium text-sm"
                 />
               </div>
             </div>
@@ -135,10 +135,10 @@ const Login: React.FC = () => {
             {/* Password Input */}
             <div className="space-y-2">
               <div className="flex justify-between items-center">
-                <label className="block text-xs font-semibold text-slate-300 uppercase tracking-wider">
+                <label className="block text-xs font-semibold text-slate-600 uppercase tracking-wider">
                   Password
                 </label>
-                <a href="#forgot" className="text-xs text-blue-400 hover:text-blue-300 font-medium transition-colors">
+                <a href="#forgot" className="text-xs text-blue-600 hover:text-blue-300 font-medium transition-colors">
                   Forgot?
                 </a>
               </div>
@@ -152,12 +152,12 @@ const Login: React.FC = () => {
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   placeholder="••••••••"
-                  className="w-full pl-11 pr-11 py-3 bg-slate-950/80 border border-slate-800 focus:border-blue-500 rounded-xl text-white placeholder-slate-600 focus:outline-none focus:ring-1 focus:ring-blue-500/30 transition-all font-medium text-sm"
+                  className="w-full pl-11 pr-11 py-3 bg-slate-50/80 border border-slate-200 focus:border-blue-500 rounded-xl text-slate-900 placeholder-slate-500 focus:outline-none focus:ring-1 focus:ring-blue-500/30 transition-all font-medium text-sm"
                 />
                 <button
                   type="button"
                   onClick={() => setShowPassword(!showPassword)}
-                  className="absolute inset-y-0 right-0 pr-3.5 flex items-center text-slate-500 hover:text-slate-300 transition-colors"
+                  className="absolute inset-y-0 right-0 pr-3.5 flex items-center text-slate-500 hover:text-slate-600 transition-colors"
                 >
                   {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
                 </button>
@@ -171,9 +171,9 @@ const Login: React.FC = () => {
                   type="checkbox"
                   checked={rememberMe}
                   onChange={(e) => setRememberMe(e.target.checked)}
-                  className="w-4.5 h-4.5 rounded bg-slate-950 border-slate-800 text-blue-600 focus:ring-0 focus:ring-offset-0 cursor-pointer"
+                  className="w-4.5 h-4.5 rounded bg-slate-50 border-slate-200 text-blue-600 focus:ring-0 focus:ring-offset-0 cursor-pointer"
                 />
-                <span className="text-xs font-medium text-slate-400 hover:text-slate-300 transition-colors">
+                <span className="text-xs font-medium text-slate-500 hover:text-slate-600 transition-colors">
                   Keep me logged in
                 </span>
               </label>

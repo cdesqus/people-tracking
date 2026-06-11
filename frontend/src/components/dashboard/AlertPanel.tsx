@@ -81,7 +81,7 @@ const AlertPanel: React.FC<AlertPanelProps> = ({
   const renderAlertsList = (alertsList: Alert[], isAcknowledged: boolean) => {
     if (alertsList.length === 0) {
       return (
-        <div className="py-8 text-center text-gray-500 dark:text-gray-400">
+        <div className="py-8 text-center text-gray-500 dark:text-slate-500">
           <p className="text-sm">
             {isAcknowledged ? 'No acknowledged alerts' : 'No active alerts'}
           </p>
@@ -121,7 +121,7 @@ const AlertPanel: React.FC<AlertPanelProps> = ({
                 <div>
                   <div className="flex items-center gap-2 flex-wrap">
                     <span className="text-xl">{getTypeIcon(alert.type)}</span>
-                    <h4 className="font-semibold text-gray-900 dark:text-white">
+                    <h4 className="font-semibold text-gray-900 dark:text-slate-900">
                       {alert.title}
                     </h4>
                     <Badge
@@ -133,11 +133,11 @@ const AlertPanel: React.FC<AlertPanelProps> = ({
                     </Badge>
                   </div>
 
-                  <p className="text-sm text-gray-700 dark:text-gray-300 mt-1">
+                  <p className="text-sm text-gray-700 dark:text-slate-600 mt-1">
                     {alert.description}
                   </p>
 
-                  <div className="flex items-center gap-4 mt-2 text-xs text-gray-600 dark:text-gray-400">
+                  <div className="flex items-center gap-4 mt-2 text-xs text-gray-600 dark:text-slate-500">
                     {alert.camera_id && (
                       <span>📹 Camera {alert.camera_id}</span>
                     )}
@@ -179,7 +179,7 @@ const AlertPanel: React.FC<AlertPanelProps> = ({
       <div className="flex flex-col gap-6">
         {/* Active Alerts */}
         <div className="flex-1">
-          <h3 className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-3">
+          <h3 className="text-sm font-semibold text-gray-700 dark:text-slate-600 mb-3">
             Active Alerts ({activeAlerts.length})
           </h3>
           <div className="max-h-96 overflow-y-auto pr-2">
@@ -200,7 +200,7 @@ const AlertPanel: React.FC<AlertPanelProps> = ({
 
             {/* Acknowledged Alerts */}
             <div className="flex-1">
-              <h3 className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-3">
+              <h3 className="text-sm font-semibold text-gray-700 dark:text-slate-600 mb-3">
                 Acknowledged ({acknowledgedAlerts.length})
               </h3>
               <div className="max-h-48 overflow-y-auto pr-2">

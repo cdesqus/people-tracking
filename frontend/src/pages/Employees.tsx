@@ -180,10 +180,10 @@ const EmployeesPage: React.FC = () => {
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
-          <h1 className="text-3xl font-bold text-gray-900 dark:text-white">
+          <h1 className="text-3xl font-bold text-gray-900 dark:text-slate-900">
             Employee Management
           </h1>
-          <p className="text-gray-600 dark:text-gray-400 mt-1">
+          <p className="text-gray-600 dark:text-slate-500 mt-1">
             Manage employees, track locations, and view detection history
           </p>
         </div>
@@ -266,10 +266,10 @@ const EmployeesPage: React.FC = () => {
           <Card className="max-w-md w-full">
             <div className="p-6 space-y-6">
               <div>
-                <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
+                <h3 className="text-lg font-semibold text-gray-900 dark:text-slate-900">
                   Delete Employee
                 </h3>
-                <p className="text-gray-600 dark:text-gray-400 mt-2">
+                <p className="text-gray-600 dark:text-slate-500 mt-2">
                   Are you sure you want to delete {selectedEmployee.name}? This action cannot be undone.
                 </p>
               </div>
