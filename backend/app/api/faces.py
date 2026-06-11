@@ -18,12 +18,23 @@ async def list_faces(
     skip: int = 0,
     limit: int = 100,
     camera_id: Optional[str] = None,
+    person_id: Optional[str] = None,
+    date: Optional[str] = None,
     db: AsyncSession = Depends(get_db)
 ):
     """List all detected faces, joined with camera location and employee names"""
     query = select(Face)
     if camera_id:
         query = query.where(Face.camera_id == camera_id)
+    if person_id:
+        query = query.where(Face.person_id == person_id)
+    if date:
+        try:
+            from sqlalchemy import cast, Date
+            target_date = datetime.strptime(date, "%Y-%m-%d").date()
+            query = query.where(cast(Face.timestamp, Date) == target_date)
+        except ValueError:
+            pass
 
     query = query.order_by(Face.timestamp.desc()).offset(skip).limit(limit)
     res = await db.execute(query)

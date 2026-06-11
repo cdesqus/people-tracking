@@ -41,7 +41,7 @@ const EmployeeTimeline: React.FC<EmployeeTimelineProps> = ({
         }
 
         const data = await response.json();
-        setTimeline(data.items || []);
+        setTimeline(Array.isArray(data) ? data : (data.items || []));
       } catch (err) {
         setError(err instanceof Error ? err.message : 'Error fetching timeline');
       } finally {
