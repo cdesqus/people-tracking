@@ -21,6 +21,7 @@ class RTSPService:
     last_detections = {}
     latest_frames = {}
     latest_frame_times = {}
+    camera_zones_cache = {}
 
     @staticmethod
     def generate_rtsp_url(
@@ -209,28 +210,9 @@ class RTSPService:
         Generate MJPEG frames from an RTSP stream for browser display.
         Uses cached frame if available to prevent camera connection limit exhaustion.
         """
-        # Parse zones if provided
-        zones = []
-        if intrusion_zones:
-            try:
-                import json
-                if isinstance(intrusion_zones, str):
-                    zones_data = json.loads(intrusion_zones)
-                else:
-                    zones_data = intrusion_zones
-                for polygon in zones_data:
-                    pts = []
-                    for p in polygon:
-                        if isinstance(p, dict):
-                            pts.append([int(p.get("x", 0)), int(p.get("y", 0))])
-                        else:
-                            pts.append([int(p[0]), int(p[1])])
-                    if pts:
-                        zones.append(np.array(pts, dtype=np.int32))
-            except Exception as e:
-                logger.error(f"Error parsing intrusion zones in stream: {e}")
-
         frame_interval = 1.0 / fps_limit
+        last_zones_json = None
+        zones = []
 
         # --- CACHED STREAMING PATH ---
         if camera_id and camera_id in RTSPService.latest_frames:
@@ -245,6 +227,30 @@ class RTSPService:
 
                     # Copy to avoid mutating cached frame
                     frame_copy = frame.copy()
+
+                    # Dynamically check for zone updates
+                    current_zones_json = RTSPService.camera_zones_cache.get(camera_id, intrusion_zones)
+                    if current_zones_json != last_zones_json:
+                        last_zones_json = current_zones_json
+                        zones = []
+                        if current_zones_json:
+                            try:
+                                import json
+                                if isinstance(current_zones_json, str):
+                                    zones_data = json.loads(current_zones_json)
+                                else:
+                                    zones_data = current_zones_json
+                                for polygon in zones_data:
+                                    pts = []
+                                    for p in polygon:
+                                        if isinstance(p, dict):
+                                            pts.append([int(p.get("x", 0)), int(p.get("y", 0))])
+                                        else:
+                                            pts.append([int(p[0]), int(p[1])])
+                                    if pts:
+                                        zones.append(np.array(pts, dtype=np.int32))
+                            except Exception as e:
+                                logger.error(f"Error parsing dynamic intrusion zones in cached stream: {e}")
 
                     # Check if the cached frame is stale (no update in 8 seconds)
                     import time as py_time
@@ -350,6 +356,30 @@ class RTSPService:
                     ret, frame = cap.read()
                     if not ret:
                         break
+
+                # Dynamically check for zone updates
+                current_zones_json = RTSPService.camera_zones_cache.get(camera_id, intrusion_zones)
+                if current_zones_json != last_zones_json:
+                    last_zones_json = current_zones_json
+                    zones = []
+                    if current_zones_json:
+                        try:
+                            import json
+                            if isinstance(current_zones_json, str):
+                                zones_data = json.loads(current_zones_json)
+                            else:
+                                zones_data = current_zones_json
+                            for polygon in zones_data:
+                                pts = []
+                                for p in polygon:
+                                    if isinstance(p, dict):
+                                        pts.append([int(p.get("x", 0)), int(p.get("y", 0))])
+                                    else:
+                                        pts.append([int(p[0]), int(p[1])])
+                                if pts:
+                                    zones.append(np.array(pts, dtype=np.int32))
+                        except Exception as e:
+                            logger.error(f"Error parsing dynamic intrusion zones in direct stream: {e}")
 
                 # Draw face bounding boxes and names if active detections exist
                 if camera_id and camera_id in RTSPService.last_detections:

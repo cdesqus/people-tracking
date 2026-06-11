@@ -160,6 +160,11 @@ class CameraService:
         for key, value in update_dict.items():
             if value is not None:
                 setattr(camera, key, value)
+
+        # Update zone cache in real-time
+        if "intrusion_zones" in update_dict:
+            from app.services.rtsp_service import RTSPService
+            RTSPService.camera_zones_cache[camera.id] = update_dict["intrusion_zones"]
         
         camera.updated_at = datetime.utcnow()
         await db.commit()

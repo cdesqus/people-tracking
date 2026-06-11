@@ -206,6 +206,9 @@ async def stream_camera(
     if not camera.stream_url:
         raise HTTPException(status_code=400, detail="Camera has no stream URL configured")
     
+    # Update zone cache with latest database values
+    RTSPService.camera_zones_cache[camera.id] = camera.intrusion_zones
+
     return StreamingResponse(
         RTSPService.generate_mjpeg_stream(
             camera.stream_url,
