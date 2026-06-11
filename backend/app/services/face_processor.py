@@ -16,6 +16,7 @@ from app.services.aws_rekognition import rekognition_service, NoFacesException
 from app.utils.websocket_manager import ws_manager
 from app.services import waha_service
 from app.config import settings
+from app.services.rtsp_service import RTSPService
 
 from ultralytics import YOLO
 import supervision as sv
@@ -38,7 +39,6 @@ def _safe_create_task(coro, name: str = "waha_task"):
 # Persistent background readers per camera to avoid OpenCV buffering latency
 _camera_threads: dict = {}   # camera_id -> threading.Thread
 _camera_active: dict = {}    # camera_id -> bool
-_latest_frames: dict = {}    # camera_id -> latest frame (numpy array)
 
 def _camera_worker(camera_id: str, stream_url: str):
     """Background thread that continuously reads from the camera to flush the buffer."""
@@ -65,8 +65,8 @@ def _camera_worker(camera_id: str, stream_url: str):
             time.sleep(1)
             continue
             
-        # Store latest frame safely
-        _latest_frames[camera_id] = frame
+        # Store latest frame safely in RTSPService cache
+        RTSPService.latest_frames[camera_id] = frame
         
     cap.release()
     logger.info(f"Stopped frame grabber thread for camera {camera_id}")
@@ -135,7 +135,7 @@ def _open_and_read_frame(camera_id: str, stream_url: str):
         # Give it a moment to fetch the first frame
         time.sleep(1.0)
         
-    frame = _latest_frames.get(camera_id)
+    frame = RTSPService.latest_frames.get(camera_id)
     if frame is not None:
         return True, frame.copy()
     return False, None

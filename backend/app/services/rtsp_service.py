@@ -19,6 +19,7 @@ class RTSPService:
     """Service for managing RTSP streams and connections"""
     
     last_detections = {}
+    latest_frames = {}
 
     @staticmethod
     def generate_rtsp_url(
@@ -155,11 +156,24 @@ class RTSPService:
                 pass
 
     @staticmethod
-    def get_snapshot(rtsp_url: str, jpeg_quality: int = 60) -> Optional[bytes]:
+    def get_snapshot(rtsp_url: str, jpeg_quality: int = 60, camera_id: Optional[str] = None) -> Optional[bytes]:
         """
         Get a single JPEG snapshot from the RTSP stream.
-        This uses fewer resources and avoids keeping TCP connections open.
+        Uses cached frame if available to prevent connection exhaustion.
         """
+        if camera_id and camera_id in RTSPService.latest_frames:
+            frame = RTSPService.latest_frames[camera_id]
+            if frame is not None:
+                try:
+                    _, buffer = cv2.imencode(
+                        '.jpg', frame,
+                        [cv2.IMWRITE_JPEG_QUALITY, jpeg_quality]
+                    )
+                    return buffer.tobytes()
+                except Exception as e:
+                    logger.error(f"Failed to encode cached frame: {e}")
+
+        # Fallback to direct RTSP capture
         os.environ.setdefault('OPENCV_FFMPEG_CAPTURE_OPTIONS', 'rtsp_transport;tcp|stimeout;5000000')
         cap = cv2.VideoCapture(rtsp_url, cv2.CAP_FFMPEG)
         try:

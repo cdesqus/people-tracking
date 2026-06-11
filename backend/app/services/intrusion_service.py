@@ -135,7 +135,7 @@ class IntrusionService:
                 
                 # We use get_snapshot from RTSPService to avoid keeping continuous connections open if network is flaky
                 # Alternatively, use a persistent cv2.VideoCapture loop here. For simplicity and reliability, get_snapshot:
-                snapshot_bytes = RTSPService.get_snapshot(stream_url, jpeg_quality=80)
+                snapshot_bytes = RTSPService.get_snapshot(stream_url, jpeg_quality=80, camera_id=cam_id)
                 
                 if snapshot_bytes:
                     nparr = np.frombuffer(snapshot_bytes, np.uint8)

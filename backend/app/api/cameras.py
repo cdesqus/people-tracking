@@ -241,10 +241,11 @@ async def get_camera_snapshot(
         raise HTTPException(status_code=400, detail="Camera has no stream URL configured")
     
     import asyncio
+    from functools import partial
     loop = asyncio.get_running_loop()
     # Run cv2 operations in threadpool to avoid blocking event loop
     snapshot_bytes = await loop.run_in_executor(
-        None, RTSPService.get_snapshot, camera.stream_url
+        None, partial(RTSPService.get_snapshot, camera.stream_url, camera_id=camera.id)
     )
     
     if not snapshot_bytes:
