@@ -206,21 +206,7 @@ class RTSPService:
     ) -> Generator[bytes, None, None]:
         """
         Generate MJPEG frames from an RTSP stream for browser display.
-
-        Yields multipart boundary-delimited JPEG frames that can be
-        consumed by an <img> tag with a StreamingResponse.
-
-        Optimized for local CCTV substreams with minimal latency:
-        - Uses FFMPEG backend with buffer size 1
-        - TCP transport for reliable local delivery
-        - Higher default FPS and lower JPEG quality for substreams
-
-        Args:
-            rtsp_url: Complete RTSP URL
-            fps_limit: Max frames per second to send (default 15 for local)
-            jpeg_quality: JPEG encoding quality 1-100 (default 60 for substream)
-            camera_id: Unique camera ID for drawing face bounding boxes (optional)
-            intrusion_zones: JSON string containing polygon points of intrusion zones (optional)
+        Uses cached frame if available to prevent camera connection limit exhaustion.
         """
         # Parse zones if provided
         zones = []
@@ -243,7 +229,84 @@ class RTSPService:
             except Exception as e:
                 logger.error(f"Error parsing intrusion zones in stream: {e}")
 
-        # Set RTSP transport to TCP and 5s timeout for local network reliability
+        frame_interval = 1.0 / fps_limit
+
+        # --- CACHED STREAMING PATH ---
+        if camera_id and camera_id in RTSPService.latest_frames:
+            logger.info(f"Serving cached MJPEG stream for camera {camera_id}")
+            try:
+                while camera_id in RTSPService.latest_frames:
+                    start = time.monotonic()
+                    frame = RTSPService.latest_frames.get(camera_id)
+                    if frame is None:
+                        time.sleep(0.1)
+                        continue
+
+                    # Copy to avoid mutating cached frame
+                    frame_copy = frame.copy()
+
+                    # Draw face bounding boxes and names if active detections exist
+                    if camera_id in RTSPService.last_detections:
+                        from datetime import datetime
+                        now = datetime.utcnow()
+                        detections = RTSPService.last_detections[camera_id]
+                        active_detections = [
+                            d for d in detections 
+                            if (now - d["timestamp"]).total_seconds() < 4.0
+                        ]
+                        
+                        for d in active_detections:
+                            name = d["name"]
+                            box = d["box"]
+                            
+                            h, w, _ = frame_copy.shape
+                            left = int(box.get("left", 0.0) * w)
+                            top = int(box.get("top", 0.0) * h)
+                            width = int(box.get("width", 0.0) * w)
+                            height = int(box.get("height", 0.0) * h)
+                            
+                            right = min(w, left + width)
+                            bottom = min(h, top + height)
+                            
+                            color = (0, 255, 0) if name != "Unknown Subject" else (0, 0, 255)
+                            
+                            cv2.rectangle(frame_copy, (left, top), (right, bottom), color, 2)
+                            
+                            label = name
+                            label_size, _ = cv2.getTextSize(label, cv2.FONT_HERSHEY_SIMPLEX, 0.5, 1)
+                            lw, lh = label_size
+                            
+                            cv2.rectangle(frame_copy, (left, top - lh - 10), (left + lw + 10, top), color, cv2.FILLED)
+                            cv2.putText(frame_copy, label, (left + 5, top - 5), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (255, 255, 255), 1, cv2.LINE_AA)
+
+                    # Draw intrusion zones
+                    if zones:
+                        cv2.polylines(frame_copy, zones, isClosed=True, color=(0, 0, 255), thickness=2)
+
+                    _, buffer = cv2.imencode(
+                        '.jpg', frame_copy,
+                        [cv2.IMWRITE_JPEG_QUALITY, jpeg_quality]
+                    )
+
+                    frame_latency_ms = int((time.monotonic() - start) * 1000)
+
+                    yield (
+                        b'--frame\r\n'
+                        b'Content-Type: image/jpeg\r\n'
+                        b'X-Frame-Latency: ' + str(frame_latency_ms).encode() + b'\r\n\r\n'
+                        + buffer.tobytes()
+                        + b'\r\n'
+                    )
+
+                    elapsed = time.monotonic() - start
+                    if elapsed < frame_interval:
+                        time.sleep(frame_interval - elapsed)
+            except GeneratorExit:
+                logger.info(f"MJPEG cached stream client disconnected for camera {camera_id}")
+            return
+
+        # --- DIRECT STREAMING FALLBACK PATH ---
+        logger.info(f"Serving direct RTSP MJPEG stream for {rtsp_url}")
         os.environ.setdefault('OPENCV_FFMPEG_CAPTURE_OPTIONS', 'rtsp_transport;tcp|stimeout;5000000')
 
         cap = cv2.VideoCapture(rtsp_url, cv2.CAP_FFMPEG)
@@ -253,8 +316,6 @@ class RTSPService:
             cap.set(cv2.CAP_PROP_BUFFERSIZE, 1)
         except Exception:
             pass
-
-        frame_interval = 1.0 / fps_limit
 
         try:
             while cap.isOpened():
@@ -333,7 +394,10 @@ class RTSPService:
         except GeneratorExit:
             logger.info("MJPEG stream client disconnected")
         finally:
-            cap.release()
+            try:
+                cap.release()
+            except:
+                pass
 
     @staticmethod
     def validate_rtsp_params(
