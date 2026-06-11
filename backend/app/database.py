@@ -62,6 +62,11 @@ async def init_db():
                     await session.execute(text("ALTER TABLE whatsapp_configs ADD COLUMN IF NOT EXISTS alert_types JSONB;"))
                 except Exception as e:
                     print(f"Migration warning whatsapp_configs alert_types: {e}")
+                    
+                try:
+                    await session.execute(text("ALTER TABLE cameras ADD COLUMN IF NOT EXISTS intrusion_zones TEXT;"))
+                except Exception as e:
+                    print(f"Migration warning cameras intrusion_zones: {e}")
                 
                 # Correct foreign keys to point to employees instead of persons
                 try:
@@ -83,6 +88,11 @@ async def init_db():
                 
                 try:
                     await session.execute(text("ALTER TABLE whatsapp_configs ADD COLUMN alert_types TEXT;"))
+                except Exception:
+                    pass
+                    
+                try:
+                    await session.execute(text("ALTER TABLE cameras ADD COLUMN intrusion_zones TEXT;"))
                 except Exception:
                     pass
             await session.commit()

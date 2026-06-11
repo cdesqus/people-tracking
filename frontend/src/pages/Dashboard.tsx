@@ -5,6 +5,26 @@ import { useDashboardData } from '@hooks/useDashboardData';
 import { acknowledgeAlertStart, acknowledgeAlertSuccess } from '@store/slices/alertSlice';
 import { API_BASE_URL } from '@/utils/constants';
 
+// Component to handle MJPEG streams properly and prevent browser connection exhaustion
+const MjpegStream: React.FC<{ src: string; alt: string; className: string }> = ({ src, alt, className }) => {
+  const imgRef = React.useRef<HTMLImageElement>(null);
+
+  React.useEffect(() => {
+    if (imgRef.current) {
+      imgRef.current.src = src;
+    }
+    return () => {
+      // Force the browser to close the MJPEG connection when the component unmounts
+      // A blank 1x1 GIF forces Chrome to kill the multipart TCP socket immediately.
+      if (imgRef.current) {
+        imgRef.current.src = 'data:image/gif;base64,R0lGODlhAQABAAD/ACwAAAAAAQABAAACADs=';
+      }
+    };
+  }, [src]);
+
+  return <img ref={imgRef} alt={alt} className={className} />;
+};
+
 const Dashboard: React.FC = () => {
   const dispatch = useAppDispatch();
   const branches = useAppSelector((state) => state.branches.branches);
@@ -342,34 +362,26 @@ const Dashboard: React.FC = () => {
       return;
     }
 
-    // Measure latency by timing how long it takes to receive a frame
+    // Measure latency by timing how long it takes to fetch a snapshot
     const measureLatency = async () => {
       try {
-        const streamUrl = activeFocusedCamera.image;
-        if (!streamUrl) return;
-
         const start = performance.now();
-        const response = await fetch(streamUrl, {
+        // Use snapshot instead of stream to prevent spawning a new OpenCV RTSP thread on the backend every 5 seconds
+        const response = await fetch(`/api/cameras/${activeFocusedCamera.id}/snapshot`, {
           method: 'GET',
           signal: AbortSignal.timeout(3000),
         });
         
         if (response.ok) {
-          // Read just enough to confirm we got data
-          const reader = response.body?.getReader();
-          if (reader) {
-            await reader.read();
-            reader.cancel();
-          }
           const latency = Math.round(performance.now() - start);
           setStreamLatency(latency);
         }
       } catch {
-        // Silently fail — latency display will show last known value
+        // Silently fail
       }
     };
 
-    // Also fetch stream info (resolution, fps) from the test-connection endpoint
+    // Only fetch stream info ONCE when the camera focuses, not every 5 seconds
     const fetchStreamInfo = async () => {
       try {
         const res = await fetch(`/api/cameras/${activeFocusedCamera.id}/test-connection`, {
@@ -391,6 +403,8 @@ const Dashboard: React.FC = () => {
 
     measureLatency();
     fetchStreamInfo();
+    
+    // Only poll latency, not test-connection
     const interval = setInterval(measureLatency, 5000);
     return () => clearInterval(interval);
   }, [activeTab, activeFocusedCamera]);
@@ -823,7 +837,7 @@ const Dashboard: React.FC = () => {
                     <div className="bg-slate-950 relative flex items-center justify-center overflow-hidden">
                       {activeFocusedCamera.status === 'active' ? (
                         <>
-                          <img 
+                          <MjpegStream
                             alt={activeFocusedCamera.name} 
                             className="w-full h-full object-contain"
                             src={activeFocusedCamera.image} 

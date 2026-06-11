@@ -7,6 +7,7 @@ export interface Camera {
   resolution: string;
   fps: number;
   branch?: string;
+  intrusion_zones?: string;
   created_at: string;
   updated_at: string;
 }

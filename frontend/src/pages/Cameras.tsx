@@ -14,6 +14,7 @@ import {
   setCurrentPage,
 } from '@store/slices/cameraSlice';
 import { Card, Table, Button, Modal, Input, Badge, Pagination } from '@components/common';
+import ZoneEditor from '@components/settings/ZoneEditor';
 import { Camera } from '@/types/index';
 import apiClient from '@services/api';
 
@@ -40,6 +41,8 @@ const CamerasPage: React.FC = () => {
 
   const [showModal, setShowModal] = useState(false);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [showZoneEditor, setShowZoneEditor] = useState(false);
+  const [zoneCamera, setZoneCamera] = useState<Camera | null>(null);
   const [selectedBranchFilter, setSelectedBranchFilter] = useState<string>('all');
   const [formData, setFormData] = useState<CameraFormData>({
     name: '',
@@ -252,6 +255,20 @@ const CamerasPage: React.FC = () => {
     setShowDeleteConfirm(false);
   };
 
+  const handleSaveZone = async (zonesJson: string) => {
+    if (!zoneCamera) return;
+    try {
+      const response = await apiClient.updateCamera(zoneCamera.id, {
+        intrusion_zones: zonesJson,
+      });
+      if (response.data.success) {
+        dispatch(updateCameraSuccess(response.data.data));
+      }
+    } catch (err) {
+      console.error('Failed to save zones', err);
+    }
+  };
+
   const statusColorMap = {
     active: 'green',
     inactive: 'gray',
@@ -327,6 +344,16 @@ const CamerasPage: React.FC = () => {
             onClick={() => handleOpenEditModal(row)}
           >
             Edit
+          </Button>
+          <Button
+            variant="secondary"
+            size="sm"
+            onClick={() => {
+              setZoneCamera(row);
+              setShowZoneEditor(true);
+            }}
+          >
+            Zones
           </Button>
           <Button
             variant="danger"
@@ -562,6 +589,13 @@ const CamerasPage: React.FC = () => {
           </div>
         </Modal>
       )}
+      {/* Zone Editor Modal */}
+      <ZoneEditor
+        isOpen={showZoneEditor}
+        onClose={() => setShowZoneEditor(false)}
+        camera={zoneCamera}
+        onSave={handleSaveZone}
+      />
     </div>
   );
 };

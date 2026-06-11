@@ -32,6 +32,9 @@ class Camera(Base):
     rtsp_channel = Column(String(50), nullable=True, default="1")  # Channel/stream number
     rtsp_stream_path = Column(String(255), nullable=True)  # Stream path for generic RTSP
     
+    # Intrusion Detection settings
+    intrusion_zones = Column(String, nullable=True)  # Store JSON as string: [[[x1,y1], [x2,y2], ...], ...]
+    
     # Status tracking
     last_status_check = Column(DateTime(timezone=True), nullable=True)
     connection_error = Column(String(500), nullable=True)  # Last connection error message

@@ -20,6 +20,7 @@ class CameraBase(BaseModel):
     resolution: Optional[str] = None
     fps: Optional[int] = 30
     branch: Optional[str] = "br-hq"
+    intrusion_zones: Optional[str] = None  # JSON string of zones
 
 
 class CameraCreate(CameraBase):

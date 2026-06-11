@@ -7,6 +7,7 @@ from app.database import init_db, close_db, seed_users
 from app.api import api_router
 from app.utils.websocket_manager import ws_manager
 from app.services.face_processor import start_face_processor
+from app.services.intrusion_service import intrusion_service
 
 
 @asynccontextmanager
@@ -24,9 +25,13 @@ async def lifespan(app: FastAPI):
     face_processor_task = asyncio.create_task(start_face_processor())
     app.state.face_processor_task = face_processor_task
     
+    # Start intrusion service background task
+    asyncio.create_task(intrusion_service.start())
+    
     yield
     # Shutdown
     print("Shutting down application...")
+    await intrusion_service.stop()
     if hasattr(app.state, "face_processor_task"):
         app.state.face_processor_task.cancel()
         try:
