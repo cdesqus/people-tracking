@@ -430,7 +430,7 @@ async def start_face_processor():
                             search_result = await rekognition_service.search_faces_by_image(
                                 collection_id=collection_id,
                                 image_bytes=crop_bytes,
-                                threshold=0.6,
+                                threshold=0.85,
                             )
                             
                             matches = search_result.get('matches', [])

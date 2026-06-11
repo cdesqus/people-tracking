@@ -33,11 +33,15 @@ class ApiClient {
       (response) => response,
       (error: AxiosError) => {
         if (error.response?.status === 401) {
-          console.error('Unauthorized access - clearing tokens and redirecting');
-          localStorage.removeItem('access_token');
-          localStorage.removeItem('refresh_token');
-          if (window.location.pathname !== '/login') {
-            window.location.href = '/login';
+          // Skip auto-redirect for /me endpoint — App.tsx handles session restore itself.
+          const requestUrl = error.config?.url || '';
+          if (!requestUrl.includes('/auth/me')) {
+            console.error('Unauthorized access - clearing tokens and redirecting');
+            localStorage.removeItem('access_token');
+            localStorage.removeItem('refresh_token');
+            if (window.location.pathname !== '/login') {
+              window.location.href = '/login';
+            }
           }
         }
         return Promise.reject(error);

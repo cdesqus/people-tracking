@@ -48,8 +48,8 @@ const Navbar: React.FC = () => {
 
   return (
     <nav className="bg-white text-slate-900 border-b border-slate-200 shadow-sm sticky top-0 z-40">
-      <div className="px-4 py-3 sm:px-6 sm:py-4">
-        <div className="flex items-center justify-between h-16 gap-4">
+      <div className="px-4 py-1.5 sm:px-6 sm:py-2">
+        <div className="flex items-center justify-between h-10 gap-4">
           {/* Left: Hamburger + Logo */}
           <div className="flex items-center gap-4">
             {/* Hamburger Menu */}
@@ -63,7 +63,7 @@ const Navbar: React.FC = () => {
 
             {/* Logo - Hidden on mobile */}
             <div className="hidden sm:flex items-center gap-2">
-              <div className="w-10 h-10 rounded-lg bg-blue-600 flex items-center justify-center font-bold text-lg">
+              <div className="w-8 h-8 rounded-lg bg-blue-600 flex items-center justify-center font-bold text-sm text-white">
                 CC
               </div>
               <span className="font-bold text-lg tracking-tight">
@@ -73,7 +73,7 @@ const Navbar: React.FC = () => {
 
             {/* Mobile Logo - Show on mobile only */}
             <div className="sm:hidden">
-              <div className="w-8 h-8 rounded-lg bg-blue-600 flex items-center justify-center font-bold text-sm">
+              <div className="w-7 h-7 rounded-lg bg-blue-600 flex items-center justify-center font-bold text-xs text-white">
                 CC
               </div>
             </div>

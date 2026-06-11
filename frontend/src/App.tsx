@@ -39,12 +39,19 @@ const App: React.FC = () => {
           if (response.data.success) {
             dispatch(setUser(response.data.data));
           } else {
-            // Token invalid/expired
+            // Token invalid/expired — confirmed by server
             dispatch(logout());
           }
-        } catch (error) {
-          console.error('Failed to restore user session:', error);
-          dispatch(logout());
+        } catch (error: any) {
+          // Only logout if the server explicitly says 401 Unauthorized.
+          // Network errors / timeouts should NOT kick the user out.
+          if (error?.response?.status === 401) {
+            console.error('Token expired or invalid, logging out.');
+            dispatch(logout());
+          } else {
+            console.warn('Failed to restore session (network issue?), keeping token:', error?.message);
+            // Keep the token — don't logout. The user can retry by refreshing.
+          }
         } finally {
           dispatch(setAuthLoading(false));
           setInitializing(false);

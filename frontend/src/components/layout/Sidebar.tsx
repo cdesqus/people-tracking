@@ -11,6 +11,7 @@ import {
   UserCheck,
   FileText,
   ShieldAlert,
+  ChevronLeft,
   LucideIcon,
 } from 'lucide-react';
 import { useAppSelector } from '@store/store';
@@ -47,6 +48,13 @@ const Sidebar: React.FC = () => {
       path: '/cameras',
       id: 'cameras',
       roles: ['admin', 'manager', 'operator', 'security'],
+    },
+    {
+      icon: ShieldAlert,
+      label: 'Intrusion Zones',
+      path: '/cameras',
+      id: 'zones',
+      roles: ['admin', 'manager', 'security'],
     },
     {
       icon: Building,
@@ -124,24 +132,13 @@ const Sidebar: React.FC = () => {
           sidebarOpen ? 'w-64' : 'w-20'
         }`}
       >
-        {/* Logo Section (Click to Toggle) */}
+        {/* Toggle Button */}
         <div 
           onClick={toggle}
-          className="flex-shrink-0 px-4 py-6 border-b border-slate-200 flex items-center justify-center cursor-pointer hover:bg-slate-100/50 transition-colors"
-          title="Toggle Sidebar"
+          className="flex-shrink-0 px-3 py-3 border-b border-slate-200 flex items-center justify-center cursor-pointer hover:bg-slate-100/50 transition-colors"
+          title={sidebarOpen ? 'Minimize' : 'Expand'}
         >
-          <div className="flex items-center gap-3">
-            <div className={`w-10 h-10 rounded-lg bg-gradient-to-br from-blue-500 to-blue-600 flex items-center justify-center font-bold text-lg flex-shrink-0 shadow-lg ${!sidebarOpen ? 'mx-auto' : ''}`}>
-              CC
-            </div>
-            {sidebarOpen && (
-              <div className="flex flex-col gap-0">
-                <span className="text-sm font-bold text-slate-700 tracking-wider">
-                  DASHBOARD
-                </span>
-              </div>
-            )}
-          </div>
+          <ChevronLeft className={`w-5 h-5 text-slate-400 transition-transform duration-300 ${!sidebarOpen ? 'rotate-180' : ''}`} />
         </div>
 
         {/* Navigation */}
