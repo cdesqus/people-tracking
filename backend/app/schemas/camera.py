@@ -50,6 +50,7 @@ class CameraUpdate(BaseModel):
     rtsp_password: Optional[str] = None
     rtsp_channel: Optional[str] = None
     rtsp_stream_path: Optional[str] = None
+    intrusion_zones: Optional[str] = None
 
 
 class CameraResponse(CameraBase):

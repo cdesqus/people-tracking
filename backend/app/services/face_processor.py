@@ -67,6 +67,7 @@ def _camera_worker(camera_id: str, stream_url: str):
             
         # Store latest frame safely in RTSPService cache
         RTSPService.latest_frames[camera_id] = frame
+        RTSPService.latest_frame_times[camera_id] = time.time()
         
     cap.release()
     logger.info(f"Stopped frame grabber thread for camera {camera_id}")
@@ -126,8 +127,22 @@ def _crop_face_from_frame(frame, bounding_box: dict, padding: float = 0.20):
 
 
 def _open_and_read_frame(camera_id: str, stream_url: str):
-    """Get the latest frame from the background grabber thread."""
-    if camera_id not in _camera_threads or not _camera_threads[camera_id].is_alive():
+    """Get the latest frame from the background grabber thread with watchdog self-healing."""
+    now = time.time()
+    last_update = RTSPService.latest_frame_times.get(camera_id, 0)
+    thread_is_alive = camera_id in _camera_threads and _camera_threads[camera_id].is_alive()
+    
+    # If the thread is dead, OR if it has been alive but hasn't updated the frame in 10 seconds:
+    if not thread_is_alive or (now - last_update > 10.0):
+        if thread_is_alive:
+            logger.warning(f"Watchdog: Camera thread for {camera_id} is hung (no update for {now - last_update:.1f}s). Restarting...")
+        else:
+            logger.info(f"Starting frame grabber thread for camera {camera_id}")
+            
+        # Signal old thread to stop (if it ever unblocks)
+        _camera_active[camera_id] = False
+        
+        # Start new thread
         _camera_active[camera_id] = True
         t = threading.Thread(target=_camera_worker, args=(camera_id, stream_url), daemon=True)
         _camera_threads[camera_id] = t

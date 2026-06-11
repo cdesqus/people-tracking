@@ -20,6 +20,7 @@ class RTSPService:
     
     last_detections = {}
     latest_frames = {}
+    latest_frame_times = {}
 
     @staticmethod
     def generate_rtsp_url(
@@ -245,43 +246,60 @@ class RTSPService:
                     # Copy to avoid mutating cached frame
                     frame_copy = frame.copy()
 
-                    # Draw face bounding boxes and names if active detections exist
-                    if camera_id in RTSPService.last_detections:
-                        from datetime import datetime
-                        now = datetime.utcnow()
-                        detections = RTSPService.last_detections[camera_id]
-                        active_detections = [
-                            d for d in detections 
-                            if (now - d["timestamp"]).total_seconds() < 4.0
-                        ]
+                    # Check if the cached frame is stale (no update in 8 seconds)
+                    import time as py_time
+                    last_update = RTSPService.latest_frame_times.get(camera_id, 0)
+                    if py_time.time() - last_update > 8.0:
+                        # Draw semi-transparent black overlay
+                        overlay = frame_copy.copy()
+                        cv2.rectangle(overlay, (0, 0), (frame_copy.shape[1], frame_copy.shape[0]), (0, 0, 0), -1)
+                        cv2.addWeighted(overlay, 0.6, frame_copy, 0.4, 0, frame_copy)
                         
-                        for d in active_detections:
-                            name = d["name"]
-                            box = d["box"]
+                        # Draw "RECONNECTING TO CAMERA..." text
+                        text = "RECONNECTING TO CAMERA..."
+                        font = cv2.FONT_HERSHEY_SIMPLEX
+                        text_size = cv2.getTextSize(text, font, 1.0, 2)[0]
+                        tx = (frame_copy.shape[1] - text_size[0]) // 2
+                        ty = (frame_copy.shape[0] + text_size[1]) // 2
+                        cv2.putText(frame_copy, text, (tx, ty), font, 1.0, (0, 0, 255), 2, cv2.LINE_AA)
+                    else:
+                        # Draw face bounding boxes and names if active detections exist
+                        if camera_id in RTSPService.last_detections:
+                            from datetime import datetime
+                            now = datetime.utcnow()
+                            detections = RTSPService.last_detections[camera_id]
+                            active_detections = [
+                                d for d in detections 
+                                if (now - d["timestamp"]).total_seconds() < 4.0
+                            ]
                             
-                            h, w, _ = frame_copy.shape
-                            left = int(box.get("left", 0.0) * w)
-                            top = int(box.get("top", 0.0) * h)
-                            width = int(box.get("width", 0.0) * w)
-                            height = int(box.get("height", 0.0) * h)
-                            
-                            right = min(w, left + width)
-                            bottom = min(h, top + height)
-                            
-                            color = (0, 255, 0) if name != "Unknown Subject" else (0, 0, 255)
-                            
-                            cv2.rectangle(frame_copy, (left, top), (right, bottom), color, 2)
-                            
-                            label = name
-                            label_size, _ = cv2.getTextSize(label, cv2.FONT_HERSHEY_SIMPLEX, 0.5, 1)
-                            lw, lh = label_size
-                            
-                            cv2.rectangle(frame_copy, (left, top - lh - 10), (left + lw + 10, top), color, cv2.FILLED)
-                            cv2.putText(frame_copy, label, (left + 5, top - 5), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (255, 255, 255), 1, cv2.LINE_AA)
+                            for d in active_detections:
+                                name = d["name"]
+                                box = d["box"]
+                                
+                                h, w, _ = frame_copy.shape
+                                left = int(box.get("left", 0.0) * w)
+                                top = int(box.get("top", 0.0) * h)
+                                width = int(box.get("width", 0.0) * w)
+                                height = int(box.get("height", 0.0) * h)
+                                
+                                right = min(w, left + width)
+                                bottom = min(h, top + height)
+                                
+                                color = (0, 255, 0) if name != "Unknown Subject" else (0, 0, 255)
+                                
+                                cv2.rectangle(frame_copy, (left, top), (right, bottom), color, 2)
+                                
+                                label = name
+                                label_size, _ = cv2.getTextSize(label, cv2.FONT_HERSHEY_SIMPLEX, 0.5, 1)
+                                lw, lh = label_size
+                                
+                                cv2.rectangle(frame_copy, (left, top - lh - 10), (left + lw + 10, top), color, cv2.FILLED)
+                                cv2.putText(frame_copy, label, (left + 5, top - 5), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (255, 255, 255), 1, cv2.LINE_AA)
 
-                    # Draw intrusion zones
-                    if zones:
-                        cv2.polylines(frame_copy, zones, isClosed=True, color=(0, 0, 255), thickness=2)
+                        # Draw intrusion zones
+                        if zones:
+                            cv2.polylines(frame_copy, zones, isClosed=True, color=(0, 0, 255), thickness=2)
 
                     _, buffer = cv2.imencode(
                         '.jpg', frame_copy,
