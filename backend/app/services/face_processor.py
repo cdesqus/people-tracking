@@ -642,9 +642,13 @@ async def start_face_processor():
                         except Exception as aws_err:
                             logger.error(f"Error calling AWS for person crop on {camera.name}: {aws_err}")
 
+                except Exception as cam_err:
+                    logger.error(f"Error processing camera {camera.name}: {cam_err}")
+
             # Wait 3 seconds before next camera stream checking cycle
             await asyncio.sleep(3)
 
         except Exception as e:
             logger.error(f"Error in background face processor: {e}")
             await asyncio.sleep(10)
+
