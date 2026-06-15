@@ -256,6 +256,7 @@ const Dashboard: React.FC = () => {
         severity: a.severity || 'high',
         type: a.type,
         acknowledged: a.acknowledged,
+        has_image: a.has_image,
         branch: a.branch || 'br-hq'
       })).filter(a => !a.acknowledged)
     : mockAlerts;
@@ -656,11 +657,19 @@ const Dashboard: React.FC = () => {
                         : 'bg-slate-50/40 border-slate-300 border border-y-slate-800 border-r-slate-800 hover:bg-slate-50/60'
                     }`}
                   >
-                    <span className={`material-symbols-outlined mt-0.5 ${
-                      alert.severity === 'critical' ? 'text-red-500' : 'text-amber-500'
-                    }`}>
-                      {alert.type === 'unknown_face' ? 'person_off' : alert.type === 'system_error' ? 'dns' : 'warning'}
-                    </span>
+                    {alert.has_image ? (
+                      <img 
+                        src={`/api/alerts/${alert.id}/image`} 
+                        alt="Capture" 
+                        className="w-10 h-10 mt-0.5 rounded object-cover border border-slate-300"
+                      />
+                    ) : (
+                      <span className={`material-symbols-outlined mt-0.5 ${
+                        alert.severity === 'critical' ? 'text-red-500' : 'text-amber-500'
+                      }`}>
+                        {alert.type === 'unknown_face' ? 'person_off' : alert.type === 'system_error' ? 'dns' : 'warning'}
+                      </span>
+                    )}
                     <div className="flex-1">
                       <div className="flex items-center justify-between">
                         <p className="text-xs font-bold text-slate-700">{alert.title}</p>
@@ -945,6 +954,13 @@ const Dashboard: React.FC = () => {
                         : 'bg-blue-500/5 border-blue-600 border-y border-r border-slate-200'
                     }`}
                   >
+                    {alert.has_image ? (
+                      <img 
+                        src={`/api/alerts/${alert.id}/image`} 
+                        alt="Capture" 
+                        className="w-14 h-10 rounded object-cover border border-slate-300 flex-shrink-0"
+                      />
+                    ) : null}
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-2">
                         <span className="text-xs font-bold text-slate-900 truncate">{alert.title}</span>
