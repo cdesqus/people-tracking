@@ -38,6 +38,7 @@ export interface Alert {
   person_id?: string;
   face_id?: string;
   acknowledged: boolean;
+  has_image?: boolean;
   created_at: string;
   updated_at: string;
 }
