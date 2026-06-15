@@ -144,6 +144,13 @@ class IntrusionService:
                     if frame is not None:
                         h, w, _ = frame.shape
                         
+                        if self.model is None:
+                            logger.error("[Intrusion] YOLO model is not loaded. Attempting to reload...")
+                            self.load_model()
+                            if self.model is None:
+                                await asyncio.sleep(5)
+                                continue
+
                         # Run YOLOv8 inference (detects people, vehicles, items, etc.)
                         results = self.model(frame, verbose=False)
                         detections = sv.Detections.from_ultralytics(results[0])
