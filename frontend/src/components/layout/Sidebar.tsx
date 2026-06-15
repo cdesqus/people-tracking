@@ -50,13 +50,6 @@ const Sidebar: React.FC = () => {
       roles: ['admin', 'manager', 'operator', 'security'],
     },
     {
-      icon: ShieldAlert,
-      label: 'Intrusion Zones',
-      path: '/cameras',
-      id: 'zones',
-      roles: ['admin', 'manager', 'security'],
-    },
-    {
       icon: Building,
       label: 'Branches',
       path: '/branches',

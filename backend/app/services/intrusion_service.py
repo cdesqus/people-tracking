@@ -144,8 +144,8 @@ class IntrusionService:
                     if frame is not None:
                         h, w, _ = frame.shape
                         
-                        # Run YOLOv8 inference (classes=0 means 'person' only)
-                        results = self.model(frame, classes=[0], verbose=False)
+                        # Run YOLOv8 inference (detects people, vehicles, items, etc.)
+                        results = self.model(frame, verbose=False)
                         detections = sv.Detections.from_ultralytics(results[0])
                         
                         zones = self.camera_zones.get(cam_id, [])
@@ -185,7 +185,7 @@ class IntrusionService:
                                     send_alert_notification(
                                         alert_id=f"intr_{cam_id}_{int(now)}",
                                         alert_title="Intrusion Detected",
-                                        alert_description="A person was detected entering a restricted zone.",
+                                        alert_description="An object or person was detected entering a restricted zone.",
                                         severity="critical",
                                         alert_type="suspicious_activity",
                                         camera_name=cam_name,
