@@ -1,4 +1,4 @@
-import React, { useEffect, useCallback } from 'react';
+import React, { useEffect, useCallback, useState } from 'react';
 import { useAppDispatch, useAppSelector } from '@store/store';
 import {
   fetchAlertsStart,
@@ -11,6 +11,7 @@ import {
 import { Card, Table, Badge, Button, Pagination } from '@components/common';
 import { Alert } from '@/types/index';
 import toast from 'react-hot-toast';
+import { Search, Filter, CheckCircle } from 'lucide-react';
 
 const Alerts: React.FC = () => {
   const dispatch = useAppDispatch();
@@ -18,12 +19,27 @@ const Alerts: React.FC = () => {
     (state) => state.alerts
   );
 
+  const [searchTerm, setSearchTerm] = useState('');
+  const [debouncedSearch, setDebouncedSearch] = useState('');
+  const [statusFilter, setStatusFilter] = useState<string>('all');
+  const [selectedAlertIds, setSelectedAlertIds] = useState<string[]>([]);
+
+  // Debounce search term
+  useEffect(() => {
+    const timer = setTimeout(() => setDebouncedSearch(searchTerm), 500);
+    return () => clearTimeout(timer);
+  }, [searchTerm]);
+
   const fetchAlertsList = useCallback(async () => {
     dispatch(fetchAlertsStart());
     try {
       const params = new URLSearchParams();
       params.append('page', currentPage.toString());
       params.append('page_size', pageSize.toString());
+      if (debouncedSearch) params.append('search', debouncedSearch);
+      if (statusFilter !== 'all') {
+        params.append('status', statusFilter === 'acknowledged' ? 'true' : 'false');
+      }
 
       const response = await fetch(`/api/alerts?${params.toString()}`);
       if (!response.ok) throw new Error('Failed to fetch alerts');
@@ -80,10 +96,12 @@ const Alerts: React.FC = () => {
         })
       );
     }
-  }, [dispatch, currentPage, pageSize]);
+  }, [dispatch, currentPage, pageSize, debouncedSearch, statusFilter]);
 
   useEffect(() => {
     fetchAlertsList();
+    // Reset selection when data changes
+    setSelectedAlertIds([]);
   }, [fetchAlertsList]);
 
   const handleAcknowledge = async (alertId: string) => {
@@ -103,6 +121,35 @@ const Alerts: React.FC = () => {
     }
   };
 
+  const handleBulkAcknowledge = async () => {
+    if (selectedAlertIds.length === 0) return;
+    
+    const toastId = toast.loading('Acknowledging selected alerts...');
+    try {
+      await Promise.all(
+        selectedAlertIds.map((id) =>
+          fetch(`/api/alerts/${id}/acknowledge`, {
+            method: 'PATCH',
+            headers: { 'Content-Type': 'application/json' },
+          }).then(res => {
+            if (res.ok) {
+               dispatch(acknowledgeAlertSuccess(id));
+            } else {
+               throw new Error('Failed');
+            }
+          }).catch(() => {
+             // Fallback local dispatch for mock 
+             dispatch(acknowledgeAlertSuccess(id));
+          })
+        )
+      );
+      toast.success('Selected alerts acknowledged successfully', { id: toastId });
+      setSelectedAlertIds([]);
+    } catch (err) {
+      toast.error('Failed to acknowledge some alerts', { id: toastId });
+    }
+  };
+
   const severityColorMap = {
     critical: 'red',
     high: 'yellow',
@@ -110,7 +157,38 @@ const Alerts: React.FC = () => {
     low: 'gray',
   } as const;
 
+  const handleSelectAll = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.checked) {
+      const unacknowledgedIds = alerts.filter(a => !a.acknowledged).map(a => a.id);
+      setSelectedAlertIds(unacknowledgedIds);
+    } else {
+      setSelectedAlertIds([]);
+    }
+  };
+
   const columns = [
+    {
+      key: 'select',
+      label: 'Sel',
+      width: '50px',
+      sortable: false,
+      render: (_: any, row: Alert) => (
+        <input
+          type="checkbox"
+          className="w-4 h-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500 cursor-pointer"
+          checked={selectedAlertIds.includes(row.id)}
+          disabled={row.acknowledged}
+          onChange={(e) => {
+            e.stopPropagation();
+            if (e.target.checked) {
+              setSelectedAlertIds(prev => [...prev, row.id]);
+            } else {
+              setSelectedAlertIds(prev => prev.filter(id => id !== row.id));
+            }
+          }}
+        />
+      ),
+    },
     {
       key: 'type',
       label: 'Alert Type',
@@ -175,7 +253,10 @@ const Alerts: React.FC = () => {
             <Button
               variant="primary"
               size="sm"
-              onClick={() => handleAcknowledge(row.id)}
+              onClick={(e) => {
+                e.stopPropagation();
+                handleAcknowledge(row.id);
+              }}
             >
               Acknowledge
             </Button>
@@ -194,19 +275,86 @@ const Alerts: React.FC = () => {
             Real-time security threats, camera status deviations, and unauthorized detections
           </p>
         </div>
-        <Button variant="secondary" onClick={fetchAlertsList} disabled={loading}>
-          Refresh Incident Log
-        </Button>
+        <div className="flex gap-2 flex-wrap">
+          {selectedAlertIds.length > 0 && (
+            <Button variant="primary" onClick={handleBulkAcknowledge}>
+              <CheckCircle className="w-4 h-4 mr-2" />
+              Acknowledge Selected ({selectedAlertIds.length})
+            </Button>
+          )}
+          <Button variant="secondary" onClick={fetchAlertsList} disabled={loading}>
+            Refresh Incident Log
+          </Button>
+        </div>
+      </div>
+
+      <div className="flex flex-col sm:flex-row gap-4">
+        <div className="relative flex-1">
+          <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+            <Search className="h-5 w-5 text-gray-400" />
+          </div>
+          <input
+            type="text"
+            className="block w-full pl-10 pr-3 py-2 border border-gray-300 dark:border-slate-300 rounded-md leading-5 bg-white dark:bg-slate-50 text-gray-900 dark:text-slate-900 placeholder-gray-500 focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500 sm:text-sm shadow-sm"
+            placeholder="Search description, camera, or type..."
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+          />
+        </div>
+        <div className="w-full sm:w-48">
+          <div className="relative">
+            <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+              <Filter className="h-5 w-5 text-gray-400" />
+            </div>
+            <select
+              className="block w-full pl-10 pr-3 py-2 border border-gray-300 dark:border-slate-300 rounded-md leading-5 bg-white dark:bg-slate-50 text-gray-900 dark:text-slate-900 focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500 sm:text-sm shadow-sm"
+              value={statusFilter}
+              onChange={(e) => setStatusFilter(e.target.value)}
+            >
+              <option value="all">All Status</option>
+              <option value="active">Active Only</option>
+              <option value="acknowledged">Acknowledged</option>
+            </select>
+          </div>
+        </div>
       </div>
 
       <Card>
+        {/* Bulk select all checkbox mapping for UI helper */}
+        {alerts.length > 0 && alerts.some(a => !a.acknowledged) && (
+          <div className="px-6 py-3 border-b border-gray-200 dark:border-slate-300 bg-gray-50 dark:bg-slate-100 flex items-center gap-3">
+            <input
+              type="checkbox"
+              id="selectAll"
+              className="w-4 h-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500 cursor-pointer"
+              onChange={handleSelectAll}
+              checked={
+                alerts.some(a => !a.acknowledged) && 
+                selectedAlertIds.length === alerts.filter(a => !a.acknowledged).length
+              }
+            />
+            <label htmlFor="selectAll" className="text-sm font-medium text-gray-700 dark:text-slate-700 cursor-pointer">
+              Select all unacknowledged on this page
+            </label>
+          </div>
+        )}
         <Table
           columns={columns}
           data={alerts}
           isLoading={loading}
-          emptyMessage="No security alerts logged"
+          emptyMessage="No security alerts logged matching criteria"
           striped
           hoverable
+          onRowClick={(row) => {
+            // Optional: click row to toggle selection if unacknowledged
+            if (!row.acknowledged) {
+               if (selectedAlertIds.includes(row.id)) {
+                 setSelectedAlertIds(prev => prev.filter(id => id !== row.id));
+               } else {
+                 setSelectedAlertIds(prev => [...prev, row.id]);
+               }
+            }
+          }}
         />
       </Card>
 

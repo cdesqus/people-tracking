@@ -2,6 +2,7 @@ from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select, func
 from app.database import get_db
+from sqlalchemy import or_
 from app.schemas.alert import AlertCreate, AlertResponse, PaginatedAlertResponse
 from app.models.alert import Alert
 import uuid
@@ -15,6 +16,8 @@ async def list_alerts(
     page_size: int = 10,
     skip: int = None,
     limit: int = None,
+    search: str = None,
+    status: bool = None,
     db: AsyncSession = Depends(get_db)
 ):
     """List all alerts with pagination, ordered by created_at DESC"""
@@ -26,13 +29,28 @@ async def list_alerts(
         offset_val = (page - 1) * page_size
         limit_val = page_size
 
+    # Base query
+    query = select(Alert)
+    
+    if search:
+        search_filter = or_(
+            Alert.title.ilike(f"%{search}%"),
+            Alert.description.ilike(f"%{search}%"),
+            Alert.camera_id.ilike(f"%{search}%"),
+            Alert.type.ilike(f"%{search}%")
+        )
+        query = query.where(search_filter)
+        
+    if status is not None:
+        query = query.where(Alert.acknowledged == status)
+
     # Get total count
-    count_stmt = select(func.count()).select_from(Alert)
+    count_stmt = select(func.count()).select_from(query.subquery())
     count_res = await db.execute(count_stmt)
     total = count_res.scalar() or 0
 
     # Get items
-    stmt = select(Alert).order_by(Alert.created_at.desc()).offset(offset_val).limit(limit_val)
+    stmt = query.order_by(Alert.created_at.desc()).offset(offset_val).limit(limit_val)
     res = await db.execute(stmt)
     items = res.scalars().all()
 
