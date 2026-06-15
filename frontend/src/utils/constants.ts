@@ -36,6 +36,7 @@ export const ALERT_TYPES = {
   MATCH: 'match',
   UNKNOWN_FACE: 'unknown_face',
   SUSPICIOUS_ACTIVITY: 'suspicious_activity',
+  INTRUSION: 'intrusion',
   SYSTEM_ERROR: 'system_error',
 } as const;
 

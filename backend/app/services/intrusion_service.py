@@ -198,7 +198,7 @@ class IntrusionService:
                                         async with async_session() as session:
                                             new_alert = Alert(
                                                 id=alert_id_str,
-                                                type="suspicious_activity",
+                                                type="intrusion",
                                                 severity="critical",
                                                 title="Intrusion Detected",
                                                 description="An object or person was detected entering a restricted zone.",
@@ -220,7 +220,7 @@ class IntrusionService:
                                         alert_title="Intrusion Detected",
                                         alert_description="An object or person was detected entering a restricted zone.",
                                         severity="critical",
-                                        alert_type="suspicious_activity",
+                                        alert_type="intrusion",
                                         camera_name=cam_name,
                                         timestamp=datetime.utcnow(),
                                         face_image_bytes=img_bytes
