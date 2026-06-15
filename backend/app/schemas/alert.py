@@ -21,6 +21,7 @@ class AlertResponse(AlertBase):
     person_id: Optional[str] = None
     face_id: Optional[str] = None
     acknowledged: bool
+    has_image: bool = False
     created_at: datetime
     updated_at: datetime
 

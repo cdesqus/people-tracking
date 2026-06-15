@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Response
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select, func
 from app.database import get_db
@@ -18,6 +18,8 @@ async def list_alerts(
     limit: int = None,
     search: str = None,
     status: bool = None,
+    sort_by: str = "created_at",
+    order: str = "desc",
     db: AsyncSession = Depends(get_db)
 ):
     """List all alerts with pagination, ordered by created_at DESC"""
@@ -49,8 +51,17 @@ async def list_alerts(
     count_res = await db.execute(count_stmt)
     total = count_res.scalar() or 0
 
+    # Apply sorting
+    if sort_by == "created_at":
+        if order == "asc":
+            query = query.order_by(Alert.created_at.asc())
+        else:
+            query = query.order_by(Alert.created_at.desc())
+    else:
+        query = query.order_by(Alert.created_at.desc())
+
     # Get items
-    stmt = query.order_by(Alert.created_at.desc()).offset(offset_val).limit(limit_val)
+    stmt = query.offset(offset_val).limit(limit_val)
     res = await db.execute(stmt)
     items = res.scalars().all()
 
@@ -121,3 +132,16 @@ async def delete_alert(alert_id: str, db: AsyncSession = Depends(get_db)):
     await db.delete(db_alert)
     await db.commit()
     return {"status": "success", "message": "Alert deleted"}
+
+
+@router.get("/{alert_id}/image")
+async def get_alert_image(alert_id: str, db: AsyncSession = Depends(get_db)):
+    """Get the capture image for an alert"""
+    stmt = select(Alert).where(Alert.id == alert_id)
+    res = await db.execute(stmt)
+    db_alert = res.scalar_one_or_none()
+
+    if not db_alert or not db_alert.image_data:
+        raise HTTPException(status_code=404, detail="Image not found")
+
+    return Response(content=db_alert.image_data, media_type="image/jpeg")

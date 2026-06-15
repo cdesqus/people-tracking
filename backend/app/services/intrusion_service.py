@@ -14,6 +14,8 @@ import supervision as sv
 
 from app.database import async_session
 from app.models.camera import Camera
+from app.models.alert import Alert
+import uuid
 from app.services.rtsp_service import RTSPService
 from app.services.waha_service import send_alert_notification
 from sqlalchemy import select
@@ -186,18 +188,42 @@ class IntrusionService:
                                     cv2.polylines(frame, [z.polygon], isClosed=True, color=(0, 0, 255), thickness=3)
                                 
                                 _, buffer = cv2.imencode('.jpg', frame, [cv2.IMWRITE_JPEG_QUALITY, 85])
+                                img_bytes = buffer.tobytes()
+                                
+                                alert_id_str = str(uuid.uuid4())
+                                
+                                # Save alert to database
+                                async def save_alert():
+                                    try:
+                                        async with async_session() as session:
+                                            new_alert = Alert(
+                                                id=alert_id_str,
+                                                type="suspicious_activity",
+                                                severity="critical",
+                                                title="Intrusion Detected",
+                                                description="An object or person was detected entering a restricted zone.",
+                                                camera_id=cam_id,
+                                                image_data=img_bytes,
+                                                acknowledged=False
+                                            )
+                                            session.add(new_alert)
+                                            await session.commit()
+                                    except Exception as db_err:
+                                        logger.error(f"[Intrusion] Failed to save alert to DB: {db_err}")
+                                
+                                asyncio.create_task(save_alert())
                                 
                                 # Trigger WA notification
                                 asyncio.create_task(
                                     send_alert_notification(
-                                        alert_id=f"intr_{cam_id}_{int(now)}",
+                                        alert_id=alert_id_str,
                                         alert_title="Intrusion Detected",
                                         alert_description="An object or person was detected entering a restricted zone.",
                                         severity="critical",
                                         alert_type="suspicious_activity",
                                         camera_name=cam_name,
                                         timestamp=datetime.utcnow(),
-                                        face_image_bytes=buffer.tobytes()
+                                        face_image_bytes=img_bytes
                                     )
                                 )
 

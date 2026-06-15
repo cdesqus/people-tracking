@@ -1,4 +1,4 @@
-from sqlalchemy import Column, String, DateTime, Enum, Boolean, ForeignKey, Index
+from sqlalchemy import Column, String, DateTime, Enum, Boolean, ForeignKey, Index, LargeBinary
 from sqlalchemy.sql import func
 from datetime import datetime
 import enum
@@ -31,6 +31,7 @@ class Alert(Base):
     person_id = Column(String(36), ForeignKey("employees.id"), nullable=True, index=True)
     face_id = Column(String(36), ForeignKey("faces.id"), nullable=True)
     acknowledged = Column(Boolean, default=False, index=True)
+    image_data = Column(LargeBinary, nullable=True)
     created_at = Column(DateTime(timezone=True), server_default=func.now(), nullable=False, index=True)
     updated_at = Column(
         DateTime(timezone=True),
@@ -46,3 +47,7 @@ class Alert(Base):
 
     def __repr__(self):
         return f"<Alert(id={self.id}, type={self.type}, severity={self.severity})>"
+
+    @property
+    def has_image(self) -> bool:
+        return self.image_data is not None

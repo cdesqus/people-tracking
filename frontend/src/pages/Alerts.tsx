@@ -23,6 +23,8 @@ const Alerts: React.FC = () => {
   const [debouncedSearch, setDebouncedSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState<string>('all');
   const [selectedAlertIds, setSelectedAlertIds] = useState<string[]>([]);
+  const [sortKey, setSortKey] = useState<string>('created_at');
+  const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc');
 
   // Debounce search term
   useEffect(() => {
@@ -40,6 +42,8 @@ const Alerts: React.FC = () => {
       if (statusFilter !== 'all') {
         params.append('status', statusFilter === 'acknowledged' ? 'true' : 'false');
       }
+      params.append('sort_by', sortKey);
+      params.append('order', sortOrder);
 
       const response = await fetch(`/api/alerts?${params.toString()}`);
       if (!response.ok) throw new Error('Failed to fetch alerts');
@@ -96,7 +100,7 @@ const Alerts: React.FC = () => {
         })
       );
     }
-  }, [dispatch, currentPage, pageSize, debouncedSearch, statusFilter]);
+  }, [dispatch, currentPage, pageSize, debouncedSearch, statusFilter, sortKey, sortOrder]);
 
   useEffect(() => {
     fetchAlertsList();
@@ -190,6 +194,26 @@ const Alerts: React.FC = () => {
       ),
     },
     {
+      key: 'preview',
+      label: 'Capture',
+      sortable: false,
+      render: (_: any, row: Alert) => (
+        <div className="w-16 h-12 flex items-center justify-center bg-gray-100 dark:bg-slate-100 rounded overflow-hidden">
+          {row.has_image ? (
+            <a href={`/api/alerts/${row.id}/image`} target="_blank" rel="noopener noreferrer">
+              <img 
+                src={`/api/alerts/${row.id}/image`} 
+                alt="Alert capture" 
+                className="w-full h-full object-cover hover:scale-110 transition-transform cursor-pointer"
+              />
+            </a>
+          ) : (
+            <span className="text-[10px] text-gray-400 font-medium">NO IMG</span>
+          )}
+        </div>
+      ),
+    },
+    {
       key: 'type',
       label: 'Alert Type',
       render: (value: string, row: Alert) => (
@@ -229,6 +253,7 @@ const Alerts: React.FC = () => {
     {
       key: 'created_at',
       label: 'Timestamp',
+      sortable: true,
       render: (value: string) => (
         <span className="text-xs text-gray-500 font-mono">
           {new Date(value).toLocaleString()}
@@ -345,6 +370,10 @@ const Alerts: React.FC = () => {
           emptyMessage="No security alerts logged matching criteria"
           striped
           hoverable
+          onSort={(key, direction) => {
+            setSortKey(key);
+            setSortOrder(direction);
+          }}
           onRowClick={(row) => {
             // Optional: click row to toggle selection if unacknowledged
             if (!row.acknowledged) {
