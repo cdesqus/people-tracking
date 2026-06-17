@@ -50,4 +50,4 @@ class Alert(Base):
 
     @property
     def has_image(self) -> bool:
-        return self.image_data is not None
+        return self.image_data is not None or self.face_id is not None

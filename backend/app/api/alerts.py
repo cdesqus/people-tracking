@@ -141,7 +141,18 @@ async def get_alert_image(alert_id: str, db: AsyncSession = Depends(get_db)):
     res = await db.execute(stmt)
     db_alert = res.scalar_one_or_none()
 
-    if not db_alert or not db_alert.image_data:
-        raise HTTPException(status_code=404, detail="Image not found")
+    if not db_alert:
+        raise HTTPException(status_code=404, detail="Alert not found")
 
-    return Response(content=db_alert.image_data, media_type="image/jpeg")
+    if db_alert.image_data:
+        return Response(content=db_alert.image_data, media_type="image/jpeg")
+
+    if db_alert.face_id:
+        from app.models.face import Face
+        face_stmt = select(Face).where(Face.id == db_alert.face_id)
+        face_res = await db.execute(face_stmt)
+        db_face = face_res.scalar_one_or_none()
+        if db_face and db_face.image_data:
+            return Response(content=db_face.image_data, media_type="image/jpeg")
+
+    raise HTTPException(status_code=404, detail="Image not found")

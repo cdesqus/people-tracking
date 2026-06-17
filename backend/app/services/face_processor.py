@@ -293,7 +293,48 @@ async def start_face_processor():
                     )
                 else:
                     logger.debug(
-                        "No employees registered yet. Skip simulated detection."
+                        "No employees registered yet. Generating mock unknown face detection."
+                    )
+                    import random
+                    camera = random.choice(cameras)
+                    face_id = str(uuid.uuid4())
+                    db_face = Face(
+                        id=face_id,
+                        camera_id=camera.id,
+                        person_id=None,
+                        confidence=random.uniform(0.85, 0.95),
+                        boundingbox={
+                            "top": 0.25,
+                            "left": 0.35,
+                            "width": 0.3,
+                            "height": 0.3,
+                        },
+                        timestamp=datetime.utcnow(),
+                        image_url="https://lh3.googleusercontent.com/aida-public/AB6AXuDjFgVkH9axMERLGYP_VOmpOpSJs087rwWE35hTKEmSaHavkXnAcTMbfTmVeam1Cl4AtVD-KxXjLUNzhl7TGgV4789W6Usk_55GgypHf9YoF49cJHG_-pYv5Aiid1GfqU0RZJ2222B1XJdE3MeWi3ng-W9BP6rJcDLj_IXq-i71-Two5zyDQvlhVp2uuELB7sDpKupOp2x-b_YTq_d8wxMZaHalJssVNuSzlJt97fdUdamgEfIFYPtnbXniYXB-ygDQjeVqd3s4AvEE"
+                    )
+                    
+                    async with async_session() as session:
+                        session.add(db_face)
+                        await session.commit()
+                        
+                    logger.info(
+                        f"[Simulated] Detected Unknown Subject on camera {camera.name}"
+                    )
+                    
+                    await ws_manager.broadcast(
+                        {
+                            "type": "new_detection",
+                            "data": {
+                                "id": face_id,
+                                "camera_id": camera.id,
+                                "person_id": None,
+                                "person_name": "Unknown Subject",
+                                "confidence": db_face.confidence * 100,
+                                "timestamp": db_face.timestamp.isoformat(),
+                                "image_url": db_face.image_url,
+                                "location": camera.name,
+                            },
+                        }
                     )
 
                 # Wait 15 seconds before generating next simulation
@@ -347,6 +388,11 @@ async def start_face_processor():
                                 if not last_sent or (now - last_sent).total_seconds() > 60.0:
                                     last_alert_sent[camera.id] = now
 
+                                    # Encode current frame to attach as proof
+                                    resized = cv2.resize(frame, (640, 480))
+                                    _, buffer = cv2.imencode(".jpg", resized)
+                                    obstruction_image_bytes = buffer.tobytes()
+
                                     # Create critical suspicious activity alert
                                     alert_id = str(uuid.uuid4())
                                     db_alert = Alert(
@@ -359,6 +405,7 @@ async def start_face_processor():
                                         person_id=None,
                                         face_id=None,
                                         acknowledged=False,
+                                        image_data=obstruction_image_bytes
                                     )
 
                                     async with async_session() as session:
@@ -379,11 +426,6 @@ async def start_face_processor():
                                         }
                                     })
                                     logger.error(f"CRITICAL: Camera {camera.name} is obstructed! Raised Alert {alert_id}")
-
-                                    # Encode current frame to attach as proof
-                                    resized = cv2.resize(frame, (640, 480))
-                                    _, buffer = cv2.imencode(".jpg", resized)
-                                    obstruction_image_bytes = buffer.tobytes()
 
                                     # Send WhatsApp notification (non-blocking)
                                     _safe_create_task(waha_service.send_alert_notification(
