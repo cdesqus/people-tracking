@@ -72,7 +72,7 @@ const Dashboard: React.FC = () => {
   const handleAcknowledgeAlert = async (alertId: string) => {
     dispatch(acknowledgeAlertStart());
     try {
-      const response = await fetch(`/api/alerts/${alertId}/acknowledge`, {
+      const response = await fetch(`${API_BASE_URL}/alerts/${alertId}/acknowledge`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
       });
@@ -362,7 +362,7 @@ const Dashboard: React.FC = () => {
       try {
         const start = performance.now();
         // Use snapshot instead of stream to prevent spawning a new OpenCV RTSP thread on the backend every 5 seconds
-        const response = await fetch(`/api/cameras/${cameraId}/snapshot`, {
+        const response = await fetch(`${API_BASE_URL}/cameras/${cameraId}/snapshot`, {
           method: 'GET',
           signal: AbortSignal.timeout(3000),
         });
@@ -379,7 +379,7 @@ const Dashboard: React.FC = () => {
     // Only fetch stream info ONCE when the camera focuses, not every 5 seconds
     const fetchStreamInfo = async () => {
       try {
-        const res = await fetch(`/api/cameras/${cameraId}/test-connection`, {
+        const res = await fetch(`${API_BASE_URL}/cameras/${cameraId}/test-connection`, {
           method: 'POST',
         });
         if (res.ok) {

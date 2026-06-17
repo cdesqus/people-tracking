@@ -3,7 +3,7 @@
  * Handles initial data loading and real-time updates
  */
 
-import { useEffect, useRef, useCallback } from 'react';
+import { useEffect, useRef, useCallback, useState } from 'react';
 import { useAppDispatch, useAppSelector } from '@store/store';
 import {
   fetchCamerasStart,
@@ -23,7 +23,7 @@ import {
   fetchFacesError,
 } from '@store/slices/faceSlice';
 import { Camera, Face, Alert } from '@/types/index';
-import { WS_URL } from '@utils/constants';
+import { WS_URL, API_BASE_URL } from '@utils/constants';
 
 interface UseDashboardDataOptions {
   autoConnect?: boolean;
@@ -47,7 +47,8 @@ export const useDashboardData = (options: UseDashboardDataOptions = {}) => {
   const alerts = useAppSelector((state) => state.alerts.alerts);
   const faces = useAppSelector((state) => state.faces.faces);
 
-  const isConnected = useRef(false);
+  const isConnectedRef = useRef(false);
+  const [isConnected, setIsConnected] = useState(false);
 
   /**
    * Fetch initial data from API
@@ -56,7 +57,7 @@ export const useDashboardData = (options: UseDashboardDataOptions = {}) => {
     try {
       // Fetch cameras
       dispatch(fetchCamerasStart());
-      const camerasRes = await fetch('/api/cameras/');
+      const camerasRes = await fetch(`${API_BASE_URL}/cameras/`);
       if (camerasRes.ok) {
         const data = await camerasRes.json();
         const camerasList = data.success && data.data ? (data.data.items || data.data) : (data.items || data);
@@ -71,7 +72,7 @@ export const useDashboardData = (options: UseDashboardDataOptions = {}) => {
 
       // Fetch alerts
       dispatch(fetchAlertsStart());
-      const alertsRes = await fetch('/api/alerts/?limit=20');
+      const alertsRes = await fetch(`${API_BASE_URL}/alerts/?limit=20`);
       if (alertsRes.ok) {
         const data = await alertsRes.json();
         dispatch(fetchAlertsSuccess({
@@ -84,7 +85,7 @@ export const useDashboardData = (options: UseDashboardDataOptions = {}) => {
 
       // Fetch recent detections
       dispatch(fetchFacesStart());
-      const detectionsRes = await fetch('/api/detections/?limit=20');
+      const detectionsRes = await fetch(`${API_BASE_URL}/detections/?limit=20`);
       if (detectionsRes.ok) {
         const data = await detectionsRes.json();
         dispatch(fetchFacesSuccess({
@@ -103,10 +104,8 @@ export const useDashboardData = (options: UseDashboardDataOptions = {}) => {
   }, [dispatch]);
 
   /**
-   * Connect to WebSocket for real-time updates
-   */
   const connectWebSocket = useCallback(() => {
-    if (isConnected.current && wsRef.current?.readyState === WebSocket.OPEN) {
+    if (isConnectedRef.current && wsRef.current?.readyState === WebSocket.OPEN) {
       return;
     }
 
@@ -117,7 +116,8 @@ export const useDashboardData = (options: UseDashboardDataOptions = {}) => {
 
       wsRef.current.onopen = () => {
         console.log('Dashboard WebSocket connected');
-        isConnected.current = true;
+        isConnectedRef.current = true;
+        setIsConnected(true);
       };
 
       wsRef.current.onmessage = (event) => {
@@ -131,12 +131,14 @@ export const useDashboardData = (options: UseDashboardDataOptions = {}) => {
 
       wsRef.current.onerror = (error) => {
         console.error('WebSocket error:', error);
-        isConnected.current = false;
+        isConnectedRef.current = false;
+        setIsConnected(false);
       };
 
       wsRef.current.onclose = () => {
         console.log('Dashboard WebSocket disconnected');
-        isConnected.current = false;
+        isConnectedRef.current = false;
+        setIsConnected(false);
         // Attempt to reconnect after 5 seconds
         setTimeout(connectWebSocket, 5000);
       };
@@ -178,7 +180,8 @@ export const useDashboardData = (options: UseDashboardDataOptions = {}) => {
     if (wsRef.current) {
       wsRef.current.close();
       wsRef.current = null;
-      isConnected.current = false;
+      isConnectedRef.current = false;
+      setIsConnected(false);
     }
   }, []);
 
@@ -191,12 +194,18 @@ export const useDashboardData = (options: UseDashboardDataOptions = {}) => {
     // Fetch initial data
     fetchInitialData();
 
+    // Setup fallback polling
+    const pollInterval = setInterval(() => {
+      fetchInitialData();
+    }, 10000);
+
     // Connect to WebSocket
     connectWebSocket();
 
     // Cleanup
     return () => {
       disconnectWebSocket();
+      clearInterval(pollInterval);
       if (kpiTimerRef.current) clearTimeout(kpiTimerRef.current);
       if (detectionTimerRef.current) clearTimeout(detectionTimerRef.current);
     };
@@ -217,7 +226,7 @@ export const useDashboardData = (options: UseDashboardDataOptions = {}) => {
     cameras,
     alerts,
     faces,
-    isConnected: isConnected.current,
+    isConnected: isConnected,
     sendMessage,
     reconnect: connectWebSocket,
     disconnect: disconnectWebSocket,

@@ -10,6 +10,7 @@ class AlertType(str, enum.Enum):
     UNKNOWN_FACE = "unknown_face"
     SUSPICIOUS_ACTIVITY = "suspicious_activity"
     SYSTEM_ERROR = "system_error"
+    INTRUSION = "intrusion"
 
 
 class AlertSeverity(str, enum.Enum):

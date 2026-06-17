@@ -313,12 +313,25 @@ async def start_face_processor():
                         image_url="https://lh3.googleusercontent.com/aida-public/AB6AXuDjFgVkH9axMERLGYP_VOmpOpSJs087rwWE35hTKEmSaHavkXnAcTMbfTmVeam1Cl4AtVD-KxXjLUNzhl7TGgV4789W6Usk_55GgypHf9YoF49cJHG_-pYv5Aiid1GfqU0RZJ2222B1XJdE3MeWi3ng-W9BP6rJcDLj_IXq-i71-Two5zyDQvlhVp2uuELB7sDpKupOp2x-b_YTq_d8wxMZaHalJssVNuSzlJt97fdUdamgEfIFYPtnbXniYXB-ygDQjeVqd3s4AvEE"
                     )
                     
+                    alert_id = str(uuid.uuid4())
+                    db_alert = Alert(
+                        id=alert_id,
+                        type=AlertType.UNKNOWN_FACE,
+                        severity=AlertSeverity.CRITICAL,
+                        title="Unrecognized Subject Detected",
+                        description=f"An unrecognized individual was detected on camera {camera.name}.",
+                        camera_id=camera.id,
+                        face_id=face_id,
+                        acknowledged=False,
+                    )
+                    
                     async with async_session() as session:
                         session.add(db_face)
+                        session.add(db_alert)
                         await session.commit()
                         
                     logger.info(
-                        f"[Simulated] Detected Unknown Subject on camera {camera.name}"
+                        f"[Simulated] Detected Unknown Subject and raised Alert on camera {camera.name}"
                     )
                     
                     await ws_manager.broadcast(
@@ -336,6 +349,46 @@ async def start_face_processor():
                             },
                         }
                     )
+                    
+                    await ws_manager.broadcast(
+                        {
+                            "type": "new_alert",
+                            "data": {
+                                "id": alert_id,
+                                "type": db_alert.type.value,
+                                "title": db_alert.title,
+                                "description": db_alert.description,
+                                "camera_id": camera.id,
+                                "severity": "critical",
+                                "created_at": db_face.timestamp.isoformat(),
+                            },
+                        }
+                    )
+                    
+                    # Fetch simulated face photo and trigger WhatsApp alert
+                    async def fetch_and_send_wa():
+                        mock_image_bytes = None
+                        try:
+                            import httpx
+                            async with httpx.AsyncClient(timeout=8.0) as client:
+                                resp = await client.get(db_face.image_url)
+                                if resp.status_code == 200:
+                                    mock_image_bytes = resp.content
+                        except Exception as fetch_err:
+                            logger.error(f"[Simulated Waha] Error fetching mock image: {fetch_err}")
+                            
+                        await waha_service.send_alert_notification(
+                            alert_id=alert_id,
+                            alert_title=db_alert.title,
+                            alert_description=db_alert.description,
+                            severity="critical",
+                            alert_type="unknown_face",
+                            camera_name=camera.name,
+                            timestamp=db_face.timestamp,
+                            face_image_bytes=mock_image_bytes,
+                        )
+                    
+                    _safe_create_task(fetch_and_send_wa(), name=f"waha_simulated_{alert_id[:8]}")
 
                 # Wait 15 seconds before generating next simulation
                 await asyncio.sleep(15)

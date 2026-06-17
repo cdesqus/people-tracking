@@ -12,6 +12,7 @@ import { Card, Table, Badge, Button, Pagination } from '@components/common';
 import { Alert } from '@/types/index';
 import toast from 'react-hot-toast';
 import { Search, Filter, CheckCircle } from 'lucide-react';
+import { API_BASE_URL } from '@/utils/constants';
 
 const Alerts: React.FC = () => {
   const dispatch = useAppDispatch();
@@ -45,7 +46,7 @@ const Alerts: React.FC = () => {
       params.append('sort_by', sortKey);
       params.append('order', sortOrder);
 
-      const response = await fetch(`/api/alerts?${params.toString()}`);
+      const response = await fetch(`${API_BASE_URL}/alerts?${params.toString()}`);
       if (!response.ok) throw new Error('Failed to fetch alerts');
       const data = await response.json();
       dispatch(
@@ -111,7 +112,7 @@ const Alerts: React.FC = () => {
   const handleAcknowledge = async (alertId: string) => {
     dispatch(acknowledgeAlertStart());
     try {
-      const response = await fetch(`/api/alerts/${alertId}/acknowledge`, {
+      const response = await fetch(`${API_BASE_URL}/alerts/${alertId}/acknowledge`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
       });
@@ -132,7 +133,7 @@ const Alerts: React.FC = () => {
     try {
       await Promise.all(
         selectedAlertIds.map((id) =>
-          fetch(`/api/alerts/${id}/acknowledge`, {
+          fetch(`${API_BASE_URL}/alerts/${id}/acknowledge`, {
             method: 'PATCH',
             headers: { 'Content-Type': 'application/json' },
           }).then(res => {

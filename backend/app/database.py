@@ -80,6 +80,11 @@ async def init_db():
                     await session.execute(text("ALTER TABLE alerts ADD CONSTRAINT alerts_person_id_fkey FOREIGN KEY (person_id) REFERENCES employees(id) ON DELETE SET NULL;"))
                 except Exception as fk_err2:
                     print(f"Migration warning alerts FK: {fk_err2}")
+                    
+                try:
+                    await session.execute(text("ALTER TYPE alerttype ADD VALUE IF NOT EXISTS 'intrusion';"))
+                except Exception as e:
+                    print(f"Migration warning alerts alerttype: {e}")
             elif db_dialect == "sqlite":
                 try:
                     await session.execute(text("ALTER TABLE faces ADD COLUMN image_data BLOB;"))

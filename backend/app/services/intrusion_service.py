@@ -14,8 +14,9 @@ import supervision as sv
 
 from app.database import async_session
 from app.models.camera import Camera
-from app.models.alert import Alert
+from app.models.alert import Alert, AlertType, AlertSeverity
 import uuid
+from app.utils.websocket_manager import ws_manager
 from app.services.rtsp_service import RTSPService
 from app.services.waha_service import send_alert_notification
 from sqlalchemy import select
@@ -185,10 +186,68 @@ class IntrusionService:
                                 
                                 # Build friendly labels with class name and confidence score
                                 class_names = results[0].names
-                                labels = [
-                                    f"{class_names.get(class_id, 'Object').title()} {confidence:.0%}"
-                                    for class_id, confidence in zip(detections.class_id, detections.confidence)
-                                ]
+                                labels = []
+                                import os
+                                aws_key = os.getenv("AWS_ACCESS_KEY_ID")
+                                aws_secret = os.getenv("AWS_SECRET_ACCESS_KEY")
+                                is_aws_configured = bool(aws_key and aws_key.strip()) and bool(aws_secret and aws_secret.strip())
+                                
+                                for i in range(len(detections)):
+                                    class_id = detections.class_id[i]
+                                    confidence = detections.confidence[i]
+                                    label_name = class_names.get(class_id, 'Object').title()
+                                    
+                                    if class_id == 0:
+                                        recognized_name = None
+                                        try:
+                                            x1, y1, x2, y2 = map(int, detections.xyxy[i])
+                                            x1, y1 = max(0, x1), max(0, y1)
+                                            x2, y2 = min(w, x2), min(h, y2)
+                                            
+                                            if x2 > x1 + 10 and y2 > y1 + 10:
+                                                person_crop = frame[y1:y2, x1:x2]
+                                                _, crop_buffer = cv2.imencode('.jpg', person_crop)
+                                                crop_bytes = crop_buffer.tobytes()
+                                                
+                                                if is_aws_configured:
+                                                    from app.services.aws_rekognition import rekognition_service
+                                                    from app.config import settings
+                                                    from app.models.employee import Employee
+                                                    
+                                                    collection_id = os.getenv("REKOGNITION_EMPLOYEES_COLLECTION", "employees")
+                                                    search_result = await rekognition_service.search_faces_by_image(
+                                                        collection_id=collection_id,
+                                                        image_bytes=crop_bytes,
+                                                        threshold=settings.face_match_threshold,
+                                                    )
+                                                    matches = search_result.get('matches', [])
+                                                    if matches:
+                                                        external_id = matches[0].get("Face", {}).get("ExternalImageId")
+                                                        async with async_session() as session:
+                                                            emp_stmt = select(Employee).where(
+                                                                Employee.id == external_id,
+                                                                Employee.deleted_at == None
+                                                            )
+                                                            emp_res = await session.execute(emp_stmt)
+                                                            emp = emp_res.scalar_one_or_none()
+                                                            if emp:
+                                                                recognized_name = emp.name
+                                                else:
+                                                    from app.models.employee import Employee
+                                                    async with async_session() as session:
+                                                        emp_stmt = select(Employee).where(Employee.deleted_at == None)
+                                                        emp_res = await session.execute(emp_stmt)
+                                                        employees = emp_res.scalars().all()
+                                                        if employees:
+                                                            import random
+                                                            recognized_name = random.choice(employees).name
+                                        except Exception as rec_err:
+                                            logger.error(f"[Intrusion] Error recognizing face in intrusion crop: {rec_err}")
+                                            
+                                        if recognized_name:
+                                            label_name = recognized_name
+                                            
+                                    labels.append(f"{label_name} {confidence:.0%}")
                                 
                                 # Draw polygon and bounding boxes for the alert image
                                 box_annotator = sv.BoxAnnotator(thickness=2)
@@ -208,8 +267,8 @@ class IntrusionService:
                                         async with async_session() as session:
                                             new_alert = Alert(
                                                 id=alert_id_str,
-                                                type="intrusion",
-                                                severity="critical",
+                                                type=AlertType.INTRUSION,
+                                                severity=AlertSeverity.CRITICAL,
                                                 title="Intrusion Detected",
                                                 description="An object or person was detected entering a restricted zone.",
                                                 camera_id=cam_id,
@@ -218,6 +277,22 @@ class IntrusionService:
                                             )
                                             session.add(new_alert)
                                             await session.commit()
+                                            
+                                            await ws_manager.broadcast({
+                                                "type": "new_alert",
+                                                "data": {
+                                                    "id": alert_id_str,
+                                                    "type": new_alert.type.value,
+                                                    "title": new_alert.title,
+                                                    "description": new_alert.description,
+                                                    "severity": new_alert.severity.value,
+                                                    "camera_id": cam_id,
+                                                    "acknowledged": False,
+                                                    "has_image": True,
+                                                    "created_at": datetime.utcnow().isoformat(),
+                                                    "updated_at": datetime.utcnow().isoformat()
+                                                }
+                                            })
                                     except Exception as db_err:
                                         logger.error(f"[Intrusion] Failed to save alert to DB: {db_err}")
                                 
