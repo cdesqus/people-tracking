@@ -157,6 +157,9 @@ class IntrusionService:
                         results = self.model(frame, verbose=False)
                         detections = sv.Detections.from_ultralytics(results[0])
                         
+                        # Filter only person detections (class_id == 0) to prevent false alerts from static chairs, TVs, etc.
+                        detections = detections[detections.class_id == 0]
+                        
                         zones = self.camera_zones.get(cam_id, [])
                         is_intrusion = False
                         
@@ -180,9 +183,16 @@ class IntrusionService:
                                 self.last_alert_time[cam_id] = now
                                 logger.warning(f"[Intrusion] 🚨 Intrusion detected on camera: {cam_name}!")
                                 
+                                # Build friendly labels with class name and confidence score
+                                class_names = results[0].names
+                                labels = [
+                                    f"{class_names.get(class_id, 'Object').title()} {confidence:.0%}"
+                                    for class_id, confidence in zip(detections.class_id, detections.confidence)
+                                ]
+                                
                                 # Draw polygon and bounding boxes for the alert image
                                 box_annotator = sv.BoxAnnotator(thickness=2)
-                                frame = box_annotator.annotate(scene=frame, detections=detections)
+                                frame = box_annotator.annotate(scene=frame, detections=detections, labels=labels)
                                 for z in zones:
                                     # Simple drawing of polygon
                                     cv2.polylines(frame, [z.polygon], isClosed=True, color=(0, 0, 255), thickness=3)
