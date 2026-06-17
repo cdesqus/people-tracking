@@ -168,64 +168,61 @@ class IntrusionService:
                             # Update zone resolution if frame size changed
                             if zone.frame_resolution_wh != (w, h):
                                 zone.frame_resolution_wh = (w, h)
-                                
+                            
                             # Check if any detection is inside the zone
-                                is_intrusion = False
-                                for zone in sv_zones:
-                                    zone.frame_resolution_wh = (w, h)
-                                    zone_mask = zone.trigger(detections=detections)
-                                    if np.any(zone_mask):
-                                        is_intrusion = True
+                            zone_mask = zone.trigger(detections=detections)
+                            if np.any(zone_mask):
+                                is_intrusion = True
+                                break
+                                
+                        # Populate YOLO detections for Live View
+                        yolo_objects = []
+                        class_names = results[0].names
+                        
+                        # Try to match YOLO persons with face processor detections
+                        current_faces = RTSPService.last_detections.get(cam_id, [])
+                        active_faces = [
+                            f for f in current_faces 
+                            if (time.time() - f["timestamp"].timestamp()) < 4.0
+                        ]
+                        
+                        for i in range(len(detections)):
+                            x1, y1, x2, y2 = map(int, detections.xyxy[i])
+                            class_id = int(detections.class_id[i])
+                            class_name = class_names.get(class_id, 'object').lower()
+                            label_name = class_name
+                            
+                            # If person, check if any face is inside this bounding box
+                            if class_name == 'person':
+                                for face in active_faces:
+                                    face_box = face["box"]
+                                    fx = face_box.get("left", 0) * w
+                                    fy = face_box.get("top", 0) * h
+                                    fw = face_box.get("width", 0) * w
+                                    fh = face_box.get("height", 0) * h
+                                    # Face center
+                                    fcx = fx + fw / 2
+                                    fcy = fy + fh / 2
+                                    
+                                    # Is face center inside person box?
+                                    if x1 <= fcx <= x2 and y1 <= fcy <= y2:
+                                        if face["name"] != "Unknown Subject":
+                                            label_name = face["name"].upper()
                                         break
                                         
-                                # Populate YOLO detections for Live View
-                                yolo_objects = []
-                                class_names = results[0].names
-                                
-                                # Try to match YOLO persons with face processor detections
-                                current_faces = RTSPService.last_detections.get(cam_id, [])
-                                active_faces = [
-                                    f for f in current_faces 
-                                    if (time.time() - f["timestamp"].timestamp()) < 4.0
-                                ]
-                                
-                                for i in range(len(detections)):
-                                    x1, y1, x2, y2 = map(int, detections.xyxy[i])
-                                    class_id = int(detections.class_id[i])
-                                    class_name = class_names.get(class_id, 'object').lower()
-                                    label_name = class_name
-                                    
-                                    # If person, check if any face is inside this bounding box
-                                    if class_name == 'person':
-                                        for face in active_faces:
-                                            face_box = face["box"]
-                                            fx = face_box.get("left", 0) * w
-                                            fy = face_box.get("top", 0) * h
-                                            fw = face_box.get("width", 0) * w
-                                            fh = face_box.get("height", 0) * h
-                                            # Face center
-                                            fcx = fx + fw / 2
-                                            fcy = fy + fh / 2
-                                            
-                                            # Is face center inside person box?
-                                            if x1 <= fcx <= x2 and y1 <= fcy <= y2:
-                                                if face["name"] != "Unknown Subject":
-                                                    label_name = face["name"].upper()
-                                                break
-                                                
-                                    yolo_objects.append({
-                                        "name": label_name,
-                                        "box": {
-                                            "left": x1 / w,
-                                            "top": y1 / h,
-                                            "width": (x2 - x1) / w,
-                                            "height": (y2 - y1) / h
-                                        },
-                                        "timestamp": datetime.utcnow()
-                                    })
-                                    
-                                RTSPService.last_yolo_detections[cam_id] = yolo_objects
-                                
+                            yolo_objects.append({
+                                "name": label_name,
+                                "box": {
+                                    "left": x1 / w,
+                                    "top": y1 / h,
+                                    "width": (x2 - x1) / w,
+                                    "height": (y2 - y1) / h
+                                },
+                                "timestamp": datetime.utcnow()
+                            })
+                            
+                        RTSPService.last_yolo_detections[cam_id] = yolo_objects
+                        
                         if is_intrusion:
                             now = time.monotonic()
                             last_alert = self.last_alert_time.get(cam_id, 0)
