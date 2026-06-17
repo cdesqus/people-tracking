@@ -104,6 +104,8 @@ export const useDashboardData = (options: UseDashboardDataOptions = {}) => {
   }, [dispatch]);
 
   /**
+   * Connect WebSocket
+   */
   const connectWebSocket = useCallback(() => {
     if (isConnectedRef.current && wsRef.current?.readyState === WebSocket.OPEN) {
       return;
