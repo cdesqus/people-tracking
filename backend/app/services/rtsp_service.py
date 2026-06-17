@@ -19,6 +19,7 @@ class RTSPService:
     """Service for managing RTSP streams and connections"""
     
     last_detections = {}
+    last_yolo_detections = {}
     latest_frames = {}
     latest_frame_times = {}
     camera_zones_cache = {}
@@ -405,6 +406,41 @@ class RTSPService:
                         bottom = min(h, top + height)
                         
                         color = (0, 255, 0) if name != "Unknown Subject" else (0, 0, 255)
+                        
+                        cv2.rectangle(frame, (left, top), (right, bottom), color, 2)
+                        
+                        label = name
+                        label_size, _ = cv2.getTextSize(label, cv2.FONT_HERSHEY_SIMPLEX, 0.5, 1)
+                        lw, lh = label_size
+                        
+                        cv2.rectangle(frame, (left, top - lh - 10), (left + lw + 10, top), color, cv2.FILLED)
+                        cv2.putText(frame, label, (left + 5, top - 5), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (255, 255, 255), 1, cv2.LINE_AA)
+                        
+                # Draw YOLO bounding boxes
+                if camera_id and camera_id in RTSPService.last_yolo_detections:
+                    from datetime import datetime
+                    now = datetime.utcnow()
+                    yolo_detections = RTSPService.last_yolo_detections[camera_id]
+                    active_yolo = [
+                        d for d in yolo_detections 
+                        if (now - d["timestamp"]).total_seconds() < 4.0
+                    ]
+                    
+                    for d in active_yolo:
+                        name = d["name"]
+                        box = d["box"]
+                        
+                        h, w, _ = frame.shape
+                        left = int(box.get("left", 0.0) * w)
+                        top = int(box.get("top", 0.0) * h)
+                        width = int(box.get("width", 0.0) * w)
+                        height = int(box.get("height", 0.0) * h)
+                        
+                        right = min(w, left + width)
+                        bottom = min(h, top + height)
+                        
+                        # Use blue for general objects, purple for recognized persons from YOLO
+                        color = (255, 100, 0) if name not in ["person", "tv", "laptop", "cell phone"] else (0, 165, 255)
                         
                         cv2.rectangle(frame, (left, top), (right, bottom), color, 2)
                         

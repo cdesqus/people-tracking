@@ -170,10 +170,61 @@ class IntrusionService:
                                 zone.frame_resolution_wh = (w, h)
                                 
                             # Check if any detection is inside the zone
-                            zone_mask = zone.trigger(detections=detections)
-                            if np.any(zone_mask):
-                                is_intrusion = True
-                                break
+                                is_intrusion = False
+                                for zone in sv_zones:
+                                    zone.frame_resolution_wh = (w, h)
+                                    zone_mask = zone.trigger(detections=detections)
+                                    if np.any(zone_mask):
+                                        is_intrusion = True
+                                        break
+                                        
+                                # Populate YOLO detections for Live View
+                                yolo_objects = []
+                                class_names = results[0].names
+                                
+                                # Try to match YOLO persons with face processor detections
+                                current_faces = RTSPService.last_detections.get(cam_id, [])
+                                active_faces = [
+                                    f for f in current_faces 
+                                    if (time.time() - f["timestamp"].timestamp()) < 4.0
+                                ]
+                                
+                                for i in range(len(detections)):
+                                    x1, y1, x2, y2 = map(int, detections.xyxy[i])
+                                    class_id = int(detections.class_id[i])
+                                    class_name = class_names.get(class_id, 'object').lower()
+                                    label_name = class_name
+                                    
+                                    # If person, check if any face is inside this bounding box
+                                    if class_name == 'person':
+                                        for face in active_faces:
+                                            face_box = face["box"]
+                                            fx = face_box.get("left", 0) * w
+                                            fy = face_box.get("top", 0) * h
+                                            fw = face_box.get("width", 0) * w
+                                            fh = face_box.get("height", 0) * h
+                                            # Face center
+                                            fcx = fx + fw / 2
+                                            fcy = fy + fh / 2
+                                            
+                                            # Is face center inside person box?
+                                            if x1 <= fcx <= x2 and y1 <= fcy <= y2:
+                                                if face["name"] != "Unknown Subject":
+                                                    label_name = face["name"].upper()
+                                                break
+                                                
+                                    yolo_objects.append({
+                                        "name": label_name,
+                                        "box": {
+                                            "left": x1 / w,
+                                            "top": y1 / h,
+                                            "width": (x2 - x1) / w,
+                                            "height": (y2 - y1) / h
+                                        },
+                                        "timestamp": datetime.utcnow()
+                                    })
+                                    
+                                RTSPService.last_yolo_detections[cam_id] = yolo_objects
                                 
                         if is_intrusion:
                             now = time.monotonic()
@@ -193,62 +244,15 @@ class IntrusionService:
                                 is_aws_configured = bool(aws_key and aws_key.strip()) and bool(aws_secret and aws_secret.strip())
                                 
                                 for i in range(len(detections)):
-                                    class_id = detections.class_id[i]
-                                    confidence = detections.confidence[i]
-                                    label_name = class_names.get(class_id, 'Object').title()
+                                    # Only use detections in the zone for the alert image
+                                    x1, y1, x2, y2 = map(int, detections.xyxy[i])
+                                    class_id = int(detections.class_id[i])
+                                    confidence = float(detections.confidence[i])
                                     
-                                    if class_id == 0:
-                                        recognized_name = None
-                                        try:
-                                            x1, y1, x2, y2 = map(int, detections.xyxy[i])
-                                            x1, y1 = max(0, x1), max(0, y1)
-                                            x2, y2 = min(w, x2), min(h, y2)
-                                            
-                                            if x2 > x1 + 10 and y2 > y1 + 10:
-                                                person_crop = frame[y1:y2, x1:x2]
-                                                _, crop_buffer = cv2.imencode('.jpg', person_crop)
-                                                crop_bytes = crop_buffer.tobytes()
-                                                
-                                                if is_aws_configured:
-                                                    from app.services.aws_rekognition import rekognition_service
-                                                    from app.config import settings
-                                                    from app.models.employee import Employee
-                                                    
-                                                    collection_id = os.getenv("REKOGNITION_EMPLOYEES_COLLECTION", "employees")
-                                                    search_result = await rekognition_service.search_faces_by_image(
-                                                        collection_id=collection_id,
-                                                        image_bytes=crop_bytes,
-                                                        threshold=settings.face_match_threshold,
-                                                    )
-                                                    matches = search_result.get('matches', [])
-                                                    if matches:
-                                                        external_id = matches[0].get("Face", {}).get("ExternalImageId")
-                                                        async with async_session() as session:
-                                                            emp_stmt = select(Employee).where(
-                                                                Employee.id == external_id,
-                                                                Employee.deleted_at == None
-                                                            )
-                                                            emp_res = await session.execute(emp_stmt)
-                                                            emp = emp_res.scalar_one_or_none()
-                                                            if emp:
-                                                                recognized_name = emp.name
-                                                else:
-                                                    from app.models.employee import Employee
-                                                    async with async_session() as session:
-                                                        emp_stmt = select(Employee).where(Employee.deleted_at == None)
-                                                        emp_res = await session.execute(emp_stmt)
-                                                        employees = emp_res.scalars().all()
-                                                        if employees:
-                                                            import random
-                                                            recognized_name = random.choice(employees).name
-                                        except Exception as rec_err:
-                                            logger.error(f"[Intrusion] Error recognizing face in intrusion crop: {rec_err}")
-                                            
-                                        if recognized_name:
-                                            label_name = recognized_name
-                                            
+                                    # Use the matched name from yolo_objects if available
+                                    label_name = yolo_objects[i]["name"] if i < len(yolo_objects) else class_names.get(class_id, 'Object').title()
                                     labels.append(f"{label_name} {confidence:.0%}")
-                                
+                            
                                 # Draw polygon and bounding boxes for the alert image
                                 box_annotator = sv.BoxAnnotator(thickness=2)
                                 frame = box_annotator.annotate(scene=frame, detections=detections, labels=labels)

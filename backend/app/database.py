@@ -82,7 +82,9 @@ async def init_db():
                     print(f"Migration warning alerts FK: {fk_err2}")
                     
                 try:
-                    await session.execute(text("ALTER TYPE alerttype ADD VALUE IF NOT EXISTS 'intrusion';"))
+                    await session.commit()
+                    async with engine.connect() as conn:
+                        await conn.execution_options(isolation_level="AUTOCOMMIT").execute(text("ALTER TYPE alerttype ADD VALUE IF NOT EXISTS 'intrusion';"))
                 except Exception as e:
                     print(f"Migration warning alerts alerttype: {e}")
             elif db_dialect == "sqlite":

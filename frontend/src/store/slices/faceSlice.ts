@@ -43,6 +43,12 @@ const faceSlice = createSlice({
       state.loading = false;
       state.error = action.payload;
     },
+    
+    // Add single face detection (for websockets)
+    addFace: (state, action: PayloadAction<Face>) => {
+      state.faces.unshift(action.payload);
+      state.total += 1;
+    },
 
     // Select face
     selectFace: (state, action: PayloadAction<Face | null>) => {
@@ -134,6 +140,7 @@ export const {
   fetchFacesStart,
   fetchFacesSuccess,
   fetchFacesError,
+  addFace,
   selectFace,
   fetchPersonsStart,
   fetchPersonsSuccess,

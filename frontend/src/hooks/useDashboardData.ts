@@ -21,6 +21,8 @@ import {
   fetchFacesStart,
   fetchFacesSuccess,
   fetchFacesError,
+  addFace,
+  selectFace,
 } from '@store/slices/faceSlice';
 import { Camera, Face, Alert } from '@/types/index';
 import { WS_URL, API_BASE_URL } from '@utils/constants';
@@ -161,10 +163,9 @@ export const useDashboardData = (options: UseDashboardDataOptions = {}) => {
         break;
       case 'new_alert':
         dispatch(addAlert(data as Alert));
-        fetchInitialData();
         break;
       case 'new_detection':
-        fetchInitialData();
+        dispatch(addFace(data as Face));
         break;
       case 'kpi_update':
         // KPIs handled separately, just log
