@@ -964,7 +964,7 @@ const Dashboard: React.FC = () => {
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-2">
                         <span className="text-xs font-bold text-slate-900 truncate">{alert.title}</span>
-                        <span className="font-mono text-[10px] text-gray-500 truncate">• {alert.location}</span>
+                        <span className="font-mono text-[10px] text-gray-500 truncate">• {alert.location} • {alert.time}</span>
                       </div>
                       <p className="text-[11px] text-slate-500 mt-1 truncate">{alert.description}</p>
                     </div>
