@@ -176,11 +176,16 @@ async def start_face_processor():
     # Wait a few seconds for database and services to settle
     await asyncio.sleep(5)
 
-    # Auto-index any employees who have photo_data but no face_id (e.g. registered before AWS was configured)
+    # Auto-index any employees who have photo_data but are missing face indexing
+    # (either no face_id at all, or no face_encoding for the local InsightFace backend)
     try:
         async with async_session() as session:
+            from sqlalchemy import or_
             stmt = select(Employee).where(
-                Employee.face_id == None,
+                or_(
+                    Employee.face_id == None,
+                    Employee.face_encoding == None,
+                ),
                 Employee.photo_data != None,
                 Employee.deleted_at == None
             )
@@ -188,7 +193,7 @@ async def start_face_processor():
             unindexed_employees = res.scalars().all()
             
             if unindexed_employees:
-                logger.info(f"Found {len(unindexed_employees)} unindexed employee(s). Attempting AWS Rekognition indexing...")
+                logger.info(f"Found {len(unindexed_employees)} unindexed employee(s). Attempting face indexing...")
                 collection_id = os.getenv("REKOGNITION_EMPLOYEES_COLLECTION", "employees")
                 for emp in unindexed_employees:
                     try:

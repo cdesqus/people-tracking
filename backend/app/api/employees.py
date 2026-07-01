@@ -5,7 +5,7 @@ from typing import Optional, List
 import os
 from app.database import get_db
 from app.models.employee import Employee, EmployeeStatus
-from app.services.aws_rekognition import rekognition_service
+from app.services.face_recognition_factory import rekognition_service
 
 router = APIRouter()
 
