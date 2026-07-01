@@ -870,8 +870,9 @@ const Dashboard: React.FC = () => {
               </div>
 
               {/* Small Sidebar Camera Selectors */}
-              <div className="flex-[3] flex flex-col bg-white border border-slate-200 rounded-xl overflow-hidden min-h-0">
-                <div className="p-3 bg-white border-b border-slate-200">
+              <div className="flex-[3] relative">
+                <div className="absolute inset-0 flex flex-col bg-white border border-slate-200 rounded-xl overflow-hidden">
+                  <div className="p-3 bg-white border-b border-slate-200">
                   <h3 className="text-xs font-bold text-slate-900 uppercase tracking-wider">Select Stream</h3>
                 </div>
                 
@@ -923,6 +924,7 @@ const Dashboard: React.FC = () => {
                       </div>
                     );
                   })}
+                </div>
                 </div>
               </div>
 
