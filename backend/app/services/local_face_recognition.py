@@ -43,9 +43,9 @@ def _get_insight_app():
         import os
 
         model_name = os.getenv("INSIGHTFACE_MODEL", "buffalo_sc")
-        # CPU-optimised detection size: 320x320 is ~4x faster than 640x640
-        # with negligible accuracy difference for surveillance camera frames.
-        det_size = (320, 320)
+        # Use 640x640 detection size. 320x320 is too small for wide CCTV shots
+        # where faces are far away and small.
+        det_size = (640, 640)
 
         logger.info(f"Loading InsightFace model '{model_name}' (CPU mode, det_size={det_size})...")
         app = FaceAnalysis(
