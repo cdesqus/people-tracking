@@ -92,13 +92,7 @@ const Sidebar: React.FC = () => {
       id: 'reports',
       roles: ['admin', 'manager', 'receptionist'],
     },
-    {
-      icon: ShieldAlert,
-      label: 'Security',
-      path: '/security',
-      id: 'security',
-      roles: ['admin'],
-    },
+
     {
       icon: Settings,
       label: 'Settings',

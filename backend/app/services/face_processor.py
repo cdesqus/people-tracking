@@ -761,8 +761,8 @@ async def start_face_processor():
 
                     except NoFacesException:
                         logger.debug(f"No faces detected on camera {camera.name}")
-                    except Exception as aws_err:
-                        logger.error(f"Error calling AWS for camera {camera.name}: {aws_err}")
+                    except Exception as err:
+                        logger.error(f"Error in face processor ({face_backend}) for camera {camera.name}: {err}")
 
                 except Exception as cam_err:
                     logger.error(f"Error processing camera {camera.name}: {cam_err}")

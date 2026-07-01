@@ -19,6 +19,7 @@ interface HealthData {
   uptime: string;
   cpuUsage: number;
   memoryUsage: number;
+  diskUsage: number;
 }
 
 const SystemHealth: React.FC = () => {
@@ -35,6 +36,7 @@ const SystemHealth: React.FC = () => {
     uptime: '15 days, 4 hours',
     cpuUsage: 12,
     memoryUsage: 45,
+    diskUsage: 62,
   });
 
   const fetchHealth = async () => {
@@ -59,6 +61,7 @@ const SystemHealth: React.FC = () => {
         uptime: '8 days, 12 hours',
         cpuUsage: 8 + Math.floor(Math.random() * 10), // live variance
         memoryUsage: 38 + Math.floor(Math.random() * 5),
+        diskUsage: 60 + Math.floor(Math.random() * 2),
       });
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Error fetching system health');
@@ -110,11 +113,11 @@ const SystemHealth: React.FC = () => {
               }`}></span>
             </div>
             <div>
-              <h2 className="text-xl font-bold text-gray-900 dark:text-slate-900">
+              <h2 className="text-xl font-bold text-gray-900 dark:text-white">
                 {isAllHealthy ? 'All Systems Operational' : 'Degraded Performance Detected'}
               </h2>
-              <p className="text-sm text-gray-600 dark:text-slate-500">
-                Live environment: <span className="font-semibold text-gray-900 dark:text-slate-900 capitalize">{health.environment}</span> (v{health.version})
+              <p className="text-sm text-gray-600 dark:text-slate-300">
+                Live environment: <span className="font-semibold text-gray-900 dark:text-white capitalize">{health.environment}</span> (v{health.version})
               </p>
             </div>
           </div>
@@ -207,8 +210,8 @@ const SystemHealth: React.FC = () => {
 
             <div>
               <div className="flex justify-between text-sm mb-1">
-                <span className="text-gray-600 dark:text-slate-500">Memory Usage</span>
-                <span className="font-semibold text-gray-900 dark:text-slate-900">{health.memoryUsage}%</span>
+                <span className="text-gray-600 dark:text-slate-300">Memory Usage</span>
+                <span className="font-semibold text-gray-900 dark:text-white">{health.memoryUsage}%</span>
               </div>
               <div className="w-full bg-gray-200 dark:bg-gray-700 h-2 rounded-full">
                 <div 
@@ -218,9 +221,22 @@ const SystemHealth: React.FC = () => {
               </div>
             </div>
 
+            <div>
+              <div className="flex justify-between text-sm mb-1">
+                <span className="text-gray-600 dark:text-slate-300">Disk Usage</span>
+                <span className="font-semibold text-gray-900 dark:text-white">{health.diskUsage}%</span>
+              </div>
+              <div className="w-full bg-gray-200 dark:bg-gray-700 h-2 rounded-full">
+                <div 
+                  className="bg-blue-500 h-2 rounded-full transition-all duration-500" 
+                  style={{ width: `${health.diskUsage}%` }}
+                />
+              </div>
+            </div>
+
             <div className="flex justify-between text-sm pt-2">
-              <span className="text-gray-600 dark:text-slate-500">System Uptime:</span>
-              <span className="font-semibold text-gray-900 dark:text-slate-900">{health.uptime}</span>
+              <span className="text-gray-600 dark:text-slate-300">System Uptime:</span>
+              <span className="font-semibold text-gray-900 dark:text-white">{health.uptime}</span>
             </div>
           </div>
         </Card>
