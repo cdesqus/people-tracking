@@ -122,7 +122,7 @@ services:
   # Waha WhatsApp HTTP API Gateway
   # Pull image first: docker login -u devlikeapro && docker pull devlikeapro/waha-plus:latest
   waha:
-    image: devlikeapro/waha-plus:latest
+    image: devlikeapro/waha:latest
     ports:
       - "3050:3000"
     environment:
