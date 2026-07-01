@@ -12,7 +12,7 @@ from app.models.camera import Camera, CameraStatus
 from app.models.employee import Employee
 from app.models.face import Face
 from app.models.alert import Alert, AlertSeverity, AlertType
-from app.services.aws_rekognition import rekognition_service, NoFacesException
+from app.services.face_recognition_factory import rekognition_service, NoFacesException
 from app.utils.websocket_manager import ws_manager
 from app.services import waha_service
 from app.config import settings
