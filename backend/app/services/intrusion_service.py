@@ -27,7 +27,7 @@ class IntrusionService:
     def __init__(self):
         self.model = None
         self.camera_tasks: Dict[str, asyncio.Task] = {}
-        self.camera_zones: Dict[str, List[sv.PolygonZone]] = {}
+        self.camera_zones: Dict[str, List[tuple]] = {}
         self.last_alert_time: Dict[str, float] = {}
         self.is_running = False
 
@@ -97,16 +97,23 @@ class IntrusionService:
                             except:
                                 pass
                                 
-                        for polygon_points in zones_data:
+                        for idx, polygon_data in enumerate(zones_data):
                             pts = []
-                            for p in polygon_points:
+                            zone_name = f"Zone {idx + 1}"
+                            
+                            points_data = polygon_data
+                            if isinstance(polygon_data, dict) and "points" in polygon_data:
+                                points_data = polygon_data["points"]
+                                zone_name = polygon_data.get("name", zone_name)
+
+                            for p in points_data:
                                 if isinstance(p, dict):
                                     pts.append([int(p.get("x", 0)), int(p.get("y", 0))])
                                 else:
                                     pts.append([int(p[0]), int(p[1])])
                             pts_array = np.array(pts, dtype=np.int32)
                             zone = sv.PolygonZone(polygon=pts_array, frame_resolution_wh=resolution_wh)
-                            self.camera_zones[cam.id].append(zone)
+                            self.camera_zones[cam.id].append((zone, zone_name))
 
                         # Start task if not running
                         if cam.id not in self.camera_tasks or self.camera_tasks[cam.id].done():
@@ -163,8 +170,9 @@ class IntrusionService:
                         
                         zones = self.camera_zones.get(cam_id, [])
                         is_intrusion = False
+                        triggered_zone_names = set()
                         
-                        for zone in zones:
+                        for zone, zone_name in zones:
                             # Update zone resolution if frame size changed
                             if zone.frame_resolution_wh != (w, h):
                                 zone.frame_resolution_wh = (w, h)
@@ -173,7 +181,7 @@ class IntrusionService:
                             zone_mask = zone.trigger(detections=detections)
                             if np.any(zone_mask):
                                 is_intrusion = True
-                                break
+                                triggered_zone_names.add(zone_name)
                                 
                         # Populate YOLO detections for Live View
                         yolo_objects = []
@@ -253,9 +261,11 @@ class IntrusionService:
                                 # Draw polygon and bounding boxes for the alert image
                                 box_annotator = sv.BoxAnnotator(thickness=2)
                                 frame = box_annotator.annotate(scene=frame, detections=detections, labels=labels)
-                                for z in zones:
+                                for z, z_name in zones:
                                     # Simple drawing of polygon
                                     cv2.polylines(frame, [z.polygon], isClosed=True, color=(0, 0, 255), thickness=3)
+                                    # Optional: Draw zone name
+                                    # cv2.putText(frame, z_name, (z.polygon[0][0], z.polygon[0][1] - 10), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 0, 255), 2)
                                 
                                 _, buffer = cv2.imencode('.jpg', frame, [cv2.IMWRITE_JPEG_QUALITY, 85])
                                 img_bytes = buffer.tobytes()
@@ -271,7 +281,7 @@ class IntrusionService:
                                                 type=AlertType.INTRUSION,
                                                 severity=AlertSeverity.CRITICAL,
                                                 title="Intrusion Detected",
-                                                description="An object or person was detected entering a restricted zone.",
+                                                description=f"An object or person was detected entering {', '.join(triggered_zone_names) or 'a restricted zone'}.",
                                                 camera_id=cam_id,
                                                 image_data=img_bytes,
                                                 acknowledged=False
@@ -304,7 +314,7 @@ class IntrusionService:
                                     send_alert_notification(
                                         alert_id=alert_id_str,
                                         alert_title="Intrusion Detected",
-                                        alert_description="An object or person was detected entering a restricted zone.",
+                                        alert_description=f"An object or person was detected entering {', '.join(triggered_zone_names) or 'a restricted zone'}.",
                                         severity="critical",
                                         alert_type="intrusion",
                                         camera_name=cam_name,

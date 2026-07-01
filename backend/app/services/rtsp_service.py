@@ -243,7 +243,10 @@ class RTSPService:
                                     zones_data = current_zones_json
                                 for polygon in zones_data:
                                     pts = []
-                                    for p in polygon:
+                                    points_data = polygon
+                                    if isinstance(polygon, dict) and "points" in polygon:
+                                        points_data = polygon["points"]
+                                    for p in points_data:
                                         if isinstance(p, dict):
                                             pts.append([int(p.get("x", 0)), int(p.get("y", 0))])
                                         else:
@@ -372,7 +375,10 @@ class RTSPService:
                                 zones_data = current_zones_json
                             for polygon in zones_data:
                                 pts = []
-                                for p in polygon:
+                                points_data = polygon
+                                if isinstance(polygon, dict) and "points" in polygon:
+                                    points_data = polygon["points"]
+                                for p in points_data:
                                     if isinstance(p, dict):
                                         pts.append([int(p.get("x", 0)), int(p.get("y", 0))])
                                     else:

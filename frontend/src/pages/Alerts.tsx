@@ -11,18 +11,22 @@ import {
 import { Card, Table, Badge, Button, Pagination } from '@components/common';
 import { Alert } from '@/types/index';
 import toast from 'react-hot-toast';
-import { Search, Filter, CheckCircle } from 'lucide-react';
+import { Search, Filter, CheckCircle, Tag } from 'lucide-react';
 import { API_BASE_URL } from '@/utils/constants';
+import { useCamera } from '@/hooks/useCamera';
 
 const Alerts: React.FC = () => {
   const dispatch = useAppDispatch();
   const { alerts, loading, currentPage, pageSize, total } = useAppSelector(
     (state) => state.alerts
   );
+  
+  const { cameras, fetchCameras } = useCamera();
 
   const [searchTerm, setSearchTerm] = useState('');
   const [debouncedSearch, setDebouncedSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState<string>('all');
+  const [typeFilter, setTypeFilter] = useState<string>('all');
   const [selectedAlertIds, setSelectedAlertIds] = useState<string[]>([]);
   const [sortKey, setSortKey] = useState<string>('created_at');
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc');
@@ -42,6 +46,9 @@ const Alerts: React.FC = () => {
       if (debouncedSearch) params.append('search', debouncedSearch);
       if (statusFilter !== 'all') {
         params.append('status', statusFilter === 'acknowledged' ? 'true' : 'false');
+      }
+      if (typeFilter !== 'all') {
+        params.append('type', typeFilter);
       }
       params.append('sort_by', sortKey);
       params.append('order', sortOrder);
@@ -101,10 +108,11 @@ const Alerts: React.FC = () => {
         })
       );
     }
-  }, [dispatch, currentPage, pageSize, debouncedSearch, statusFilter, sortKey, sortOrder]);
+  }, [dispatch, currentPage, pageSize, debouncedSearch, statusFilter, typeFilter, sortKey, sortOrder]);
 
   useEffect(() => {
     fetchAlertsList();
+    if (cameras.length === 0) fetchCameras();
     // Reset selection when data changes
     setSelectedAlertIds([]);
   }, [fetchAlertsList]);
@@ -236,11 +244,14 @@ const Alerts: React.FC = () => {
     {
       key: 'camera_id',
       label: 'Camera Source',
-      render: (value: string) => (
-        <span className="text-xs font-mono bg-gray-100 dark:bg-slate-100 px-2.5 py-1 rounded text-gray-600 dark:text-slate-500 font-bold border border-gray-200 dark:border-slate-300">
-          {value || 'SYSTEM'}
-        </span>
-      ),
+      render: (value: string) => {
+        const cam = cameras.find(c => c.id === value);
+        return (
+          <span className="text-xs font-mono bg-gray-100 dark:bg-slate-100 px-2.5 py-1 rounded text-gray-600 dark:text-slate-500 font-bold border border-gray-200 dark:border-slate-300">
+            {cam ? cam.name : value || 'SYSTEM'}
+          </span>
+        );
+      },
     },
     {
       key: 'severity',
@@ -327,8 +338,23 @@ const Alerts: React.FC = () => {
             onChange={(e) => setSearchTerm(e.target.value)}
           />
         </div>
-        <div className="w-full sm:w-48">
-          <div className="relative">
+        <div className="w-full sm:w-auto flex gap-4 flex-wrap">
+          <div className="relative flex-1 min-w-[150px]">
+            <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+              <Tag className="h-5 w-5 text-gray-400" />
+            </div>
+            <select
+              className="block w-full pl-10 pr-3 py-2 border border-gray-300 dark:border-slate-300 rounded-md leading-5 bg-white dark:bg-slate-50 text-gray-900 dark:text-slate-900 focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500 sm:text-sm shadow-sm"
+              value={typeFilter}
+              onChange={(e) => setTypeFilter(e.target.value)}
+            >
+              <option value="all">All Types</option>
+              <option value="intrusion">Intrusion</option>
+              <option value="unknown_face">Unknown Face</option>
+              <option value="system_error">System Error</option>
+            </select>
+          </div>
+          <div className="relative flex-1 min-w-[150px]">
             <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
               <Filter className="h-5 w-5 text-gray-400" />
             </div>

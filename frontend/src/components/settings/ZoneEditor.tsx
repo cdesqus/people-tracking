@@ -15,11 +15,16 @@ interface Point {
   y: number;
 }
 
+interface Zone {
+  name: string;
+  points: Point[];
+}
+
 const ZoneEditor: React.FC<ZoneEditorProps> = ({ isOpen, onClose, onSave, camera }) => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const imgRef = useRef<HTMLImageElement>(null);
   const [points, setPoints] = useState<Point[]>([]);
-  const [zones, setZones] = useState<Point[][]>([]);
+  const [zones, setZones] = useState<Zone[]>([]);
   const [isDrawing, setIsDrawing] = useState(false);
   const [imgSize, setImgSize] = useState({ width: 0, height: 0 });
 
@@ -29,10 +34,13 @@ const ZoneEditor: React.FC<ZoneEditorProps> = ({ isOpen, onClose, onSave, camera
       if (camera.intrusion_zones) {
         try {
           const parsed = JSON.parse(camera.intrusion_zones);
-          // Scale from original resolution to canvas if needed, or just keep as percentages
-          // Assuming backend expects actual pixel coordinates based on the resolution 1920x1080
-          // But for simplicity, we'll store them exactly as drawn on the canvas size, then map to standard 1920x1080.
-          setZones(parsed);
+          const mappedZones = parsed.map((z: any, idx: number) => {
+            if (Array.isArray(z)) {
+              return { name: `Zone ${idx + 1}`, points: z };
+            }
+            return { name: z.name || `Zone ${idx + 1}`, points: z.points || [] };
+          });
+          setZones(mappedZones);
         } catch (e) {
           console.error('Failed to parse zones', e);
           setZones([]);
@@ -56,7 +64,7 @@ const ZoneEditor: React.FC<ZoneEditorProps> = ({ isOpen, onClose, onSave, camera
     // Draw existing zones
     zones.forEach((zone) => {
       ctx.beginPath();
-      zone.forEach((p, i) => {
+      zone.points.forEach((p, i) => {
         if (i === 0) ctx.moveTo(p.x, p.y);
         else ctx.lineTo(p.x, p.y);
       });
@@ -125,7 +133,8 @@ const ZoneEditor: React.FC<ZoneEditorProps> = ({ isOpen, onClose, onSave, camera
         const startPt = points[0];
         const dist = Math.sqrt(Math.pow(x - startPt.x, 2) + Math.pow(y - startPt.y, 2));
         if (dist < 20) {
-          setZones([...zones, points]);
+          const zoneName = prompt("Enter a name for this zone:", `Zone ${zones.length + 1}`) || `Zone ${zones.length + 1}`;
+          setZones([...zones, { name: zoneName, points }]);
           setPoints([]);
           setIsDrawing(false);
           return;
@@ -171,7 +180,7 @@ const ZoneEditor: React.FC<ZoneEditorProps> = ({ isOpen, onClose, onSave, camera
               onLoad={handleImageLoad}
               crossOrigin="anonymous"
               className="max-w-full h-auto"
-              style={{ maxHeight: '60vh', display: 'block' }}
+              style={{ maxHeight: '50vh', display: 'block' }}
             />
             <canvas
               ref={canvasRef}
@@ -180,6 +189,35 @@ const ZoneEditor: React.FC<ZoneEditorProps> = ({ isOpen, onClose, onSave, camera
             />
           </div>
         </div>
+
+        {zones.length > 0 && (
+          <div className="mt-2 max-h-32 overflow-y-auto">
+            <h4 className="text-sm font-semibold mb-2 text-gray-700 dark:text-slate-300">Configured Zones:</h4>
+            <div className="space-y-2">
+              {zones.map((z, idx) => (
+                <div key={idx} className="flex justify-between items-center bg-gray-50 dark:bg-slate-800 p-2 rounded border border-gray-200 dark:border-slate-700">
+                  <input 
+                    type="text" 
+                    value={z.name} 
+                    onChange={(e) => {
+                      const newZones = [...zones];
+                      newZones[idx].name = e.target.value;
+                      setZones(newZones);
+                    }}
+                    className="bg-transparent border-b border-dashed border-gray-400 focus:border-blue-500 text-sm font-medium focus:ring-0 outline-none w-2/3 dark:text-white"
+                  />
+                  <button 
+                    onClick={() => setZones(zones.filter((_, i) => i !== idx))}
+                    className="text-red-500 hover:text-red-700 p-1 bg-red-50 dark:bg-red-900/30 rounded"
+                    title="Delete Zone"
+                  >
+                    <span className="material-symbols-outlined text-sm">delete</span>
+                  </button>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
 
         <div className="flex justify-between items-center mt-4 pt-4 border-t border-gray-200 dark:border-slate-300">
           <Button variant="secondary" onClick={handleClear} size="sm">
