@@ -11,8 +11,11 @@ RUN apt-get update && apt-get install -y \
     g++ \
     python3-dev \
     postgresql-client \
-    libgl1 \
     libglib2.0-0 \
+    libsm6 \
+    libxext6 \
+    libxrender-dev \
+    libgl1-mesa-glx \
     libgomp1 \
     && rm -rf /var/lib/apt/lists/*
 
