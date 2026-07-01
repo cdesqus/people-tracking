@@ -53,6 +53,8 @@ services:
       - WAHA_URL=http://waha:3000
       - WAHA_API_KEY=${WAHA_API_KEY:-}
       - WAHA_SESSION=default
+      - FACE_RECOGNITION_BACKEND=${FACE_RECOGNITION_BACKEND:-local}
+      - INSIGHTFACE_MODEL=${INSIGHTFACE_MODEL:-buffalo_sc}
     depends_on:
       postgres:
         condition: service_healthy

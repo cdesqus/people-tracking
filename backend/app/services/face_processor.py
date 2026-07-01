@@ -226,16 +226,24 @@ async def start_face_processor():
                 await asyncio.sleep(10)
                 continue
 
-            # Check if AWS credentials are set and not empty
-            aws_key = os.getenv("AWS_ACCESS_KEY_ID")
-            aws_secret = os.getenv("AWS_SECRET_ACCESS_KEY")
-            is_aws_configured = bool(aws_key and aws_key.strip()) and bool(aws_secret and aws_secret.strip())
+            # Determine processing mode:
+            #   - 'local'  : use InsightFace (FACE_RECOGNITION_BACKEND=local)
+            #   - 'aws'    : use AWS Rekognition (FACE_RECOGNITION_BACKEND=aws)
+            #   - 'demo'   : simulation mode (no backend configured)
+            face_backend = os.getenv("FACE_RECOGNITION_BACKEND", "local").strip().lower()
 
-            # --- MOCK SIMULATION MODE (If AWS is not configured) ---
-            if not is_aws_configured:
-                logger.debug(
-                    "AWS credentials not configured. Running in Demo Simulation Mode."
-                )
+            if face_backend == "aws":
+                aws_key = os.getenv("AWS_ACCESS_KEY_ID")
+                aws_secret = os.getenv("AWS_SECRET_ACCESS_KEY")
+                is_real_mode = bool(aws_key and aws_key.strip()) and bool(aws_secret and aws_secret.strip())
+                if not is_real_mode:
+                    logger.warning("FACE_RECOGNITION_BACKEND=aws but AWS credentials are empty. Falling back to Demo Simulation Mode.")
+            else:
+                # local InsightFace — always real mode, no cloud credentials needed
+                is_real_mode = True
+
+            # --- MOCK SIMULATION MODE (fallback when no backend is ready) ---
+            if not is_real_mode:
 
                 if employees:
                     import random
@@ -654,14 +662,23 @@ async def start_face_processor():
                                     image_data=crop_bytes,
                                 )
 
-                                # Step 1: Commit the Face row FIRST so it is fully
-                                # visible in PostgreSQL before the Alert FK check runs.
-                                # (session has autoflush=False — flush() alone is not
-                                # enough to satisfy the alerts_face_id_fkey constraint)
-                                async with async_session() as session:
-                                    session.add(db_face)
-                                    await session.commit()
+                                # Step 1: Commit Face first in its own session.
+                                # If this fails we skip the Alert entirely — no FK violation.
+                                face_saved = False
+                                try:
+                                    async with async_session() as session:
+                                        session.add(db_face)
+                                        await session.commit()
+                                        face_saved = True
+                                        logger.info(f"[LocalFR] Unknown face saved: {face_id} on {camera.name}")
+                                except Exception as face_save_err:
+                                    logger.error(f"[LocalFR] Failed to save face record {face_id}: {face_save_err}")
 
+                                if not face_saved:
+                                    # Face was not persisted — skip Alert to avoid FK violation
+                                    continue
+
+                                # Step 2: Face is committed. Now safely create the Alert.
                                 alert_id = str(uuid.uuid4())
                                 db_alert = Alert(
                                     id=alert_id,
@@ -674,25 +691,29 @@ async def start_face_processor():
                                     acknowledged=False,
                                 )
 
-                                # Step 2: Now safely insert the Alert with FK reference
-                                async with async_session() as session:
-                                    session.add(db_alert)
-                                    await session.commit()
+                                try:
+                                    async with async_session() as session:
+                                        session.add(db_alert)
+                                        await session.commit()
+                                except Exception as alert_save_err:
+                                    logger.error(f"[LocalFR] Failed to save alert for face {face_id}: {alert_save_err}")
+                                    continue
 
-                                    from app.services.rtsp_service import RTSPService
-                                    if camera.id not in RTSPService.last_detections:
-                                        RTSPService.last_detections[camera.id] = []
+                                # Update RTSP overlay cache
+                                from app.services.rtsp_service import RTSPService
+                                if camera.id not in RTSPService.last_detections:
+                                    RTSPService.last_detections[camera.id] = []
 
-                                    now = datetime.utcnow()
-                                    RTSPService.last_detections[camera.id] = [
-                                        d for d in RTSPService.last_detections[camera.id]
-                                        if (now - d["timestamp"]).total_seconds() < 5.0
-                                    ]
-                                    RTSPService.last_detections[camera.id].append({
-                                        "name": "Unknown Subject",
-                                        "box": bounding_box,
-                                        "timestamp": now
-                                    })
+                                now = datetime.utcnow()
+                                RTSPService.last_detections[camera.id] = [
+                                    d for d in RTSPService.last_detections[camera.id]
+                                    if (now - d["timestamp"]).total_seconds() < 5.0
+                                ]
+                                RTSPService.last_detections[camera.id].append({
+                                    "name": "Unknown Subject",
+                                    "box": bounding_box,
+                                    "timestamp": now
+                                })
 
                                 # Broadcast detection
                                 await ws_manager.broadcast({

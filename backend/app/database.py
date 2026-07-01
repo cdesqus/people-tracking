@@ -87,6 +87,27 @@ async def init_db():
                         await conn.execution_options(isolation_level="AUTOCOMMIT").execute(text("ALTER TYPE alerttype ADD VALUE IF NOT EXISTS 'intrusion';"))
                 except Exception as e:
                     print(f"Migration warning alerts alerttype: {e}")
+
+                # Make the alerts->faces FK deferrable so it's checked at COMMIT
+                # time instead of INSERT time. This permanently prevents FK
+                # violations caused by inserting Face and Alert in separate
+                # statements within the same transaction.
+                try:
+                    async with engine.connect() as conn:
+                        await conn.execution_options(isolation_level="AUTOCOMMIT").execute(
+                            text(
+                                "ALTER TABLE alerts "
+                                "DROP CONSTRAINT IF EXISTS alerts_face_id_fkey; "
+                                "ALTER TABLE alerts "
+                                "ADD CONSTRAINT alerts_face_id_fkey "
+                                "FOREIGN KEY (face_id) REFERENCES faces(id) "
+                                "ON DELETE SET NULL "
+                                "DEFERRABLE INITIALLY DEFERRED;"
+                            )
+                        )
+                    print("Migration: alerts_face_id_fkey is now DEFERRABLE INITIALLY DEFERRED")
+                except Exception as fk_defer_err:
+                    print(f"Migration warning (deferrable FK): {fk_defer_err}")
             elif db_dialect == "sqlite":
                 try:
                     await session.execute(text("ALTER TABLE faces ADD COLUMN image_data BLOB;"))
