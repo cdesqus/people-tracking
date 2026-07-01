@@ -327,6 +327,9 @@ async def start_face_processor():
                     
                     async with async_session() as session:
                         session.add(db_face)
+                        await session.commit()
+
+                    async with async_session() as session:
                         session.add(db_alert)
                         await session.commit()
                         
@@ -651,6 +654,14 @@ async def start_face_processor():
                                     image_data=crop_bytes,
                                 )
 
+                                # Step 1: Commit the Face row FIRST so it is fully
+                                # visible in PostgreSQL before the Alert FK check runs.
+                                # (session has autoflush=False — flush() alone is not
+                                # enough to satisfy the alerts_face_id_fkey constraint)
+                                async with async_session() as session:
+                                    session.add(db_face)
+                                    await session.commit()
+
                                 alert_id = str(uuid.uuid4())
                                 db_alert = Alert(
                                     id=alert_id,
@@ -663,9 +674,8 @@ async def start_face_processor():
                                     acknowledged=False,
                                 )
 
+                                # Step 2: Now safely insert the Alert with FK reference
                                 async with async_session() as session:
-                                    session.add(db_face)
-                                    await session.flush()
                                     session.add(db_alert)
                                     await session.commit()
 
