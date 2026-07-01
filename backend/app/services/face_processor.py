@@ -329,10 +329,10 @@ async def start_face_processor():
                         title="Unrecognized Subject Detected",
                         description=f"An unrecognized individual was detected on camera {camera.name}.",
                         camera_id=camera.id,
-                        face_id=face_id,
+                        face_id=None,   # No FK dependency — avoids ForeignKeyViolationError
                         acknowledged=False,
                     )
-                    
+
                     async with async_session() as session:
                         session.add(db_face)
                         await session.commit()
@@ -662,8 +662,7 @@ async def start_face_processor():
                                     image_data=crop_bytes,
                                 )
 
-                                # Step 1: Commit Face first in its own session.
-                                # If this fails we skip the Alert entirely — no FK violation.
+                                # Save Face record (best-effort — detection history)
                                 face_saved = False
                                 try:
                                     async with async_session() as session:
@@ -674,11 +673,9 @@ async def start_face_processor():
                                 except Exception as face_save_err:
                                     logger.error(f"[LocalFR] Failed to save face record {face_id}: {face_save_err}")
 
-                                if not face_saved:
-                                    # Face was not persisted — skip Alert to avoid FK violation
-                                    continue
-
-                                # Step 2: Face is committed. Now safely create the Alert.
+                                # Alert is INDEPENDENT of Face table.
+                                # face_id=None avoids ForeignKeyViolationError entirely.
+                                # Image is stored directly on the alert via image_data.
                                 alert_id = str(uuid.uuid4())
                                 db_alert = Alert(
                                     id=alert_id,
@@ -687,7 +684,8 @@ async def start_face_processor():
                                     title="Unrecognized Subject Detected",
                                     description=f"An unrecognized individual was detected on camera {camera.name}.",
                                     camera_id=camera.id,
-                                    face_id=face_id,
+                                    face_id=None,          # No FK dependency
+                                    image_data=crop_bytes, # Face image stored directly
                                     acknowledged=False,
                                 )
 
