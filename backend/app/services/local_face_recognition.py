@@ -247,13 +247,20 @@ class LocalFaceRecognitionService:
         await _ensure_cache_fresh()
         all_embeddings = _embedding_cache.get_all()
 
+        # Sort by best match first
         matches = []
         for emp_id, emp_embedding in all_embeddings.items():
             similarity = _cosine_similarity(query_embedding, emp_embedding)
             # Convert cosine similarity [0,1] to a percentage-like score [0,100]
-            # and apply the threshold (threshold is in 0.0–1.0 range from settings)
+            # ArcFace usually considers > 0.45 as the same person.
             similarity_pct = similarity * 100.0
-            if similarity >= threshold:
+            
+            logger.info(f"[LocalFR] Comparing query face against {emp_id}: similarity={similarity:.3f} (threshold={threshold})")
+            
+            # Use 0.45 as the default hard threshold for local ArcFace if the config threshold is too strict (> 0.5)
+            effective_threshold = min(threshold, 0.45) if threshold > 1.0 or threshold >= 0.5 else threshold
+            
+            if similarity >= effective_threshold:
                 matches.append({
                     "Similarity": similarity_pct,
                     "Face": {

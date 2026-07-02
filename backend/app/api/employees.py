@@ -138,9 +138,14 @@ async def create_employee(
                 external_id=id,
             )
             if face_id:
+                await db.refresh(employee)
                 employee.face_id = face_id
                 await db.commit()
                 await db.refresh(employee)
+            else:
+                raise HTTPException(status_code=400, detail="No face detected in the provided photo. Please upload a clear photo.")
+        except HTTPException:
+            raise
         except Exception as e:
             # Logging warning but not crash registration
             print(f"Warning: Rekognition indexing skipped or failed: {e}")

@@ -204,6 +204,7 @@ async def start_face_processor():
                             external_id=emp.id
                         )
                         if face_id:
+                            await session.refresh(emp)
                             emp.face_id = face_id
                             logger.info(f"Successfully indexed face for {emp.name}. FaceId: {face_id}")
                         else:
