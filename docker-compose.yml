@@ -51,7 +51,7 @@ services:
       - LOG_LEVEL=INFO
       - WORKERS=4
       - WAHA_URL=http://waha:3000
-      - WAHA_API_KEY=${WAHA_API_KEY:-}
+      - WAHA_API_KEY=${WAHA_API_KEY:-default-waha-key-123}
       - WAHA_SESSION=default
       - FACE_RECOGNITION_BACKEND=${FACE_RECOGNITION_BACKEND:-local}
       - INSIGHTFACE_MODEL=${INSIGHTFACE_MODEL:-buffalo_sc}
@@ -127,7 +127,7 @@ services:
       - "3050:3000"
     environment:
       - WHATSAPP_DEFAULT_ENGINE=NOWEB
-      - WHATSAPP_API_KEY=${WAHA_API_KEY:-}
+      - WHATSAPP_API_KEY=${WAHA_API_KEY:-default-waha-key-123}
       - WHATSAPP_HOOK_URL=http://backend:8000/api/whatsapp/webhook
       - WAHA_LOG_LEVEL=info
     volumes:
