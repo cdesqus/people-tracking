@@ -177,7 +177,7 @@ class RTSPService:
                     logger.error(f"Failed to encode cached frame: {e}")
 
         # Fallback to direct RTSP capture
-        os.environ.setdefault('OPENCV_FFMPEG_CAPTURE_OPTIONS', 'rtsp_transport;tcp|stimeout;5000000')
+        os.environ['OPENCV_FFMPEG_CAPTURE_OPTIONS'] = 'rtsp_transport;tcp|fflags;discardcorrupt|stimeout;5000000'
         cap = cv2.VideoCapture(rtsp_url, cv2.CAP_FFMPEG)
         try:
             cap.set(cv2.CAP_PROP_BUFFERSIZE, 1)
@@ -335,7 +335,7 @@ class RTSPService:
 
         # --- DIRECT STREAMING FALLBACK PATH ---
         logger.info(f"Serving direct RTSP MJPEG stream for {rtsp_url}")
-        os.environ.setdefault('OPENCV_FFMPEG_CAPTURE_OPTIONS', 'rtsp_transport;tcp|stimeout;5000000')
+        os.environ['OPENCV_FFMPEG_CAPTURE_OPTIONS'] = 'rtsp_transport;tcp|fflags;discardcorrupt|stimeout;5000000'
 
         cap = cv2.VideoCapture(rtsp_url, cv2.CAP_FFMPEG)
         

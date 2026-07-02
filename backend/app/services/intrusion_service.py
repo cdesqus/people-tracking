@@ -172,10 +172,11 @@ class IntrusionService:
                         is_intrusion = False
                         triggered_zone_names = set()
                         
-                        for zone, zone_name in zones:
+                        for idx, (zone, zone_name) in enumerate(zones):
                             # Update zone resolution if frame size changed
                             if zone.frame_resolution_wh != (w, h):
-                                zone.frame_resolution_wh = (w, h)
+                                zone = sv.PolygonZone(polygon=zone.polygon, frame_resolution_wh=(w, h))
+                                self.camera_zones[cam_id][idx] = (zone, zone_name)
                             
                             # Check if any detection is inside the zone
                             zone_mask = zone.trigger(detections=detections)
