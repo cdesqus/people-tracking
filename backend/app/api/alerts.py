@@ -1,8 +1,7 @@
 from fastapi import APIRouter, Depends, HTTPException, Response
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy import select, func
+from sqlalchemy import select, func, or_, cast, String
 from app.database import get_db
-from sqlalchemy import or_
 from app.schemas.alert import AlertCreate, AlertResponse, PaginatedAlertResponse
 from app.models.alert import Alert
 import uuid
@@ -18,6 +17,7 @@ async def list_alerts(
     limit: int = None,
     search: str = None,
     status: bool = None,
+    type: str = None,
     sort_by: str = "created_at",
     order: str = "desc",
     db: AsyncSession = Depends(get_db)
@@ -39,12 +39,15 @@ async def list_alerts(
             Alert.title.ilike(f"%{search}%"),
             Alert.description.ilike(f"%{search}%"),
             Alert.camera_id.ilike(f"%{search}%"),
-            Alert.type.ilike(f"%{search}%")
+            cast(Alert.type, String).ilike(f"%{search}%")
         )
         query = query.where(search_filter)
         
     if status is not None:
         query = query.where(Alert.acknowledged == status)
+
+    if type is not None:
+        query = query.where(Alert.type == type)
 
     # Get total count
     count_stmt = select(func.count()).select_from(query.subquery())

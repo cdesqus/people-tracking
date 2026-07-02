@@ -115,11 +115,11 @@ const SettingsPage: React.FC = () => {
     <div className="space-y-6">
       {/* Header */}
       <div>
-        <h1 className="text-3xl font-bold text-gray-900 dark:text-white">
+        <h1 className="text-2xl font-bold text-gray-800">
           Settings & Configuration
         </h1>
-        <p className="text-gray-600 dark:text-slate-300 mt-1">
-          Manage system settings, users, cameras, and monitor system health
+        <p className="text-sm text-gray-500 mt-1">
+          Kelola pengaturan sistem, pengguna, kamera, dan pantau kesehatan sistem
         </p>
       </div>
 
