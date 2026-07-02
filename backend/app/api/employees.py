@@ -106,21 +106,9 @@ async def create_employee(
         )
 
     photo_bytes = None
-    face_id = None
 
     if photo:
         photo_bytes = await photo.read()
-        collection_id = os.getenv("REKOGNITION_EMPLOYEES_COLLECTION", "employees")
-        try:
-            # Index face in AWS Rekognition if credentials configured
-            face_id = await rekognition_service.index_face(
-                collection_id=collection_id,
-                image_bytes=photo_bytes,
-                external_id=id,
-            )
-        except Exception as e:
-            # Logging warning but not crash registration
-            print(f"Warning: Rekognition indexing skipped or failed: {e}")
 
     employee = Employee(
         id=id,
@@ -132,13 +120,30 @@ async def create_employee(
         contact=contact,
         badge_id=badge_id,
         photo_data=photo_bytes,
-        face_id=face_id,
+        face_id=None,
         photo_url=f"/api/employees/{id}/photo" if photo_bytes else None,
     )
 
     db.add(employee)
     await db.commit()
     await db.refresh(employee)
+
+    if photo_bytes:
+        collection_id = os.getenv("REKOGNITION_EMPLOYEES_COLLECTION", "employees")
+        try:
+            # Index face in AWS Rekognition or local FR (needs DB record first)
+            face_id = await rekognition_service.index_face(
+                collection_id=collection_id,
+                image_bytes=photo_bytes,
+                external_id=id,
+            )
+            if face_id:
+                employee.face_id = face_id
+                await db.commit()
+                await db.refresh(employee)
+        except Exception as e:
+            # Logging warning but not crash registration
+            print(f"Warning: Rekognition indexing skipped or failed: {e}")
 
     return {
         "id": employee.id,
