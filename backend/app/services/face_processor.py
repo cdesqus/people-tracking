@@ -55,38 +55,25 @@ def _create_camera_capture(stream_url: str):
     try:
         cap.set(cv2.CAP_PROP_OPEN_TIMEOUT_MSECS, 3000)
         cap.set(cv2.CAP_PROP_READ_TIMEOUT_MSECS, 3000)
+        # CRITICAL: Prevent OpenCV from buffering old frames which causes the "3 duplicated images" tearing/distortion bug
+        cap.set(cv2.CAP_PROP_BUFFERSIZE, 1)
     except Exception:
         pass
     return cap
 
 
-def _is_temporally_valid_frame(frame, reference_frame) -> bool:
+def _is_temporally_valid(frame, small_current, small_reference) -> bool:
     """Reject malformed frames and large decoder-artifact jumps."""
     if frame is None or frame.ndim != 3 or frame.shape[2] != 3:
         return False
     height, width = frame.shape[:2]
     if width < 64 or height < 64:
         return False
-    if reference_frame is None:
+    if small_reference is None:
         return True
-    if frame.shape != reference_frame.shape:
-        return False
 
-    # A fixed CCTV scene changes gradually. H.264 macroblock corruption or the
-    # tiled/mosaic artifact changes most of the image in a single decoded frame.
-    small_current = cv2.resize(frame, (160, 90))
-    small_reference = cv2.resize(reference_frame, (160, 90))
     delta = cv2.absdiff(small_current, small_reference)
     return float(delta.mean()) < 60.0
-
-
-def _frame_delta(frame, reference_frame) -> float:
-    """Cheap visual delta used to detect a decoder returning one frozen frame."""
-    if reference_frame is None or frame.shape != reference_frame.shape:
-        return float("inf")
-    small_current = cv2.resize(frame, (160, 90))
-    small_reference = cv2.resize(reference_frame, (160, 90))
-    return float(cv2.absdiff(small_current, small_reference).mean())
 
 
 def _camera_worker(camera_id: str, stream_url: str, generation: int):
@@ -98,6 +85,8 @@ def _camera_worker(camera_id: str, stream_url: str, generation: int):
         f"(generation {generation})"
     )
     reference_frame = RTSPService.latest_frames.get(camera_id)
+    small_reference = cv2.resize(reference_frame, (160, 90)) if reference_frame is not None else None
+    
     rejected_frames = 0
     last_visual_change = time.monotonic()
     
@@ -123,15 +112,25 @@ def _camera_worker(camera_id: str, stream_url: str, generation: int):
                 break
             cap = _create_camera_capture(stream_url)
             reference_frame = None
+            small_reference = None
             rejected_frames = 0
             last_visual_change = time.monotonic()
             continue
 
-        visual_delta = _frame_delta(frame, reference_frame)
+        # Resize ONCE per frame instead of 4 times to prevent CPU overload
+        try:
+            small_current = cv2.resize(frame, (160, 90))
+        except cv2.error:
+            continue
+
+        if small_reference is not None and reference_frame is not None and frame.shape == reference_frame.shape:
+            visual_delta = float(cv2.absdiff(small_current, small_reference).mean())
+        else:
+            visual_delta = float("inf")
+
         if visual_delta < 0.02:
             # Some RTSP/FFmpeg combinations return the last decoded frame over
-            # and over instead of reporting a read failure. The on-camera clock
-            # means a healthy CCTV frame should not remain byte-visually static.
+            # and over instead of reporting a read failure.
             if time.monotonic() - last_visual_change >= 3.0:
                 logger.warning(
                     f"Camera {camera_id} decoder is frozen; reopening RTSP stream"
@@ -140,13 +139,14 @@ def _camera_worker(camera_id: str, stream_url: str, generation: int):
                 time.sleep(0.25)
                 cap = _create_camera_capture(stream_url)
                 reference_frame = None
+                small_reference = None
                 rejected_frames = 0
                 last_visual_change = time.monotonic()
             continue
 
         last_visual_change = time.monotonic()
 
-        if not _is_temporally_valid_frame(frame, reference_frame):
+        if not _is_temporally_valid(frame, small_current, small_reference):
             rejected_frames += 1
             if rejected_frames >= 3:
                 logger.warning(
@@ -157,18 +157,19 @@ def _camera_worker(camera_id: str, stream_url: str, generation: int):
                 time.sleep(0.5)
                 cap = _create_camera_capture(stream_url)
                 reference_frame = None
+                small_reference = None
                 rejected_frames = 0
                 last_visual_change = time.monotonic()
             continue
 
         rejected_frames = 0
             
-        # Own the cached memory. Some OpenCV/FFmpeg builds reuse the decoder
-        # buffer on the next read, which otherwise can produce torn MJPEG frames.
+        # Own the cached memory.
         cached_frame = frame.copy()
         RTSPService.latest_frames[camera_id] = cached_frame
         RTSPService.latest_frame_times[camera_id] = time.time()
         reference_frame = cached_frame
+        small_reference = small_current
         
     cap.release()
     logger.info(
@@ -274,13 +275,7 @@ async def start_face_processor():
     last_unknown_alert_sent = {} # camera_id -> timestamp of last unknown face alert
     last_employee_alert_sent = {} # (camera_id, employee_id) -> timestamp of last employee alert
 
-    # Load YOLOv8 for first-pass person detection
-    logger.info("Loading YOLOv8n model for face processor...")
-    try:
-        yolo_model = YOLO("yolov8n.pt")
-    except Exception as e:
-        logger.error(f"Failed to load YOLOv8n: {e}")
-        yolo_model = None
+    # Removed YOLOv8 model loading (unused, frees up memory and CPU)
 
     # Wait a few seconds for database and services to settle
     await asyncio.sleep(5)
