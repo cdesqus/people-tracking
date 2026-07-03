@@ -413,5 +413,84 @@ class LocalFaceRecognitionService:
         pass
 
 
+    async def analyze_faces(
+        self,
+        collection_id: str,
+        image_bytes: bytes,
+        threshold: float = 0.6
+    ) -> List[Dict[str, Any]]:
+        """
+        Unified method: Detects all faces and matches them locally in ONE PASS.
+        Returns a list of dicts:
+        [
+            {
+                "bbox": {"Left": ..., "Top": ..., "Width": ..., "Height": ...},
+                "confidence": 99.9,
+                "match": { ... } or None
+            }, ...
+        ]
+        """
+        app = await asyncio.to_thread(_get_insight_app)
+        frame = _bytes_to_bgr(image_bytes)
+        if frame is None:
+            return []
+
+        h, w = frame.shape[:2]
+        faces = await asyncio.to_thread(_run_face_analysis, app, frame)
+
+        if not faces:
+            return []
+
+        def normalized_bbox(face) -> Dict[str, float]:
+            x1, y1, x2, y2 = face.bbox
+            return {
+                "Left":   max(0.0, float(x1) / w),
+                "Top":    max(0.0, float(y1) / h),
+                "Width":  min(1.0, float(x2 - x1) / w),
+                "Height": min(1.0, float(y2 - y1) / h),
+            }
+
+        await _ensure_cache_fresh()
+        all_embeddings = _embedding_cache.get_all()
+        effective_threshold = min(threshold, 0.45) if threshold >= 0.5 else threshold
+
+        results = []
+        for query_face in faces:
+            query_embedding = query_face.normed_embedding
+            query_bbox = normalized_bbox(query_face)
+            confidence = float(query_face.det_score) * 100
+            
+            best_emp = None
+            best_sim = 0.0
+            
+            for emp_id, emp_embeddings in all_embeddings.items():
+                similarity = max(
+                    _cosine_similarity(query_embedding, emp_embedding)
+                    for emp_embedding in emp_embeddings
+                )
+                if similarity >= effective_threshold and similarity > best_sim:
+                    best_sim = similarity
+                    best_emp = emp_id
+                    
+            match_data = None
+            if best_emp:
+                similarity_pct = best_sim * 100.0
+                match_data = {
+                    "Similarity": similarity_pct,
+                    "Face": {
+                        "ExternalImageId": best_emp,
+                        "FaceId": f"local-{best_emp}",
+                        "Confidence": similarity_pct,
+                    },
+                }
+                
+            results.append({
+                "bbox": query_bbox,
+                "confidence": confidence,
+                "match": match_data
+            })
+            
+        return results
+
 # Singleton instance
 local_face_recognition_service = LocalFaceRecognitionService()

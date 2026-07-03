@@ -123,6 +123,22 @@ def _camera_worker(camera_id: str, stream_url: str, generation: int):
         except cv2.error:
             continue
 
+        # Detect 3-image tearing anomaly (dynamic resolution drop causing FFmpeg stride desync)
+        third = small_current.shape[1] // 3
+        left_part = small_current[:, :third]
+        middle_part = small_current[:, third:2*third]
+        tear_delta = float(cv2.absdiff(left_part, middle_part).mean())
+        if tear_delta < 5.0 and float(left_part.std()) > 10.0:
+            logger.warning(f"Camera {camera_id} produced 3-image tear anomaly; reopening decoder")
+            cap.release()
+            time.sleep(1)
+            cap = _create_camera_capture(stream_url)
+            reference_frame = None
+            small_reference = None
+            rejected_frames = 0
+            last_visual_change = time.monotonic()
+            continue
+
         if small_reference is not None and reference_frame is not None and frame.shape == reference_frame.shape:
             visual_delta = float(cv2.absdiff(small_current, small_reference).mean())
         else:
@@ -626,9 +642,14 @@ async def start_face_processor():
                     frame_bytes = frame_buffer.tobytes()
 
                     try:
-                        # 1. Detect ALL faces in the frame first
+                        # 1. Use the unified analyze_faces to detect and match in one pass
                         try:
-                            faces_found = await rekognition_service.detect_faces(frame_bytes)
+                            # analyze_faces returns [{'bbox': ..., 'confidence': ..., 'match': ...}, ...]
+                            faces_found = await rekognition_service.analyze_faces(
+                                collection_id=os.getenv("REKOGNITION_EMPLOYEES_COLLECTION", "employees"),
+                                image_bytes=frame_bytes,
+                                threshold=settings.face_match_threshold,
+                            )
                         except Exception as detect_err:
                             logger.error(f"Error detecting faces for multi-person scan: {detect_err}")
                             faces_found = []
@@ -639,60 +660,38 @@ async def start_face_processor():
                         logger.info(f"Found {len(faces_found)} face(s) in frame from camera {camera.name}")
 
                         # 2. Process EACH face individually
-                        collection_id = os.getenv("REKOGNITION_EMPLOYEES_COLLECTION", "employees")
-                        
                         for face_detail in faces_found:
-                            confidence = face_detail.get("Confidence", 90.0)
-                            box = face_detail.get("BoundingBox", {})
+                            confidence = face_detail.get("confidence", 90.0)
+                            bounding_box = face_detail.get("bbox", {})
+                            match = face_detail.get("match")
                             
                             # Skip extremely low confidence faces
                             if confidence < 50.0:
                                 continue
 
-                            # Crop the face using its bounding box
-                            crop_bytes, bounding_box = _crop_face_from_frame(frame, box)
+                            crop_bytes, _ = _crop_face_from_frame(frame, bounding_box)
                             if crop_bytes is None:
-                                continue
+                                crop_bytes = frame_bytes
 
                             active_employee = None
-                            active_employee_match = None
                             matched_face_details = None
-
-                            try:
-                                # Search THIS SPECIFIC face crop in the database/collection
-                                search_result = await rekognition_service.search_faces_by_image(
-                                    collection_id=collection_id,
-                                    image_bytes=crop_bytes,
-                                    threshold=settings.face_match_threshold,
-                                )
-                                matches = search_result.get('matches', [])
-
-                                if matches:
-                                    async with async_session() as session:
-                                        for match in matches:
-                                            face_match_details = match.get("Face", {})
-                                            external_id = face_match_details.get("ExternalImageId")
-                                            
-                                            emp_stmt = select(Employee).where(
-                                                Employee.id == external_id,
-                                                Employee.deleted_at == None,
-                                            )
-                                            emp_res = await session.execute(emp_stmt)
-                                            emp = emp_res.scalar_one_or_none()
-                                            
-                                            if emp:
-                                                active_employee_match = match
-                                                active_employee = emp
-                                                matched_face_details = face_match_details
-                                                break
-                            except NoFacesException:
-                                pass
-                            except Exception as search_err:
-                                logger.error(f"Error searching cropped face: {search_err}")
+                            
+                            if match:
+                                face_match_details = match.get("Face", {})
+                                external_id = face_match_details.get("ExternalImageId")
+                                
+                                async with async_session() as session:
+                                    emp_stmt = select(Employee).where(
+                                        Employee.id == external_id,
+                                        Employee.deleted_at == None,
+                                    )
+                                    emp_res = await session.execute(emp_stmt)
+                                    active_employee = emp_res.scalar_one_or_none()
+                                    matched_face_details = face_match_details
 
                             # Process the result for this specific face
-                            if active_employee_match and active_employee:
-                                similarity = active_employee_match.get("Similarity", 0.0)
+                            if active_employee:
+                                similarity = match.get("Similarity", 0.0)
                                 face_match_id = matched_face_details.get("FaceId")
 
                                 logger.info(f"Face match found! ID: {active_employee.id} ({active_employee.name}), Similarity: {similarity}%")

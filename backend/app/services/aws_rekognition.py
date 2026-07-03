@@ -134,6 +134,75 @@ class RekognitionService:
             print(f"Error indexing face: {e}")
             return None
 
+    async def analyze_faces(
+        self,
+        collection_id: str,
+        image_bytes: bytes,
+        threshold: float = 0.6
+    ) -> List[Dict[str, Any]]:
+        """
+        Unified method: Detects all faces in the frame, and searches each face in the collection.
+        Returns a list of dicts:
+        [
+            {
+                "bbox": {"Left": ..., "Top": ..., "Width": ..., "Height": ...},
+                "confidence": 99.9,
+                "match": { ... } or None
+            }, ...
+        ]
+        """
+        faces_found = await self.detect_faces(image_bytes)
+        if not faces_found:
+            return []
+            
+        import cv2
+        import numpy as np
+        
+        arr = np.frombuffer(image_bytes, dtype=np.uint8)
+        frame = cv2.imdecode(arr, cv2.IMREAD_COLOR)
+        if frame is None:
+            return []
+            
+        h, w = frame.shape[:2]
+        
+        results = []
+        for face in faces_found:
+            box = face.get("BoundingBox", {})
+            confidence = face.get("Confidence", 90.0)
+            if confidence < 50.0:
+                continue
+                
+            x1 = int(box.get("Left", 0) * w)
+            y1 = int(box.get("Top", 0) * h)
+            x2 = int(x1 + box.get("Width", 0) * w)
+            y2 = int(y1 + box.get("Height", 0) * h)
+            
+            x1, y1 = max(0, x1), max(0, y1)
+            x2, y2 = min(w, x2), min(h, y2)
+            
+            if x2 - x1 < 10 or y2 - y1 < 10:
+                continue
+                
+            crop = frame[y1:y2, x1:x2]
+            _, crop_buf = cv2.imencode('.jpg', crop)
+            crop_bytes = crop_buf.tobytes()
+            
+            match_data = None
+            try:
+                search_result = await self.search_faces_by_image(collection_id, crop_bytes, threshold)
+                matches = search_result.get("matches", [])
+                if matches:
+                    match_data = matches[0]
+            except Exception:
+                pass
+                
+            results.append({
+                "bbox": box,
+                "confidence": confidence,
+                "match": match_data
+            })
+            
+        return results
 
 # Create service instance
 rekognition_service = RekognitionService()
