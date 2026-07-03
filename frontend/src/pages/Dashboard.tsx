@@ -241,6 +241,8 @@ const Dashboard: React.FC = () => {
         snapshotUrl: c.status === 'active'
           ? `${API_BASE_URL}/cameras/${c.id}/snapshot?t=${snapshotTick}`
           : '',
+        resolution: c.resolution,
+        fps: c.fps,
         branch: c.branch || 'br-hq'
       }))
     : mockCameras;
@@ -376,33 +378,24 @@ const Dashboard: React.FC = () => {
       }
     };
 
-    // Only fetch stream info ONCE when the camera focuses, not every 5 seconds
-    const fetchStreamInfo = async () => {
-      try {
-        const res = await fetch(`${API_BASE_URL}/cameras/${cameraId}/test-connection`, {
-          method: 'POST',
-        });
-        if (res.ok) {
-          const data = await res.json();
-          if (data.resolution && data.fps) {
-            setStreamInfo({
-              resolution: data.resolution,
-              fps: `${Math.round(data.fps)}`,
-            });
-          }
-        }
-      } catch {
-        // Use defaults
-      }
-    };
-
     measureLatency();
-    fetchStreamInfo();
+    // Camera metadata already contains these values. Do not open another RTSP
+    // connection merely to populate the focused-feed badge.
+    setStreamInfo({
+      resolution: activeFocusedCamera.resolution || '640x480',
+      fps: `${Math.round(activeFocusedCamera.fps || 0)}`,
+    });
     
     // Only poll latency, not test-connection
     const interval = setInterval(measureLatency, 5000);
     return () => clearInterval(interval);
-  }, [activeTab, activeFocusedCamera?.id, activeFocusedCamera?.status]);
+  }, [
+    activeTab,
+    activeFocusedCamera?.id,
+    activeFocusedCamera?.status,
+    activeFocusedCamera?.resolution,
+    activeFocusedCamera?.fps,
+  ]);
 
   return (
     <div className="flex-1 flex flex-col bg-slate-50 text-slate-800">

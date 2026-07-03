@@ -164,17 +164,20 @@ class RTSPService:
         Get a single JPEG snapshot from the RTSP stream.
         Uses cached frame if available to prevent connection exhaustion.
         """
-        if camera_id and camera_id in RTSPService.latest_frames:
-            frame = RTSPService.latest_frames[camera_id]
+        if camera_id:
+            frame = RTSPService.latest_frames.get(camera_id)
             if frame is not None:
                 try:
                     _, buffer = cv2.imencode(
-                        '.jpg', frame,
+                        '.jpg', frame.copy(),
                         [cv2.IMWRITE_JPEG_QUALITY, jpeg_quality]
                     )
                     return buffer.tobytes()
                 except Exception as e:
                     logger.error(f"Failed to encode cached frame: {e}")
+            # A camera ID means the shared reader owns this RTSP connection.
+            # Never create a second decoder while its cache is warming up.
+            return None
 
         # Fallback to direct RTSP capture
         os.environ['OPENCV_FFMPEG_CAPTURE_OPTIONS'] = 'rtsp_transport;tcp|fflags;discardcorrupt|stimeout;5000000'
@@ -216,14 +219,43 @@ class RTSPService:
         zones = []
 
         # --- CACHED STREAMING PATH ---
-        if camera_id and camera_id in RTSPService.latest_frames:
+        if camera_id:
             logger.info(f"Serving cached MJPEG stream for camera {camera_id}")
+            waiting_frame = np.zeros((480, 640, 3), dtype=np.uint8)
+            waiting_text = "CONNECTING TO CAMERA..."
+            waiting_size = cv2.getTextSize(
+                waiting_text, cv2.FONT_HERSHEY_SIMPLEX, 0.8, 2
+            )[0]
+            cv2.putText(
+                waiting_frame,
+                waiting_text,
+                (
+                    (waiting_frame.shape[1] - waiting_size[0]) // 2,
+                    (waiting_frame.shape[0] + waiting_size[1]) // 2,
+                ),
+                cv2.FONT_HERSHEY_SIMPLEX,
+                0.8,
+                (255, 255, 255),
+                2,
+                cv2.LINE_AA,
+            )
+            _, waiting_buffer = cv2.imencode(
+                ".jpg",
+                waiting_frame,
+                [cv2.IMWRITE_JPEG_QUALITY, jpeg_quality],
+            )
             try:
-                while camera_id in RTSPService.latest_frames:
+                while True:
                     start = time.monotonic()
                     frame = RTSPService.latest_frames.get(camera_id)
                     if frame is None:
-                        time.sleep(0.1)
+                        yield (
+                            b'--frame\r\n'
+                            b'Content-Type: image/jpeg\r\n\r\n'
+                            + waiting_buffer.tobytes()
+                            + b'\r\n'
+                        )
+                        time.sleep(0.5)
                         continue
 
                     # Copy to avoid mutating cached frame

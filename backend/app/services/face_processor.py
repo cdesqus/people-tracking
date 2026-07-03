@@ -39,9 +39,14 @@ def _safe_create_task(coro, name: str = "waha_task"):
 # Persistent background readers per camera to avoid OpenCV buffering latency
 _camera_threads: dict = {}   # camera_id -> threading.Thread
 _camera_active: dict = {}    # camera_id -> bool
+_camera_generations: dict = {}  # camera_id -> reader generation
 
-def _camera_worker(camera_id: str, stream_url: str):
-    """Background thread that continuously reads from the camera to flush the buffer."""
+
+def _create_camera_capture(stream_url: str):
+    """Open one low-latency TCP RTSP capture."""
+    os.environ["OPENCV_FFMPEG_CAPTURE_OPTIONS"] = (
+        "rtsp_transport;tcp|fflags;discardcorrupt|stimeout;5000000"
+    )
     cap = cv2.VideoCapture(stream_url, cv2.CAP_FFMPEG)
     try:
         cap.set(cv2.CAP_PROP_BUFFERSIZE, 1)
@@ -49,28 +54,51 @@ def _camera_worker(camera_id: str, stream_url: str):
         cap.set(cv2.CAP_PROP_READ_TIMEOUT_MSECS, 3000)
     except Exception:
         pass
+    return cap
+
+
+def _camera_worker(camera_id: str, stream_url: str, generation: int):
+    """Background thread that continuously reads from the camera to flush the buffer."""
+    cap = _create_camera_capture(stream_url)
     
-    logger.info(f"Started frame grabber thread for camera {camera_id}")
+    logger.info(
+        f"Started frame grabber thread for camera {camera_id} "
+        f"(generation {generation})"
+    )
     
-    while _camera_active.get(camera_id, False):
+    while (
+        _camera_active.get(camera_id, False)
+        and _camera_generations.get(camera_id) == generation
+    ):
         if not cap.isOpened():
             time.sleep(1)
-            cap = cv2.VideoCapture(stream_url, cv2.CAP_FFMPEG)
+            if _camera_generations.get(camera_id) != generation:
+                break
+            cap = _create_camera_capture(stream_url)
             continue
             
         ret, frame = cap.read()
+        if _camera_generations.get(camera_id) != generation:
+            break
         if not ret or frame is None:
             # Connection lost or EOF, release and try to reconnect
             cap.release()
             time.sleep(1)
+            if _camera_generations.get(camera_id) != generation:
+                break
+            cap = _create_camera_capture(stream_url)
             continue
             
-        # Store latest frame safely in RTSPService cache
-        RTSPService.latest_frames[camera_id] = frame
+        # Own the cached memory. Some OpenCV/FFmpeg builds reuse the decoder
+        # buffer on the next read, which otherwise can produce torn MJPEG frames.
+        RTSPService.latest_frames[camera_id] = frame.copy()
         RTSPService.latest_frame_times[camera_id] = time.time()
         
     cap.release()
-    logger.info(f"Stopped frame grabber thread for camera {camera_id}")
+    logger.info(
+        f"Stopped frame grabber thread for camera {camera_id} "
+        f"(generation {generation})"
+    )
 
 
 def _crop_face_from_frame(frame, bounding_box: dict, padding: float = 0.20):
@@ -139,12 +167,17 @@ def _open_and_read_frame(camera_id: str, stream_url: str):
         else:
             logger.info(f"Starting frame grabber thread for camera {camera_id}")
             
-        # Signal old thread to stop (if it ever unblocks)
-        _camera_active[camera_id] = False
-        
-        # Start new thread
+        # Invalidate the old generation before starting the replacement. A
+        # boolean alone is unsafe because setting it True for the new thread
+        # also revives the old thread.
+        generation = _camera_generations.get(camera_id, 0) + 1
+        _camera_generations[camera_id] = generation
         _camera_active[camera_id] = True
-        t = threading.Thread(target=_camera_worker, args=(camera_id, stream_url), daemon=True)
+        t = threading.Thread(
+            target=_camera_worker,
+            args=(camera_id, stream_url, generation),
+            daemon=True,
+        )
         _camera_threads[camera_id] = t
         t.start()
         # Give it a moment to fetch the first frame
