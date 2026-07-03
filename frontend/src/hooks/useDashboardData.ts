@@ -199,8 +199,10 @@ export const useDashboardData = (options: UseDashboardDataOptions = {}) => {
 
     // Setup fallback polling
     const pollInterval = setInterval(() => {
-      fetchInitialData();
-    }, 10000);
+      if (!isConnectedRef.current) {
+        fetchInitialData();
+      }
+    }, 30000);
 
     // Connect to WebSocket
     connectWebSocket();

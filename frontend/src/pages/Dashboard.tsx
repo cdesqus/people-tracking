@@ -56,15 +56,73 @@ const Dashboard: React.FC = () => {
 
     return () => {
       document.head.removeChild(linkIcons);
+import React, { useState, useEffect } from 'react';
+import { Link } from 'react-router-dom';
+import { useAppDispatch, useAppSelector } from '@store/store';
+import { useDashboardData } from '@hooks/useDashboardData';
+import { acknowledgeAlertStart, acknowledgeAlertSuccess } from '@store/slices/alertSlice';
+import { API_BASE_URL } from '@/utils/constants';
+
+// Component to handle MJPEG streams properly and prevent browser connection exhaustion
+const MjpegStream: React.FC<{ src: string; alt: string; className: string }> = ({ src, alt, className }) => {
+  const imgRef = React.useRef<HTMLImageElement>(null);
+
+  React.useEffect(() => {
+    if (imgRef.current) {
+      imgRef.current.src = src;
+    }
+    return () => {
+      // Force the browser to close the MJPEG connection when the component unmounts
+      // A blank 1x1 GIF forces Chrome to kill the multipart TCP socket immediately.
+      if (imgRef.current) {
+        imgRef.current.src = 'data:image/gif;base64,R0lGODlhAQABAAD/ACwAAAAAAQABAAACADs=';
+      }
+    };
+  }, [src]);
+
+  return <img ref={imgRef} alt={alt} className={className} />;
+};
+
+const Dashboard: React.FC = () => {
+  const dispatch = useAppDispatch();
+  const branches = useAppSelector((state) => state.branches.branches);
+  const [activeTab, setActiveTab] = useState<'overview' | 'monitor'>('overview');
+  const [selectedCamera, setSelectedCamera] = useState<string>('CAM-01');
+  const [selectedBranch, setSelectedBranch] = useState<string>('all');
+  const [snapshotTick, setSnapshotTick] = useState(Date.now());
+  const [previewImage, setPreviewImage] = useState<{ src: string, title: string, subtitle: string } | null>(null);
+  const [streamLatency, setStreamLatency] = useState<number | null>(null);
+  const [streamInfo, setStreamInfo] = useState<{ resolution: string; fps: string } | null>(null);
+  // kpiStats is now calculated dynamically inline during render to avoid state loops
+
+  // Load real-time data from custom hook
+  const { cameras, alerts, faces, isConnected } = useDashboardData({
+    autoConnect: true,
+  });
+
+  // Load Google Fonts and Material Icons stylesheet on mount
+  useEffect(() => {
+    const linkIcons = document.createElement('link');
+    linkIcons.href = 'https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap';
+    linkIcons.rel = 'stylesheet';
+    document.head.appendChild(linkIcons);
+
+    const linkFonts = document.createElement('link');
+    linkFonts.href = 'https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500&display=swap';
+    linkFonts.rel = 'stylesheet';
+    document.head.appendChild(linkFonts);
+
+    return () => {
+      document.head.removeChild(linkIcons);
       document.head.removeChild(linkFonts);
     };
   }, []);
 
-  // Update snapshot timestamp every 3 seconds for thumbnails
+  // Update snapshot timestamp every 30 seconds for thumbnails
   useEffect(() => {
     const snapshotInterval = setInterval(() => {
       setSnapshotTick(Date.now());
-    }, 3000);
+    }, 30000);
     return () => clearInterval(snapshotInterval);
   }, []);
 
@@ -387,7 +445,7 @@ const Dashboard: React.FC = () => {
     });
     
     // Only poll latency, not test-connection
-    const interval = setInterval(measureLatency, 5000);
+    const interval = setInterval(measureLatency, 10000);
     return () => clearInterval(interval);
   }, [
     activeTab,

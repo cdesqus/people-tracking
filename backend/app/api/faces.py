@@ -130,4 +130,4 @@ async def get_face_image(face_id: str, db: AsyncSession = Depends(get_db)):
         raise HTTPException(
             status_code=404, detail="Face detection captured image not found"
         )
-    return Response(content=face.image_data, media_type="image/jpeg")
+    return Response(content=face.image_data, media_type="image/jpeg", headers={"Cache-Control": "public, max-age=86400"})
