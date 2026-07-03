@@ -45,9 +45,9 @@ _camera_generations: dict = {}  # camera_id -> reader generation
 def _create_camera_capture(stream_url: str):
     """Open one stable TCP RTSP capture without dropping H.264 references."""
     os.environ["OPENCV_FFMPEG_CAPTURE_OPTIONS"] = (
-        "rtsp_transport;tcp|timeout;5000000|buffer_size;1048576"
+        "rtsp_transport;tcp|timeout;5000000"
     )
-    os.environ["OPENCV_FFMPEG_THREADS"] = "1"
+    os.environ.pop("OPENCV_FFMPEG_THREADS", None)
     # Decoder errors are handled by ret/frame validation below. Keep FFmpeg's
     # repetitive macroblock/sws warnings from flooding container logs.
     os.environ["OPENCV_FFMPEG_LOGLEVEL"] = "8"
@@ -80,6 +80,15 @@ def _is_temporally_valid_frame(frame, reference_frame) -> bool:
     return float(delta.mean()) < 60.0
 
 
+def _frame_delta(frame, reference_frame) -> float:
+    """Cheap visual delta used to detect a decoder returning one frozen frame."""
+    if reference_frame is None or frame.shape != reference_frame.shape:
+        return float("inf")
+    small_current = cv2.resize(frame, (160, 90))
+    small_reference = cv2.resize(reference_frame, (160, 90))
+    return float(cv2.absdiff(small_current, small_reference).mean())
+
+
 def _camera_worker(camera_id: str, stream_url: str, generation: int):
     """Background thread that continuously reads from the camera to flush the buffer."""
     cap = _create_camera_capture(stream_url)
@@ -90,6 +99,7 @@ def _camera_worker(camera_id: str, stream_url: str, generation: int):
     )
     reference_frame = RTSPService.latest_frames.get(camera_id)
     rejected_frames = 0
+    last_visual_change = time.monotonic()
     
     while (
         _camera_active.get(camera_id, False)
@@ -114,7 +124,27 @@ def _camera_worker(camera_id: str, stream_url: str, generation: int):
             cap = _create_camera_capture(stream_url)
             reference_frame = None
             rejected_frames = 0
+            last_visual_change = time.monotonic()
             continue
+
+        visual_delta = _frame_delta(frame, reference_frame)
+        if visual_delta < 0.02:
+            # Some RTSP/FFmpeg combinations return the last decoded frame over
+            # and over instead of reporting a read failure. The on-camera clock
+            # means a healthy CCTV frame should not remain byte-visually static.
+            if time.monotonic() - last_visual_change >= 3.0:
+                logger.warning(
+                    f"Camera {camera_id} decoder is frozen; reopening RTSP stream"
+                )
+                cap.release()
+                time.sleep(0.25)
+                cap = _create_camera_capture(stream_url)
+                reference_frame = None
+                rejected_frames = 0
+                last_visual_change = time.monotonic()
+            continue
+
+        last_visual_change = time.monotonic()
 
         if not _is_temporally_valid_frame(frame, reference_frame):
             rejected_frames += 1
@@ -128,6 +158,7 @@ def _camera_worker(camera_id: str, stream_url: str, generation: int):
                 cap = _create_camera_capture(stream_url)
                 reference_frame = None
                 rejected_frames = 0
+                last_visual_change = time.monotonic()
             continue
 
         rejected_frames = 0

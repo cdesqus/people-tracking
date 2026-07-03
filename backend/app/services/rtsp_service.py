@@ -180,8 +180,8 @@ class RTSPService:
             return None
 
         # Fallback to direct RTSP capture
-        os.environ['OPENCV_FFMPEG_CAPTURE_OPTIONS'] = 'rtsp_transport;tcp|timeout;5000000|buffer_size;1048576'
-        os.environ['OPENCV_FFMPEG_THREADS'] = '1'
+        os.environ['OPENCV_FFMPEG_CAPTURE_OPTIONS'] = 'rtsp_transport;tcp|timeout;5000000'
+        os.environ.pop('OPENCV_FFMPEG_THREADS', None)
         os.environ['OPENCV_FFMPEG_LOGLEVEL'] = '8'
         cap = cv2.VideoCapture(rtsp_url, cv2.CAP_FFMPEG)
         try:
@@ -368,8 +368,8 @@ class RTSPService:
 
         # --- DIRECT STREAMING FALLBACK PATH ---
         logger.info(f"Serving direct RTSP MJPEG stream for {rtsp_url}")
-        os.environ['OPENCV_FFMPEG_CAPTURE_OPTIONS'] = 'rtsp_transport;tcp|timeout;5000000|buffer_size;1048576'
-        os.environ['OPENCV_FFMPEG_THREADS'] = '1'
+        os.environ['OPENCV_FFMPEG_CAPTURE_OPTIONS'] = 'rtsp_transport;tcp|timeout;5000000'
+        os.environ.pop('OPENCV_FFMPEG_THREADS', None)
         os.environ['OPENCV_FFMPEG_LOGLEVEL'] = '8'
 
         cap = cv2.VideoCapture(rtsp_url, cv2.CAP_FFMPEG)
