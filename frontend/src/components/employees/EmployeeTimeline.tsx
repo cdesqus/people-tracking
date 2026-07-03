@@ -8,7 +8,6 @@ import Card from '@components/common/Card';
 import Input from '@components/common/Input';
 import Modal from '@components/common/Modal';
 import { EmployeeTimeline as TimelineData } from '@/types/management';
-import { API_BASE_URL } from '@/utils/constants';
 
 interface EmployeeTimelineProps {
   employeeId: string;
@@ -38,7 +37,7 @@ const EmployeeTimeline: React.FC<EmployeeTimelineProps> = ({
           params.append('date', dateFilter);
         }
 
-        const response = await fetch(`${API_BASE_URL}/detections?${params.toString()}`);
+        const response = await fetch(`/api/detections/?${params.toString()}`);
         if (!response.ok) {
           throw new Error('Failed to fetch timeline');
         }
@@ -64,7 +63,7 @@ const EmployeeTimeline: React.FC<EmployeeTimelineProps> = ({
   };
 
   const captureUrl = (item: TimelineData) =>
-    `${API_BASE_URL}/detections/${item.id}/image`;
+    `/api/detections/${item.id}/image`;
 
   return (
     <div className="space-y-4">
