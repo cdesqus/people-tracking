@@ -625,163 +625,169 @@ async def start_face_processor():
                     _, frame_buffer = cv2.imencode(".jpg", frame)
                     frame_bytes = frame_buffer.tobytes()
 
-                    collection_id = os.getenv("REKOGNITION_EMPLOYEES_COLLECTION", "employees")
                     try:
-                        # Search face in Rekognition collection directly from the full frame
-                        search_result = await rekognition_service.search_faces_by_image(
-                            collection_id=collection_id,
-                            image_bytes=frame_bytes,
-                            threshold=settings.face_match_threshold,
-                        )
+                        # 1. Detect ALL faces in the frame first
+                        try:
+                            faces_found = await rekognition_service.detect_faces(frame_bytes)
+                        except Exception as detect_err:
+                            logger.error(f"Error detecting faces for multi-person scan: {detect_err}")
+                            faces_found = []
+
+                        if not faces_found:
+                            raise NoFacesException("No faces detected in frame")
+
+                        logger.info(f"Found {len(faces_found)} face(s) in frame from camera {camera.name}")
+
+                        # 2. Process EACH face individually
+                        collection_id = os.getenv("REKOGNITION_EMPLOYEES_COLLECTION", "employees")
                         
-                        matches = search_result.get('matches', [])
-                        searched_face_box_relative = search_result.get('searched_face_bounding_box', {})
-                        
-                        # Crop the face using the bounding box returned by Rekognition
-                        crop_bytes, bounding_box = _crop_face_from_frame(frame, searched_face_box_relative)
-                        if crop_bytes is None:
-                            crop_bytes = frame_bytes
+                        for face_detail in faces_found:
+                            confidence = face_detail.get("Confidence", 90.0)
+                            box = face_detail.get("BoundingBox", {})
+                            
+                            # Skip extremely low confidence faces
+                            if confidence < 50.0:
+                                continue
 
-                        active_employee = None
-                        active_employee_match = None
-                        matched_face_details = None
+                            # Crop the face using its bounding box
+                            crop_bytes, bounding_box = _crop_face_from_frame(frame, box)
+                            if crop_bytes is None:
+                                continue
 
-                        if matches:
-                            async with async_session() as session:
-                                for match in matches:
-                                    face_details = match.get("Face", {})
-                                    external_id = face_details.get("ExternalImageId")
-                                    
-                                    emp_stmt = select(Employee).where(
-                                        Employee.id == external_id,
-                                        Employee.deleted_at == None,
-                                    )
-                                    emp_res = await session.execute(emp_stmt)
-                                    emp = emp_res.scalar_one_or_none()
-                                    
-                                    if emp:
-                                        active_employee_match = match
-                                        active_employee = emp
-                                        matched_face_details = face_details
-                                        break
+                            active_employee = None
+                            active_employee_match = None
+                            matched_face_details = None
 
-                        if active_employee_match and active_employee:
-                            similarity = active_employee_match.get("Similarity", 0.0)
-                            face_match_id = matched_face_details.get("FaceId")
-
-                            logger.info(f"Face match found! ID: {active_employee.id} ({active_employee.name}), Similarity: {similarity}%")
-
-                            async with async_session() as session:
-                                session.add(active_employee)
-                                
-                                face_id = str(uuid.uuid4())
-                                db_face = Face(
-                                    id=face_id,
-                                    camera_id=camera.id,
-                                    person_id=active_employee.id,
-                                    confidence=similarity / 100.0,
-                                    face_match=face_match_id,
-                                    boundingbox=bounding_box,
-                                    timestamp=datetime.utcnow(),
-                                    image_data=crop_bytes,
+                            try:
+                                # Search THIS SPECIFIC face crop in the database/collection
+                                search_result = await rekognition_service.search_faces_by_image(
+                                    collection_id=collection_id,
+                                    image_bytes=crop_bytes,
+                                    threshold=settings.face_match_threshold,
                                 )
-                                session.add(db_face)
+                                matches = search_result.get('matches', [])
 
-                                active_employee.last_detected = datetime.utcnow()
-                                active_employee.current_location = camera.name
-                                await session.commit()
+                                if matches:
+                                    async with async_session() as session:
+                                        for match in matches:
+                                            face_match_details = match.get("Face", {})
+                                            external_id = face_match_details.get("ExternalImageId")
+                                            
+                                            emp_stmt = select(Employee).where(
+                                                Employee.id == external_id,
+                                                Employee.deleted_at == None,
+                                            )
+                                            emp_res = await session.execute(emp_stmt)
+                                            emp = emp_res.scalar_one_or_none()
+                                            
+                                            if emp:
+                                                active_employee_match = match
+                                                active_employee = emp
+                                                matched_face_details = face_match_details
+                                                break
+                            except NoFacesException:
+                                pass
+                            except Exception as search_err:
+                                logger.error(f"Error searching cropped face: {search_err}")
 
-                                # Update overlay cache
-                                from app.services.rtsp_service import RTSPService
-                                if camera.id not in RTSPService.last_detections:
-                                    RTSPService.last_detections[camera.id] = []
-                                
-                                now = datetime.utcnow()
-                                RTSPService.last_detections[camera.id] = [
-                                    d for d in RTSPService.last_detections[camera.id]
-                                    if (now - d["timestamp"]).total_seconds() < 5.0
-                                ]
-                                RTSPService.last_detections[camera.id].append({
-                                    "name": active_employee.name,
-                                    "box": bounding_box,
-                                    "timestamp": now
-                                })
+                            # Process the result for this specific face
+                            if active_employee_match and active_employee:
+                                similarity = active_employee_match.get("Similarity", 0.0)
+                                face_match_id = matched_face_details.get("FaceId")
 
-                                # Broadcast new detection
-                                await ws_manager.broadcast({
-                                    "type": "new_detection",
-                                    "data": {
-                                        "id": face_id,
-                                        "camera_id": camera.id,
-                                        "person_id": active_employee.id,
-                                        "person_name": active_employee.name,
-                                        "confidence": similarity,
-                                        "timestamp": db_face.timestamp.isoformat(),
-                                        "image_url": f"/api/detections/{face_id}/image",
-                                        "location": camera.name,
-                                    },
-                                })
+                                logger.info(f"Face match found! ID: {active_employee.id} ({active_employee.name}), Similarity: {similarity}%")
 
-                                # Store a throttled, automatically completed history
-                                # record. A valid employee detection is not an incident.
-                                last_emp_alert = last_employee_alert_sent.get((camera.id, active_employee.id))
-                                if not last_emp_alert or (now - last_emp_alert).total_seconds() > 300.0:
-                                    last_employee_alert_sent[(camera.id, active_employee.id)] = now
-                                    match_alert_id = str(uuid.uuid4())
-                                    match_alert = Alert(
-                                        id=match_alert_id,
-                                        type=AlertType.MATCH,
-                                        severity=AlertSeverity.INFO,
-                                        title=f"Valid Employee: {active_employee.name}",
-                                        description=f"{active_employee.name} was recognized on camera {camera.name} with {similarity:.1f}% confidence.",
+                                async with async_session() as session:
+                                    session.add(active_employee)
+                                    
+                                    face_id = str(uuid.uuid4())
+                                    db_face = Face(
+                                        id=face_id,
                                         camera_id=camera.id,
                                         person_id=active_employee.id,
-                                        face_id=face_id,
+                                        confidence=similarity / 100.0,
+                                        face_match=face_match_id,
+                                        boundingbox=bounding_box,
+                                        timestamp=datetime.utcnow(),
                                         image_data=crop_bytes,
-                                        acknowledged=True,
                                     )
-                                    session.add(match_alert)
+                                    session.add(db_face)
+
+                                    active_employee.last_detected = datetime.utcnow()
+                                    active_employee.current_location = camera.name
                                     await session.commit()
 
+                                    # Update overlay cache
+                                    from app.services.rtsp_service import RTSPService
+                                    if camera.id not in RTSPService.last_detections:
+                                        RTSPService.last_detections[camera.id] = []
+                                    
+                                    now = datetime.utcnow()
+                                    RTSPService.last_detections[camera.id] = [
+                                        d for d in RTSPService.last_detections[camera.id]
+                                        if (now - d["timestamp"]).total_seconds() < 5.0
+                                    ]
+                                    RTSPService.last_detections[camera.id].append({
+                                        "name": active_employee.name,
+                                        "box": bounding_box,
+                                        "timestamp": now
+                                    })
+
+                                    # Broadcast new detection
                                     await ws_manager.broadcast({
-                                        "type": "new_alert",
+                                        "type": "new_detection",
                                         "data": {
-                                            "id": match_alert_id,
-                                            "type": match_alert.type.value,
-                                            "title": match_alert.title,
-                                            "description": match_alert.description,
+                                            "id": face_id,
                                             "camera_id": camera.id,
                                             "person_id": active_employee.id,
-                                            "face_id": face_id,
-                                            "severity": "info",
-                                            "acknowledged": True,
-                                            "has_image": True,
-                                            "created_at": db_face.timestamp.isoformat(),
+                                            "person_name": active_employee.name,
+                                            "confidence": similarity,
+                                            "timestamp": db_face.timestamp.isoformat(),
+                                            "image_url": f"/api/detections/{face_id}/image",
+                                            "location": camera.name,
                                         },
                                     })
-                        else:
-                            # Found face but no match -> Unknown Face
-                            # Use detect_faces to find ALL faces in the frame.
-                            logger.info("Unknown face(s) detected! Scanning for all faces in frame.")
 
-                            faces_found = []
-                            try:
-                                faces_found = await rekognition_service.detect_faces(frame_bytes)
-                            except Exception as detect_err:
-                                logger.error(f"Error detecting faces for multi-person scan: {detect_err}")
+                                    # Store a throttled, automatically completed history
+                                    # record. A valid employee detection is not an incident.
+                                    last_emp_alert = last_employee_alert_sent.get((camera.id, active_employee.id))
+                                    if not last_emp_alert or (now - last_emp_alert).total_seconds() > 300.0:
+                                        last_employee_alert_sent[(camera.id, active_employee.id)] = now
+                                        match_alert_id = str(uuid.uuid4())
+                                        match_alert = Alert(
+                                            id=match_alert_id,
+                                            type=AlertType.MATCH,
+                                            severity=AlertSeverity.INFO,
+                                            title=f"Valid Employee: {active_employee.name}",
+                                            description=f"{active_employee.name} was recognized on camera {camera.name} with {similarity:.1f}% confidence.",
+                                            camera_id=camera.id,
+                                            person_id=active_employee.id,
+                                            face_id=face_id,
+                                            image_data=crop_bytes,
+                                            acknowledged=True,
+                                        )
+                                        session.add(match_alert)
+                                        await session.commit()
 
-                            if not faces_found:
-                                faces_found = [{"Confidence": 90.0, "BoundingBox": {"Top": 0.2, "Left": 0.3, "Width": 0.4, "Height": 0.4}}]
-
-                            logger.info(f"Found {len(faces_found)} face(s) in frame from camera {camera.name}")
-
-                            for face_detail in faces_found:
-                                confidence = face_detail.get("Confidence", 90.0)
-                                box = face_detail.get("BoundingBox", {})
-
-                                crop_bytes, bounding_box = _crop_face_from_frame(frame, box)
-                                if crop_bytes is None:
-                                    crop_bytes = frame_bytes
+                                        await ws_manager.broadcast({
+                                            "type": "new_alert",
+                                            "data": {
+                                                "id": match_alert_id,
+                                                "type": match_alert.type.value,
+                                                "title": match_alert.title,
+                                                "description": match_alert.description,
+                                                "camera_id": camera.id,
+                                                "person_id": active_employee.id,
+                                                "face_id": face_id,
+                                                "severity": "info",
+                                                "acknowledged": True,
+                                                "has_image": True,
+                                                "created_at": db_face.timestamp.isoformat(),
+                                            },
+                                        })
+                            else:
+                                # Found face but no match -> Unknown Face
+                                logger.info(f"Unknown face detected on camera {camera.name}")
 
                                 face_id = str(uuid.uuid4())
                                 db_face = Face(
