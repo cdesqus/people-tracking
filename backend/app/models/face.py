@@ -31,3 +31,7 @@ class Face(Base):
 
     def __repr__(self):
         return f"<Face(id={self.id}, camera_id={self.camera_id}, confidence={self.confidence})>"
+
+    @property
+    def has_image(self) -> bool:
+        return self.image_data is not None

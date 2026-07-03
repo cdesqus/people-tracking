@@ -565,7 +565,7 @@ async def start_face_processor():
                             similarity = active_employee_match.get("Similarity", 0.0)
                             face_match_id = matched_face_details.get("FaceId")
 
-                            logger.info(f"AWS Match Found! ID: {active_employee.id} ({active_employee.name}), Similarity: {similarity}%")
+                            logger.info(f"Face match found! ID: {active_employee.id} ({active_employee.name}), Similarity: {similarity}%")
 
                             async with async_session() as session:
                                 session.add(active_employee)
@@ -618,21 +618,43 @@ async def start_face_processor():
                                     },
                                 })
 
-                                # Alerts
+                                # Store a throttled, automatically completed history
+                                # record. A valid employee detection is not an incident.
                                 last_emp_alert = last_employee_alert_sent.get((camera.id, active_employee.id))
                                 if not last_emp_alert or (now - last_emp_alert).total_seconds() > 300.0:
                                     last_employee_alert_sent[(camera.id, active_employee.id)] = now
                                     match_alert_id = str(uuid.uuid4())
-                                    _safe_create_task(waha_service.send_alert_notification(
-                                        alert_id=match_alert_id,
-                                        alert_title=f"Employee Detected: {active_employee.name}",
-                                        alert_description=f"{active_employee.name} was detected on camera {camera.name} with {similarity:.1f}% confidence.",
-                                        severity="low",
-                                        alert_type="match",
-                                        camera_name=camera.name,
-                                        timestamp=db_face.timestamp,
-                                        face_image_bytes=crop_bytes,
-                                    ), name=f"waha_match_{match_alert_id[:8]}")
+                                    match_alert = Alert(
+                                        id=match_alert_id,
+                                        type=AlertType.MATCH,
+                                        severity=AlertSeverity.INFO,
+                                        title=f"Valid Employee: {active_employee.name}",
+                                        description=f"{active_employee.name} was recognized on camera {camera.name} with {similarity:.1f}% confidence.",
+                                        camera_id=camera.id,
+                                        person_id=active_employee.id,
+                                        face_id=face_id,
+                                        image_data=crop_bytes,
+                                        acknowledged=True,
+                                    )
+                                    session.add(match_alert)
+                                    await session.commit()
+
+                                    await ws_manager.broadcast({
+                                        "type": "new_alert",
+                                        "data": {
+                                            "id": match_alert_id,
+                                            "type": match_alert.type.value,
+                                            "title": match_alert.title,
+                                            "description": match_alert.description,
+                                            "camera_id": camera.id,
+                                            "person_id": active_employee.id,
+                                            "face_id": face_id,
+                                            "severity": "info",
+                                            "acknowledged": True,
+                                            "has_image": True,
+                                            "created_at": db_face.timestamp.isoformat(),
+                                        },
+                                    })
                         else:
                             # Found face but no match -> Unknown Face
                             # Use detect_faces to find ALL faces in the frame.
@@ -774,4 +796,3 @@ async def start_face_processor():
         except Exception as e:
             logger.error(f"Error in background face processor: {e}")
             await asyncio.sleep(10)
-

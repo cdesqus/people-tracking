@@ -6,7 +6,9 @@
 import React, { useState, useEffect } from 'react';
 import Card from '@components/common/Card';
 import Input from '@components/common/Input';
+import Modal from '@components/common/Modal';
 import { EmployeeTimeline as TimelineData } from '@/types/management';
+import { API_BASE_URL } from '@/utils/constants';
 
 interface EmployeeTimelineProps {
   employeeId: string;
@@ -23,6 +25,7 @@ const EmployeeTimeline: React.FC<EmployeeTimelineProps> = ({
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [dateFilter, setDateFilter] = useState('');
+  const [selectedCapture, setSelectedCapture] = useState<TimelineData | null>(null);
 
   useEffect(() => {
     const fetchTimeline = async () => {
@@ -35,7 +38,7 @@ const EmployeeTimeline: React.FC<EmployeeTimelineProps> = ({
           params.append('date', dateFilter);
         }
 
-        const response = await fetch(`/api/detections?${params.toString()}`);
+        const response = await fetch(`${API_BASE_URL}/detections?${params.toString()}`);
         if (!response.ok) {
           throw new Error('Failed to fetch timeline');
         }
@@ -59,6 +62,9 @@ const EmployeeTimeline: React.FC<EmployeeTimelineProps> = ({
   const formatDate = (timestamp: string) => {
     return new Date(timestamp).toLocaleDateString();
   };
+
+  const captureUrl = (item: TimelineData) =>
+    `${API_BASE_URL}/detections/${item.id}/image`;
 
   return (
     <div className="space-y-4">
@@ -111,38 +117,61 @@ const EmployeeTimeline: React.FC<EmployeeTimelineProps> = ({
 
                   {/* Content */}
                   <div className="flex-1 ml-8 pb-4">
-                    <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
-                      <div>
-                        <h4 className="font-semibold text-gray-900 dark:text-slate-900">
-                          {item.location}
-                        </h4>
-                        <p className="text-sm text-gray-600 dark:text-slate-500">
-                          Camera: {item.camera}
-                        </p>
-                      </div>
-                      <div className="text-right">
-                        <p className="font-semibold text-gray-900 dark:text-slate-900">
-                          {formatTime(item.timestamp)}
-                        </p>
-                        <p className="text-sm text-gray-600 dark:text-slate-500">
-                          {formatDate(item.timestamp)}
-                        </p>
-                      </div>
-                    </div>
+                    <div className="flex gap-3">
+                      {item.has_image ? (
+                        <button
+                          type="button"
+                          className="w-20 h-20 shrink-0 overflow-hidden rounded-lg border border-gray-200 bg-gray-100 shadow-sm focus:outline-none focus:ring-2 focus:ring-sky-500"
+                          onClick={() => setSelectedCapture(item)}
+                          aria-label={`Open face capture from ${item.location}`}
+                        >
+                          <img
+                            src={captureUrl(item)}
+                            alt={`Face capture at ${item.location}`}
+                            className="w-full h-full object-cover transition-transform hover:scale-105"
+                          />
+                        </button>
+                      ) : (
+                        <div className="w-20 h-20 shrink-0 rounded-lg border border-dashed border-gray-300 bg-gray-50 flex items-center justify-center px-2 text-center text-[10px] font-medium text-gray-400">
+                          NO CAPTURE
+                        </div>
+                      )}
 
-                    {/* Confidence */}
-                    <div className="mt-2 flex items-center gap-2">
-                      <div className="flex-1 bg-gray-200 dark:bg-slate-200 rounded-full h-2 max-w-xs">
-                        <div
-                          className="bg-sky-500 h-2 rounded-full"
-                          style={{
-                            width: `${Math.min(100, (item.confidence || 0) * 100)}%`,
-                          }}
-                        />
+                      <div className="flex-1 min-w-0">
+                        <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-2">
+                          <div>
+                            <h4 className="font-semibold text-gray-900 dark:text-slate-900">
+                              {item.location}
+                            </h4>
+                            <p className="text-sm text-gray-600 dark:text-slate-500">
+                              Camera: {item.camera_name || item.camera_id}
+                            </p>
+                          </div>
+                          <div className="text-left sm:text-right shrink-0">
+                            <p className="font-semibold text-gray-900 dark:text-slate-900">
+                              {formatTime(item.timestamp)}
+                            </p>
+                            <p className="text-sm text-gray-600 dark:text-slate-500">
+                              {formatDate(item.timestamp)}
+                            </p>
+                          </div>
+                        </div>
+
+                        {/* Confidence */}
+                        <div className="mt-2 flex items-center gap-2">
+                          <div className="flex-1 bg-gray-200 dark:bg-slate-200 rounded-full h-2 max-w-xs">
+                            <div
+                              className="bg-sky-500 h-2 rounded-full"
+                              style={{
+                                width: `${Math.min(100, (item.confidence || 0) * 100)}%`,
+                              }}
+                            />
+                          </div>
+                          <span className="text-xs text-gray-600 dark:text-slate-500 font-semibold min-w-12">
+                            {((item.confidence || 0) * 100).toFixed(0)}%
+                          </span>
+                        </div>
                       </div>
-                      <span className="text-xs text-gray-600 dark:text-slate-500 font-semibold min-w-12">
-                        {((item.confidence || 0) * 100).toFixed(0)}%
-                      </span>
                     </div>
                   </div>
                 </div>
@@ -191,6 +220,29 @@ const EmployeeTimeline: React.FC<EmployeeTimelineProps> = ({
           </div>
         </Card>
       )}
+
+      <Modal
+        isOpen={selectedCapture !== null}
+        onClose={() => setSelectedCapture(null)}
+        size="lg"
+        title={`Face Capture - ${employeeName}`}
+      >
+        {selectedCapture && (
+          <div className="space-y-3">
+            <div className="rounded-lg overflow-hidden border border-gray-200 bg-gray-100">
+              <img
+                src={captureUrl(selectedCapture)}
+                alt={`Face capture of ${employeeName}`}
+                className="w-full max-h-[60vh] object-contain"
+              />
+            </div>
+            <div className="flex justify-between gap-4 text-sm text-gray-600">
+              <span>{selectedCapture.location}</span>
+              <span>{new Date(selectedCapture.timestamp).toLocaleString()}</span>
+            </div>
+          </div>
+        )}
+      </Modal>
     </div>
   );
 };

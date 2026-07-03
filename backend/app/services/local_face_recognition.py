@@ -230,49 +230,65 @@ class LocalFaceRecognitionService:
         if not faces:
             raise NoFacesException("No faces detected in the image")
 
-        # Pick the face with the highest detection confidence
-        best_face = max(faces, key=lambda f: f.det_score)
-        query_embedding = best_face.normed_embedding  # already L2-normalised
+        def normalized_bbox(face) -> Dict[str, float]:
+            x1, y1, x2, y2 = face.bbox
+            return {
+                "Left":   max(0.0, float(x1) / w),
+                "Top":    max(0.0, float(y1) / h),
+                "Width":  min(1.0, float(x2 - x1) / w),
+                "Height": min(1.0, float(y2 - y1) / h),
+            }
 
-        # Bounding box of the detected face (normalised)
-        x1, y1, x2, y2 = best_face.bbox
-        searched_bbox = {
-            "Left":   max(0.0, float(x1) / w),
-            "Top":    max(0.0, float(y1) / h),
-            "Width":  min(1.0, float(x2 - x1) / w),
-            "Height": min(1.0, float(y2 - y1) / h),
-        }
+        # Keep a sensible fallback box when no employee matches.
+        searched_bbox = normalized_bbox(max(faces, key=lambda f: f.det_score))
 
         # Refresh embedding cache if stale
         await _ensure_cache_fresh()
         all_embeddings = _embedding_cache.get_all()
 
-        # Sort by best match first
-        matches = []
-        for emp_id, emp_embedding in all_embeddings.items():
-            similarity = _cosine_similarity(query_embedding, emp_embedding)
-            # Convert cosine similarity [0,1] to a percentage-like score [0,100]
-            # ArcFace usually considers > 0.45 as the same person.
-            similarity_pct = similarity * 100.0
-            
-            logger.info(f"[LocalFR] Comparing query face against {emp_id}: similarity={similarity:.3f} (threshold={threshold})")
-            
-            # Use 0.45 as the default hard threshold for local ArcFace if the config threshold is too strict (> 0.5)
-            effective_threshold = min(threshold, 0.45) if threshold > 1.0 or threshold >= 0.5 else threshold
-            
-            if similarity >= effective_threshold:
-                matches.append({
-                    "Similarity": similarity_pct,
-                    "Face": {
-                        # Use employee ID as ExternalImageId (same as AWS indexing)
-                        "ExternalImageId": emp_id,
-                        "FaceId": f"local-{emp_id}",
-                        "Confidence": similarity_pct,
-                    },
-                })
+        # Search every face, not only the most prominent one. CCTV frames often
+        # contain several people and the registered employee may be farther away.
+        effective_threshold = min(threshold, 0.45) if threshold >= 0.5 else threshold
+        best_matches: Dict[str, Dict[str, Any]] = {}
+        for query_face in faces:
+            query_embedding = query_face.normed_embedding
+            query_bbox = normalized_bbox(query_face)
+            for emp_id, emp_embedding in all_embeddings.items():
+                similarity = _cosine_similarity(query_embedding, emp_embedding)
+                similarity_pct = similarity * 100.0
+
+                logger.info(
+                    f"[LocalFR] Comparing detected face against {emp_id}: "
+                    f"similarity={similarity:.3f} (threshold={effective_threshold})"
+                )
+
+                if similarity < effective_threshold:
+                    continue
+
+                previous = best_matches.get(emp_id)
+                if previous is None or similarity_pct > previous["match"]["Similarity"]:
+                    best_matches[emp_id] = {
+                        "bbox": query_bbox,
+                        "match": {
+                            "Similarity": similarity_pct,
+                            "Face": {
+                                # Use employee ID as ExternalImageId (same as AWS indexing)
+                                "ExternalImageId": emp_id,
+                                "FaceId": f"local-{emp_id}",
+                                "Confidence": similarity_pct,
+                            },
+                        },
+                    }
 
         # Sort by best match first
-        matches.sort(key=lambda m: m["Similarity"], reverse=True)
+        ranked_matches = sorted(
+            best_matches.values(),
+            key=lambda item: item["match"]["Similarity"],
+            reverse=True,
+        )
+        matches = [item["match"] for item in ranked_matches]
+        if ranked_matches:
+            searched_bbox = ranked_matches[0]["bbox"]
 
         return {
             "matches": matches,

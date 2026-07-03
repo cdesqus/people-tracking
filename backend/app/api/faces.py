@@ -44,6 +44,7 @@ async def list_faces(
     for f in faces:
         person_name = "Unknown Subject"
         location_name = f"Camera {f.camera_id}"
+        camera_name = location_name
         image_url = f.image_url
         if f.image_data:
             image_url = f"/api/detections/{f.id}/image"
@@ -63,6 +64,7 @@ async def list_faces(
         cam_res = await db.execute(cam_stmt)
         camera = cam_res.scalar_one_or_none()
         if camera:
+            camera_name = camera.name
             location_name = camera.name
 
         items.append(
@@ -71,9 +73,11 @@ async def list_faces(
                 camera_id=f.camera_id,
                 person_id=f.person_id,
                 person_name=person_name,
+                camera_name=camera_name,
                 location=location_name,
                 confidence=f.confidence,
                 face_match=f.face_match,
+                has_image=f.has_image,
                 boundingbox=f.boundingbox,
                 timestamp=f.timestamp,
                 image_url=image_url,

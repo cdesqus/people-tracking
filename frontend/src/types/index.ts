@@ -31,7 +31,7 @@ export interface Face {
 export interface Alert {
   id: string;
   type: 'match' | 'unknown_face' | 'suspicious_activity' | 'system_error' | 'intrusion';
-  severity: 'low' | 'medium' | 'high' | 'critical';
+  severity: 'info' | 'low' | 'medium' | 'high' | 'critical';
   title: string;
   description: string;
   camera_id: string;

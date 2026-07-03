@@ -14,6 +14,7 @@ class AlertType(str, enum.Enum):
 
 
 class AlertSeverity(str, enum.Enum):
+    INFO = "info"
     LOW = "low"
     MEDIUM = "medium"
     HIGH = "high"

@@ -478,12 +478,24 @@ async def get_security_incidents_report(
     except ValueError:
         raise HTTPException(status_code=400, detail="Invalid date format, use YYYY-MM-DD")
         
-    stmt = select(Alert).where(Alert.created_at >= f_date, Alert.created_at <= t_date + timedelta(days=1))
+    stmt = select(Alert).where(
+        Alert.created_at >= f_date,
+        Alert.created_at <= t_date + timedelta(days=1),
+        Alert.type != AlertType.MATCH,
+    )
     res = await db.execute(stmt)
     alerts = res.scalars().all()
     
     if len(alerts) == 0:
-        return get_mock_security_incidents(f_date, t_date)
+        return {
+            "records": [],
+            "summary": {
+                "total": 0,
+                "critical": 0,
+                "warnings": 0,
+                "info": 0,
+            },
+        }
         
     records = []
     critical = 0

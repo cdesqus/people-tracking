@@ -89,6 +89,16 @@ async def init_db():
                 except Exception as e:
                     print(f"Migration warning alerts alerttype: {e}")
 
+                # Recognized employees are stored in alert history as informational
+                # records, not as low/medium/high/critical security incidents.
+                try:
+                    async with engine.connect() as conn:
+                        await conn.execution_options(isolation_level="AUTOCOMMIT").execute(
+                            text("ALTER TYPE alertseverity ADD VALUE IF NOT EXISTS 'INFO';")
+                        )
+                except Exception as e:
+                    print(f"Migration warning alerts alertseverity INFO: {e}")
+
                 # Make the alerts->faces FK deferrable so it's checked at COMMIT
                 # time instead of INSERT time. This permanently prevents FK
                 # violations caused by inserting Face and Alert in separate
@@ -182,4 +192,3 @@ async def seed_users():
 async def close_db():
     """Close database connection"""
     await engine.dispose()
-

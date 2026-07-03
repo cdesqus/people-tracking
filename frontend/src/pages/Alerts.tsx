@@ -164,6 +164,7 @@ const Alerts: React.FC = () => {
   };
 
   const severityColorMap = {
+    info: 'green',
     critical: 'red',
     high: 'yellow',
     medium: 'blue',
@@ -209,9 +210,9 @@ const Alerts: React.FC = () => {
       render: (_: any, row: Alert) => (
         <div className="w-16 h-12 flex items-center justify-center bg-gray-100 dark:bg-slate-100 rounded overflow-hidden">
           {row.has_image ? (
-            <a href={`/api/alerts/${row.id}/image`} target="_blank" rel="noopener noreferrer">
+            <a href={`${API_BASE_URL}/alerts/${row.id}/image`} target="_blank" rel="noopener noreferrer">
               <img 
-                src={`/api/alerts/${row.id}/image`} 
+                src={`${API_BASE_URL}/alerts/${row.id}/image`}
                 alt="Alert capture" 
                 className="w-full h-full object-cover hover:scale-110 transition-transform cursor-pointer"
               />
@@ -224,10 +225,10 @@ const Alerts: React.FC = () => {
     },
     {
       key: 'type',
-      label: 'Alert Type',
+      label: 'Record Type',
       render: (value: string, row: Alert) => (
         <span className="font-mono text-xs uppercase tracking-wider font-semibold text-gray-700 dark:text-slate-600">
-          {value.replace('_', ' ')}
+          {value === 'match' ? 'VALID DETECTION' : value.replace('_', ' ')}
         </span>
       ),
     },
@@ -255,10 +256,10 @@ const Alerts: React.FC = () => {
     },
     {
       key: 'severity',
-      label: 'Severity',
-      render: (value: string) => (
+      label: 'Classification',
+      render: (value: string, row: Alert) => (
         <Badge color={severityColorMap[value as keyof typeof severityColorMap] || 'gray'}>
-          {value.toUpperCase()}
+          {row.type === 'match' ? 'VALID' : value.toUpperCase()}
         </Badge>
       ),
     },
@@ -275,9 +276,9 @@ const Alerts: React.FC = () => {
     {
       key: 'acknowledged',
       label: 'Status',
-      render: (value: boolean) => (
-        <Badge color={value ? 'green' : 'red'}>
-          {value ? 'ACKNOWLEDGED' : 'ACTIVE'}
+      render: (value: boolean, row: Alert) => (
+        <Badge color={row.type === 'match' || value ? 'green' : 'red'}>
+          {row.type === 'match' ? 'RECORDED' : value ? 'ACKNOWLEDGED' : 'ACTIVE'}
         </Badge>
       ),
     },
@@ -349,6 +350,7 @@ const Alerts: React.FC = () => {
               onChange={(e) => setTypeFilter(e.target.value)}
             >
               <option value="all">All Types</option>
+              <option value="match">Valid Employee</option>
               <option value="intrusion">Intrusion</option>
               <option value="unknown_face">Unknown Face</option>
               <option value="system_error">System Error</option>

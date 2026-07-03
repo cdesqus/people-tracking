@@ -50,11 +50,14 @@ export interface Detection {
 
 export interface EmployeeTimeline {
   id: string;
-  employee_id: string;
+  person_id?: string;
   timestamp: string;
-  camera: string;
+  camera_id: string;
+  camera_name?: string;
   location: string;
   confidence: number;
+  image_url?: string;
+  has_image?: boolean;
 }
 
 export interface VisitorTimeline {

@@ -55,6 +55,7 @@ services:
       - WAHA_SESSION=default
       - FACE_RECOGNITION_BACKEND=${FACE_RECOGNITION_BACKEND:-local}
       - INSIGHTFACE_MODEL=${INSIGHTFACE_MODEL:-buffalo_sc}
+      - FACE_MATCH_THRESHOLD=${FACE_MATCH_THRESHOLD:-0.40}
     depends_on:
       postgres:
         condition: service_healthy

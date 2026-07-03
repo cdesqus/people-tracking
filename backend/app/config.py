@@ -42,7 +42,9 @@ class Settings(BaseSettings):
     # Face Recognition
     confidence_threshold: float = 0.9
     max_faces_per_image: int = 10
-    face_match_threshold: float = 0.70
+    # ArcFace cosine similarity. 0.40 is a practical CCTV default; the old
+    # effective 0.45 threshold rejected too many small or angled faces.
+    face_match_threshold: float = 0.40
 
     # Alert Configuration
     alert_retention_days: int = 30

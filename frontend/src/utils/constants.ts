@@ -42,6 +42,7 @@ export const ALERT_TYPES = {
 
 // Alert Severities
 export const ALERT_SEVERITIES = {
+  INFO: 'info',
   LOW: 'low',
   MEDIUM: 'medium',
   HIGH: 'high',

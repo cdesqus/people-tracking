@@ -27,8 +27,10 @@ class FaceResponse(FaceBase):
     id: str
     person_id: Optional[str] = None
     person_name: Optional[str] = None
+    camera_name: Optional[str] = None
     location: Optional[str] = None
     face_match: Optional[str] = None
+    has_image: bool = False
     created_at: datetime
     updated_at: datetime
 
