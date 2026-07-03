@@ -38,7 +38,15 @@ fi
 echo ""
 
 echo -e "${YELLOW}Step 3: Starting services...${NC}"
-docker-compose up -d
+if ! docker-compose up -d; then
+    echo "Services failed to become healthy"
+    echo "Backend container status:"
+    docker-compose ps -a
+    echo ""
+    echo "Last 200 backend log lines:"
+    docker-compose logs --tail=200 backend
+    exit 1
+fi
 echo -e "${GREEN}✓ Services started${NC}"
 echo ""
 

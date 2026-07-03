@@ -7,8 +7,10 @@ interface so face_processor.py requires zero logic changes.
 Face embeddings are stored as JSON in employees.face_encoding column.
 Matching is done via cosine similarity (no cloud calls, no per-image cost).
 """
+import asyncio
 import logging
 import io
+import threading
 import uuid
 import time
 from typing import List, Dict, Any, Optional
@@ -24,6 +26,8 @@ logger = logging.getLogger(__name__)
 # ---------------------------------------------------------------------------
 _insight_app = None
 _insight_load_error: Optional[str] = None
+_insight_load_lock = threading.Lock()
+_insight_inference_lock = threading.Lock()
 
 
 def _get_insight_app():
@@ -38,28 +42,39 @@ def _get_insight_app():
         return _insight_app
     if _insight_load_error is not None:
         raise RuntimeError(_insight_load_error)
-    try:
-        from insightface.app import FaceAnalysis
-        import os
+    with _insight_load_lock:
+        if _insight_app is not None:
+            return _insight_app
+        if _insight_load_error is not None:
+            raise RuntimeError(_insight_load_error)
+        try:
+            from insightface.app import FaceAnalysis
+            import os
 
-        model_name = os.getenv("INSIGHTFACE_MODEL", "buffalo_sc")
-        # Use 640x640 detection size. 320x320 is too small for wide CCTV shots
-        # where faces are far away and small.
-        det_size = (640, 640)
+            model_name = os.getenv("INSIGHTFACE_MODEL", "buffalo_sc")
+            # Use 640x640 detection size. 320x320 is too small for wide CCTV shots
+            # where faces are far away and small.
+            det_size = (640, 640)
 
-        logger.info(f"Loading InsightFace model '{model_name}' (CPU mode, det_size={det_size})...")
-        app = FaceAnalysis(
-            name=model_name,
-            providers=["CPUExecutionProvider"],
-        )
-        app.prepare(ctx_id=0, det_size=det_size)
-        _insight_app = app
-        logger.info(f"InsightFace '{model_name}' loaded successfully.")
-        return _insight_app
-    except Exception as e:
-        _insight_load_error = str(e)
-        logger.error(f"Failed to load InsightFace: {e}")
-        raise
+            logger.info(f"Loading InsightFace model '{model_name}' (CPU mode, det_size={det_size})...")
+            app = FaceAnalysis(
+                name=model_name,
+                providers=["CPUExecutionProvider"],
+            )
+            app.prepare(ctx_id=0, det_size=det_size)
+            _insight_app = app
+            logger.info(f"InsightFace '{model_name}' loaded successfully.")
+            return _insight_app
+        except Exception as e:
+            _insight_load_error = str(e)
+            logger.error(f"Failed to load InsightFace: {e}")
+            raise
+
+
+def _run_face_analysis(app, frame):
+    """Run ONNX inference off-loop and serialize access to the shared model."""
+    with _insight_inference_lock:
+        return app.get(frame)
 
 
 # ---------------------------------------------------------------------------
@@ -70,19 +85,19 @@ class _EmbeddingCache:
     TTL = 60  # seconds
 
     def __init__(self):
-        self._data: Dict[str, np.ndarray] = {}   # employee_id -> embedding
+        self._data: Dict[str, List[np.ndarray]] = {}  # employee_id -> embeddings
         self._loaded_at: float = 0.0
         self._loading: bool = False
 
     def is_stale(self) -> bool:
         return (time.time() - self._loaded_at) > self.TTL
 
-    def set(self, embeddings: Dict[str, np.ndarray]):
+    def set(self, embeddings: Dict[str, List[np.ndarray]]):
         self._data = embeddings
         self._loaded_at = time.time()
         logger.info(f"[LocalFR] Embedding cache updated with {len(embeddings)} employee(s).")
 
-    def get_all(self) -> Dict[str, np.ndarray]:
+    def get_all(self) -> Dict[str, List[np.ndarray]]:
         return self._data
 
 
@@ -106,7 +121,7 @@ def _bytes_to_bgr(image_bytes: bytes) -> np.ndarray:
     return frame
 
 
-async def _load_embeddings_from_db() -> Dict[str, np.ndarray]:
+async def _load_embeddings_from_db() -> Dict[str, List[np.ndarray]]:
     """
     Fetch all active employees that have a face_encoding stored in the DB.
     Returns a dict: {employee_id: embedding_array}.
@@ -116,7 +131,7 @@ async def _load_embeddings_from_db() -> Dict[str, np.ndarray]:
         from app.database import async_session
         from app.models.employee import Employee
 
-        result: Dict[str, np.ndarray] = {}
+        result: Dict[str, List[np.ndarray]] = {}
         async with async_session() as session:
             stmt = select(Employee).where(
                 Employee.deleted_at == None,
@@ -127,7 +142,15 @@ async def _load_embeddings_from_db() -> Dict[str, np.ndarray]:
             for emp in employees:
                 if emp.face_encoding:
                     try:
-                        result[emp.id] = np.array(emp.face_encoding, dtype=np.float32)
+                        encoded = np.array(emp.face_encoding, dtype=np.float32)
+                        if encoded.ndim == 1:
+                            # Backward compatibility: employees registered before
+                            # multi-photo enrollment have one flat 512-value vector.
+                            result[emp.id] = [encoded]
+                        elif encoded.ndim == 2:
+                            result[emp.id] = [row for row in encoded]
+                        else:
+                            raise ValueError(f"unexpected embedding shape {encoded.shape}")
                     except Exception as e:
                         logger.warning(f"[LocalFR] Bad encoding for employee {emp.id}: {e}")
         return result
@@ -174,13 +197,13 @@ class LocalFaceRecognitionService:
         Compatible with AWS Rekognition FaceDetails format.
         """
         try:
-            app = _get_insight_app()
+            app = await asyncio.to_thread(_get_insight_app)
             frame = _bytes_to_bgr(image_bytes)
             if frame is None:
                 return []
 
             h, w = frame.shape[:2]
-            faces = app.get(frame)
+            faces = await asyncio.to_thread(_run_face_analysis, app, frame)
 
             result = []
             for face in faces:
@@ -219,13 +242,13 @@ class LocalFaceRecognitionService:
 
         Raises NoFacesException if no face is detected.
         """
-        app = _get_insight_app()
+        app = await asyncio.to_thread(_get_insight_app)
         frame = _bytes_to_bgr(image_bytes)
         if frame is None:
             raise NoFacesException("Could not decode image")
 
         h, w = frame.shape[:2]
-        faces = app.get(frame)
+        faces = await asyncio.to_thread(_run_face_analysis, app, frame)
 
         if not faces:
             raise NoFacesException("No faces detected in the image")
@@ -253,8 +276,13 @@ class LocalFaceRecognitionService:
         for query_face in faces:
             query_embedding = query_face.normed_embedding
             query_bbox = normalized_bbox(query_face)
-            for emp_id, emp_embedding in all_embeddings.items():
-                similarity = _cosine_similarity(query_embedding, emp_embedding)
+            for emp_id, emp_embeddings in all_embeddings.items():
+                # One employee may have 1–5 enrollment angles. The best matching
+                # reference wins, while old single-vector records still work.
+                similarity = max(
+                    _cosine_similarity(query_embedding, emp_embedding)
+                    for emp_embedding in emp_embeddings
+                )
                 similarity_pct = similarity * 100.0
 
                 logger.info(
@@ -311,13 +339,13 @@ class LocalFaceRecognitionService:
         Returns a synthetic face_id string if successful, None otherwise.
         """
         try:
-            app = _get_insight_app()
+            app = await asyncio.to_thread(_get_insight_app)
             frame = _bytes_to_bgr(image_bytes)
             if frame is None:
                 logger.warning("[LocalFR] index_face: could not decode image bytes")
                 return None
 
-            faces = app.get(frame)
+            faces = await asyncio.to_thread(_run_face_analysis, app, frame)
             if not faces:
                 logger.warning(f"[LocalFR] index_face: no face detected in photo for employee {external_id}")
                 return None
@@ -339,9 +367,29 @@ class LocalFaceRecognitionService:
                         )
                         emp = res.scalar_one_or_none()
                         if emp:
-                            emp.face_encoding = embedding
+                            existing = emp.face_encoding or []
+                            if existing and isinstance(existing[0], (int, float)):
+                                existing = [existing]
+
+                            # Keep at most five distinct enrollment angles.
+                            existing_embeddings = list(existing)
+                            candidate = np.array(embedding, dtype=np.float32)
+                            is_duplicate = any(
+                                _cosine_similarity(
+                                    candidate,
+                                    np.array(saved, dtype=np.float32),
+                                ) >= 0.995
+                                for saved in existing_embeddings
+                            )
+                            if not is_duplicate and len(existing_embeddings) < 5:
+                                existing_embeddings.append(embedding)
+
+                            emp.face_encoding = existing_embeddings
                             await session.commit()
-                            logger.info(f"[LocalFR] Stored face embedding for employee {emp.name} ({emp.id})")
+                            logger.info(
+                                f"[LocalFR] Stored {len(existing_embeddings)} face "
+                                f"embedding(s) for employee {emp.name} ({emp.id})"
+                            )
                         else:
                             logger.warning(f"[LocalFR] index_face: employee {external_id} not found in DB")
                 except Exception as db_err:

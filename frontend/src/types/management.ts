@@ -12,6 +12,7 @@ export interface Employee {
   badge_id?: string;
   contact?: string;
   email?: string;
+  face_photo_count?: number;
   last_detected?: string;
   current_location?: string;
   created_at: string;

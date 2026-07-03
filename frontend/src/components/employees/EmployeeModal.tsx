@@ -18,6 +18,7 @@ interface EmployeeModalProps {
   onClose: () => void;
   onEdit?: (employee: Employee) => void;
   onDelete?: (employee: Employee) => void;
+  onAddFacePhotos?: (employee: Employee, photos: File[]) => Promise<number>;
   isLoading?: boolean;
 }
 
@@ -27,10 +28,13 @@ const EmployeeModal: React.FC<EmployeeModalProps> = ({
   onClose,
   onEdit,
   onDelete,
+  onAddFacePhotos,
   isLoading = false,
 }) => {
   const [activeTab, setActiveTab] = useState('details');
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [uploadingFaces, setUploadingFaces] = useState(false);
+  const [faceUploadMessage, setFaceUploadMessage] = useState<string | null>(null);
 
   if (!employee) return null;
 
@@ -44,6 +48,33 @@ const EmployeeModal: React.FC<EmployeeModalProps> = ({
     { id: 'details', label: 'Details' },
     { id: 'timeline', label: 'Timeline' },
   ];
+
+  const handleAdditionalFacePhotos = async (
+    event: React.ChangeEvent<HTMLInputElement>
+  ) => {
+    const files = Array.from(event.target.files || []);
+    event.target.value = '';
+    if (!onAddFacePhotos || files.length === 0) return;
+
+    const remainingSlots = 5 - (employee.face_photo_count || 0);
+    if (files.length > remainingSlots) {
+      setFaceUploadMessage(`Choose at most ${remainingSlots} additional photo(s).`);
+      return;
+    }
+
+    setUploadingFaces(true);
+    setFaceUploadMessage(null);
+    try {
+      const count = await onAddFacePhotos(employee, files);
+      setFaceUploadMessage(`${count} face reference(s) are now registered.`);
+    } catch (error) {
+      setFaceUploadMessage(
+        error instanceof Error ? error.message : 'Failed to add face photos.'
+      );
+    } finally {
+      setUploadingFaces(false);
+    }
+  };
 
   const renderDetails = () => (
     <div className="space-y-6">
@@ -124,6 +155,31 @@ const EmployeeModal: React.FC<EmployeeModalProps> = ({
           <p className="text-gray-900 dark:text-slate-900">
             {employee.current_location || 'Unknown'}
           </p>
+        </Card>
+
+        <Card className="p-4 bg-gray-50 dark:bg-slate-200/50">
+          <h4 className="text-sm font-semibold text-gray-700 dark:text-slate-600 mb-2">
+            Face References
+          </h4>
+          <p className="text-gray-900 dark:text-slate-900">
+            {employee.face_photo_count || 0} registered angle(s)
+          </p>
+          {onAddFacePhotos && (employee.face_photo_count || 0) < 5 && (
+            <label className="mt-3 inline-flex cursor-pointer items-center rounded-md bg-blue-600 px-3 py-1.5 text-xs font-semibold text-white hover:bg-blue-700">
+              {uploadingFaces ? 'Indexing...' : 'Add Face Angles'}
+              <input
+                type="file"
+                accept="image/*"
+                multiple
+                disabled={uploadingFaces}
+                onChange={handleAdditionalFacePhotos}
+                className="sr-only"
+              />
+            </label>
+          )}
+          {faceUploadMessage && (
+            <p className="mt-2 text-xs text-slate-600">{faceUploadMessage}</p>
+          )}
         </Card>
 
         <Card className="p-4 bg-gray-50 dark:bg-slate-200/50">

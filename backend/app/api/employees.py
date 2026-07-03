@@ -10,6 +10,16 @@ from app.services.face_recognition_factory import rekognition_service
 router = APIRouter()
 
 
+def _face_photo_count(employee: Employee) -> int:
+    """Return enrollment reference count for old and new encoding formats."""
+    encoding = employee.face_encoding
+    if not encoding:
+        return 0
+    if isinstance(encoding, list) and encoding and isinstance(encoding[0], list):
+        return len(encoding)
+    return 1
+
+
 @router.get("/")
 async def list_employees(
     page: int = Query(1, ge=1),
@@ -58,6 +68,7 @@ async def list_employees(
                 "badge_id": emp.badge_id,
                 "contact": emp.contact,
                 "email": emp.email,
+                "face_photo_count": _face_photo_count(emp),
                 "last_detected": emp.last_detected,
                 "current_location": emp.current_location,
                 "created_at": emp.created_at,
@@ -93,9 +104,10 @@ async def create_employee(
     contact: Optional[str] = Form(None),
     badge_id: Optional[str] = Form(None),
     photo: Optional[UploadFile] = File(None),
+    photos: Optional[List[UploadFile]] = File(None),
     db: AsyncSession = Depends(get_db),
 ):
-    """Register a new employee with photo upload and face indexing"""
+    """Register a new employee with up to five face enrollment photos."""
     # Check if employee with the same ID already exists
     stmt = select(Employee).where(Employee.id == id, Employee.deleted_at == None)
     res = await db.execute(stmt)
@@ -105,10 +117,30 @@ async def create_employee(
             status_code=400, detail=f"Employee with ID {id} already exists"
         )
 
-    photo_bytes = None
-
+    uploads: List[UploadFile] = []
     if photo:
-        photo_bytes = await photo.read()
+        uploads.append(photo)
+    if photos:
+        uploads.extend(photos)
+
+    if len(uploads) > 5:
+        raise HTTPException(
+            status_code=400,
+            detail="A maximum of 5 face photos can be uploaded.",
+        )
+
+    photo_samples: List[bytes] = []
+    for upload in uploads:
+        if upload.content_type and not upload.content_type.startswith("image/"):
+            raise HTTPException(
+                status_code=400,
+                detail=f"{upload.filename or 'Uploaded file'} is not an image.",
+            )
+        image_bytes = await upload.read()
+        if image_bytes:
+            photo_samples.append(image_bytes)
+
+    photo_bytes = photo_samples[0] if photo_samples else None
 
     employee = Employee(
         id=id,
@@ -128,27 +160,37 @@ async def create_employee(
     await db.commit()
     await db.refresh(employee)
 
-    if photo_bytes:
+    indexed_face_ids: List[str] = []
+    if photo_samples:
         collection_id = os.getenv("REKOGNITION_EMPLOYEES_COLLECTION", "employees")
-        try:
-            # Index face in AWS Rekognition or local FR (needs DB record first)
-            face_id = await rekognition_service.index_face(
-                collection_id=collection_id,
-                image_bytes=photo_bytes,
-                external_id=id,
+        for index, sample in enumerate(photo_samples, start=1):
+            try:
+                face_id = await rekognition_service.index_face(
+                    collection_id=collection_id,
+                    image_bytes=sample,
+                    external_id=id,
+                )
+                if face_id:
+                    indexed_face_ids.append(face_id)
+                else:
+                    print(f"Warning: no face detected in enrollment photo {index} for {id}")
+            except Exception as e:
+                print(f"Warning: face indexing failed for photo {index} of {id}: {e}")
+
+        if not indexed_face_ids:
+            # Do not leave a seemingly registered employee whose face can never
+            # match. The client can retry with clearer photos.
+            await db.delete(employee)
+            await db.commit()
+            raise HTTPException(
+                status_code=400,
+                detail="No usable face was detected. Upload clear front, left, and right-angle photos.",
             )
-            if face_id:
-                await db.refresh(employee)
-                employee.face_id = face_id
-                await db.commit()
-                await db.refresh(employee)
-            else:
-                raise HTTPException(status_code=400, detail="No face detected in the provided photo. Please upload a clear photo.")
-        except HTTPException:
-            raise
-        except Exception as e:
-            # Logging warning but not crash registration
-            print(f"Warning: Rekognition indexing skipped or failed: {e}")
+
+        await db.refresh(employee)
+        employee.face_id = indexed_face_ids[-1]
+        await db.commit()
+        await db.refresh(employee)
 
     return {
         "id": employee.id,
@@ -162,10 +204,87 @@ async def create_employee(
         "badge_id": employee.badge_id,
         "contact": employee.contact,
         "email": employee.email,
+        "face_photo_count": _face_photo_count(employee) or len(indexed_face_ids),
         "last_detected": employee.last_detected,
         "current_location": employee.current_location,
         "created_at": employee.created_at,
         "updated_at": employee.updated_at,
+    }
+
+
+@router.post("/{employee_id}/face-photos")
+async def add_employee_face_photos(
+    employee_id: str,
+    photos: List[UploadFile] = File(...),
+    db: AsyncSession = Depends(get_db),
+):
+    """Add enrollment angles to an existing employee, up to five total."""
+    result = await db.execute(
+        select(Employee).where(
+            Employee.id == employee_id,
+            Employee.deleted_at == None,
+        )
+    )
+    employee = result.scalar_one_or_none()
+    if not employee:
+        raise HTTPException(status_code=404, detail="Employee not found")
+
+    current_count = _face_photo_count(employee)
+    remaining_slots = max(0, 5 - current_count)
+    if remaining_slots == 0:
+        raise HTTPException(
+            status_code=400,
+            detail="This employee already has 5 face references.",
+        )
+    if not photos or len(photos) > remaining_slots:
+        raise HTTPException(
+            status_code=400,
+            detail=f"Upload between 1 and {remaining_slots} additional photo(s).",
+        )
+
+    collection_id = os.getenv("REKOGNITION_EMPLOYEES_COLLECTION", "employees")
+    indexed_face_ids: List[str] = []
+    for index, upload in enumerate(photos, start=1):
+        if upload.content_type and not upload.content_type.startswith("image/"):
+            raise HTTPException(
+                status_code=400,
+                detail=f"{upload.filename or 'Uploaded file'} is not an image.",
+            )
+        image_bytes = await upload.read()
+        if not image_bytes:
+            continue
+        try:
+            face_id = await rekognition_service.index_face(
+                collection_id=collection_id,
+                image_bytes=image_bytes,
+                external_id=employee_id,
+            )
+            if face_id:
+                indexed_face_ids.append(face_id)
+        except Exception as exc:
+            print(
+                f"Warning: additional face photo {index} failed for "
+                f"{employee_id}: {exc}"
+            )
+
+    if not indexed_face_ids:
+        raise HTTPException(
+            status_code=400,
+            detail="No usable face was detected in the uploaded photos.",
+        )
+
+    await db.refresh(employee)
+    employee.face_id = indexed_face_ids[-1]
+    await db.commit()
+    await db.refresh(employee)
+    face_photo_count = _face_photo_count(employee)
+
+    return {
+        "status": "success",
+        "indexed": len(indexed_face_ids),
+        "face_photo_count": face_photo_count or min(
+            5, current_count + len(indexed_face_ids)
+        ),
     }
 
 

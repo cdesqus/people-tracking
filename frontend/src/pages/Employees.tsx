@@ -118,7 +118,7 @@ const EmployeesPage: React.FC = () => {
 
   // Handle form submission
   const handleRegisterEmployee = async (
-    formData: Omit<Employee, 'created_at' | 'updated_at'> & { photo?: File }
+    formData: Omit<Employee, 'created_at' | 'updated_at'> & { photos?: File[] }
   ) => {
     dispatch(createEmployeeStart());
     try {
@@ -129,14 +129,17 @@ const EmployeesPage: React.FC = () => {
       if (formData.email) data.append('email', formData.email);
       if (formData.contact) data.append('contact', formData.contact);
       data.append('status', formData.status);
-      if (formData.photo) data.append('photo', formData.photo);
+      formData.photos?.forEach((photo) => data.append('photos', photo));
 
       const response = await fetch('/api/employees', {
         method: 'POST',
         body: data,
       });
 
-      if (!response.ok) throw new Error('Failed to register employee');
+      if (!response.ok) {
+        const errorBody = await response.json().catch(() => null);
+        throw new Error(errorBody?.detail || 'Failed to register employee');
+      }
 
       const employee = await response.json();
       dispatch(createEmployeeSuccess(employee));
@@ -171,6 +174,25 @@ const EmployeesPage: React.FC = () => {
         )
       );
     }
+  };
+
+  const handleAddFacePhotos = async (employee: Employee, photos: File[]) => {
+    const data = new FormData();
+    photos.forEach((photo) => data.append('photos', photo));
+
+    const response = await fetch(`/api/employees/${employee.id}/face-photos`, {
+      method: 'POST',
+      body: data,
+    });
+    const responseBody = await response.json().catch(() => null);
+    if (!response.ok) {
+      throw new Error(responseBody?.detail || 'Failed to add face photos');
+    }
+
+    const facePhotoCount = responseBody.face_photo_count || employee.face_photo_count || 0;
+    dispatch(selectEmployee({ ...employee, face_photo_count: facePhotoCount }));
+    fetchEmployees();
+    return facePhotoCount;
   };
 
 
@@ -243,6 +265,7 @@ const EmployeesPage: React.FC = () => {
         onDelete={(employee) => {
           setShowDeleteConfirm(true);
         }}
+        onAddFacePhotos={handleAddFacePhotos}
         isLoading={loading}
       />
 
