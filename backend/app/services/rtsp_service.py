@@ -180,10 +180,11 @@ class RTSPService:
             return None
 
         # Fallback to direct RTSP capture
-        os.environ['OPENCV_FFMPEG_CAPTURE_OPTIONS'] = 'rtsp_transport;tcp|fflags;discardcorrupt|stimeout;5000000'
+        os.environ['OPENCV_FFMPEG_CAPTURE_OPTIONS'] = 'rtsp_transport;tcp|timeout;5000000|buffer_size;1048576'
+        os.environ['OPENCV_FFMPEG_THREADS'] = '1'
+        os.environ['OPENCV_FFMPEG_LOGLEVEL'] = '8'
         cap = cv2.VideoCapture(rtsp_url, cv2.CAP_FFMPEG)
         try:
-            cap.set(cv2.CAP_PROP_BUFFERSIZE, 1)
             ret, frame = cap.read()
             if not ret or frame is None:
                 return None
@@ -367,15 +368,11 @@ class RTSPService:
 
         # --- DIRECT STREAMING FALLBACK PATH ---
         logger.info(f"Serving direct RTSP MJPEG stream for {rtsp_url}")
-        os.environ['OPENCV_FFMPEG_CAPTURE_OPTIONS'] = 'rtsp_transport;tcp|fflags;discardcorrupt|stimeout;5000000'
+        os.environ['OPENCV_FFMPEG_CAPTURE_OPTIONS'] = 'rtsp_transport;tcp|timeout;5000000|buffer_size;1048576'
+        os.environ['OPENCV_FFMPEG_THREADS'] = '1'
+        os.environ['OPENCV_FFMPEG_LOGLEVEL'] = '8'
 
         cap = cv2.VideoCapture(rtsp_url, cv2.CAP_FFMPEG)
-        
-        # Minimize buffer to always get the latest frame (lowest latency)
-        try:
-            cap.set(cv2.CAP_PROP_BUFFERSIZE, 1)
-        except Exception:
-            pass
 
         try:
             while cap.isOpened():
@@ -385,10 +382,6 @@ class RTSPService:
                     # Try to reconnect once
                     cap.release()
                     cap = cv2.VideoCapture(rtsp_url, cv2.CAP_FFMPEG)
-                    try:
-                        cap.set(cv2.CAP_PROP_BUFFERSIZE, 1)
-                    except Exception:
-                        pass
                     ret, frame = cap.read()
                     if not ret:
                         break

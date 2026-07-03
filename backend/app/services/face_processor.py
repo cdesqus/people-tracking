@@ -43,18 +43,41 @@ _camera_generations: dict = {}  # camera_id -> reader generation
 
 
 def _create_camera_capture(stream_url: str):
-    """Open one low-latency TCP RTSP capture."""
+    """Open one stable TCP RTSP capture without dropping H.264 references."""
     os.environ["OPENCV_FFMPEG_CAPTURE_OPTIONS"] = (
-        "rtsp_transport;tcp|fflags;discardcorrupt|stimeout;5000000"
+        "rtsp_transport;tcp|timeout;5000000|buffer_size;1048576"
     )
+    os.environ["OPENCV_FFMPEG_THREADS"] = "1"
+    # Decoder errors are handled by ret/frame validation below. Keep FFmpeg's
+    # repetitive macroblock/sws warnings from flooding container logs.
+    os.environ["OPENCV_FFMPEG_LOGLEVEL"] = "8"
     cap = cv2.VideoCapture(stream_url, cv2.CAP_FFMPEG)
     try:
-        cap.set(cv2.CAP_PROP_BUFFERSIZE, 1)
         cap.set(cv2.CAP_PROP_OPEN_TIMEOUT_MSECS, 3000)
         cap.set(cv2.CAP_PROP_READ_TIMEOUT_MSECS, 3000)
     except Exception:
         pass
     return cap
+
+
+def _is_temporally_valid_frame(frame, reference_frame) -> bool:
+    """Reject malformed frames and large decoder-artifact jumps."""
+    if frame is None or frame.ndim != 3 or frame.shape[2] != 3:
+        return False
+    height, width = frame.shape[:2]
+    if width < 64 or height < 64:
+        return False
+    if reference_frame is None:
+        return True
+    if frame.shape != reference_frame.shape:
+        return False
+
+    # A fixed CCTV scene changes gradually. H.264 macroblock corruption or the
+    # tiled/mosaic artifact changes most of the image in a single decoded frame.
+    small_current = cv2.resize(frame, (160, 90))
+    small_reference = cv2.resize(reference_frame, (160, 90))
+    delta = cv2.absdiff(small_current, small_reference)
+    return float(delta.mean()) < 60.0
 
 
 def _camera_worker(camera_id: str, stream_url: str, generation: int):
@@ -65,6 +88,8 @@ def _camera_worker(camera_id: str, stream_url: str, generation: int):
         f"Started frame grabber thread for camera {camera_id} "
         f"(generation {generation})"
     )
+    reference_frame = RTSPService.latest_frames.get(camera_id)
+    rejected_frames = 0
     
     while (
         _camera_active.get(camera_id, False)
@@ -87,12 +112,32 @@ def _camera_worker(camera_id: str, stream_url: str, generation: int):
             if _camera_generations.get(camera_id) != generation:
                 break
             cap = _create_camera_capture(stream_url)
+            reference_frame = None
+            rejected_frames = 0
             continue
+
+        if not _is_temporally_valid_frame(frame, reference_frame):
+            rejected_frames += 1
+            if rejected_frames >= 3:
+                logger.warning(
+                    f"Camera {camera_id} produced {rejected_frames} corrupt or "
+                    "discontinuous frames; reopening decoder"
+                )
+                cap.release()
+                time.sleep(0.5)
+                cap = _create_camera_capture(stream_url)
+                reference_frame = None
+                rejected_frames = 0
+            continue
+
+        rejected_frames = 0
             
         # Own the cached memory. Some OpenCV/FFmpeg builds reuse the decoder
         # buffer on the next read, which otherwise can produce torn MJPEG frames.
-        RTSPService.latest_frames[camera_id] = frame.copy()
+        cached_frame = frame.copy()
+        RTSPService.latest_frames[camera_id] = cached_frame
         RTSPService.latest_frame_times[camera_id] = time.time()
+        reference_frame = cached_frame
         
     cap.release()
     logger.info(
