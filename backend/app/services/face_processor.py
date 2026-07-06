@@ -52,24 +52,32 @@ def _create_camera_capture(stream_url: str):
     # Decoder errors are handled by ret/frame validation below. Keep FFmpeg's
     # repetitive macroblock/sws warnings from flooding container logs.
     os.environ["OPENCV_FFMPEG_LOGLEVEL"] = "8"
-    # Open/read timeouts must be passed when the FFmpeg capture is created;
-    # setting them afterwards is ignored by several OpenCV builds.
-    try:
-        cap = cv2.VideoCapture(
-            stream_url,
-            cv2.CAP_FFMPEG,
-            [
-                cv2.CAP_PROP_OPEN_TIMEOUT_MSECS,
-                3000,
-                cv2.CAP_PROP_READ_TIMEOUT_MSECS,
-                3000,
-            ],
-        )
-    except (TypeError, cv2.error):
+    # OpenCV uses the singular *_MSEC names. Some distro builds do not expose
+    # these properties at all, so construct the capture without parameters
+    # instead of letting every camera worker thread crash.
+    open_timeout_property = getattr(cv2, "CAP_PROP_OPEN_TIMEOUT_MSEC", None)
+    read_timeout_property = getattr(cv2, "CAP_PROP_READ_TIMEOUT_MSEC", None)
+    if open_timeout_property is not None and read_timeout_property is not None:
+        try:
+            cap = cv2.VideoCapture(
+                stream_url,
+                cv2.CAP_FFMPEG,
+                [
+                    open_timeout_property,
+                    3000,
+                    read_timeout_property,
+                    3000,
+                ],
+            )
+        except (TypeError, cv2.error):
+            cap = cv2.VideoCapture(stream_url, cv2.CAP_FFMPEG)
+    else:
         cap = cv2.VideoCapture(stream_url, cv2.CAP_FFMPEG)
     try:
         # Keep latency bounded on OpenCV backends that implement this property.
-        cap.set(cv2.CAP_PROP_BUFFERSIZE, 1)
+        buffer_size_property = getattr(cv2, "CAP_PROP_BUFFERSIZE", None)
+        if buffer_size_property is not None:
+            cap.set(buffer_size_property, 1)
     except Exception:
         pass
     return cap
