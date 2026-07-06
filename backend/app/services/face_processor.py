@@ -83,18 +83,14 @@ def _create_camera_capture(stream_url: str):
     return cap
 
 
-def _is_temporally_valid(frame, small_current, small_reference) -> bool:
-    """Reject malformed frames and large decoder-artifact jumps."""
+def _is_structurally_valid(frame, reference_frame) -> bool:
+    """Reject malformed frames without treating valid scene changes as errors."""
     if frame is None or frame.ndim != 3 or frame.shape[2] != 3:
         return False
     height, width = frame.shape[:2]
     if width < 64 or height < 64:
         return False
-    if small_reference is None:
-        return True
-
-    delta = cv2.absdiff(small_current, small_reference)
-    return float(delta.mean()) < 60.0
+    return reference_frame is None or frame.shape == reference_frame.shape
 
 
 def _camera_worker(camera_id: str, stream_url: str, generation: int):
@@ -108,10 +104,9 @@ def _camera_worker(camera_id: str, stream_url: str, generation: int):
     # Keep showing the last good cached frame while the new decoder warms up,
     # but never use it as the temporal reference for a new decoder session.
     reference_frame = None
-    small_reference = None
     
     rejected_frames = 0
-    last_visual_change = time.monotonic()
+    slicing_frames = 0
     warmup_frames_remaining = 3
     
     while (
@@ -125,7 +120,7 @@ def _camera_worker(camera_id: str, stream_url: str, generation: int):
                 break
             cap = _create_camera_capture(stream_url)
             reference_frame = None
-            small_reference = None
+            slicing_frames = 0
             warmup_frames_remaining = 3
             continue
             
@@ -140,9 +135,8 @@ def _camera_worker(camera_id: str, stream_url: str, generation: int):
                 break
             cap = _create_camera_capture(stream_url)
             reference_frame = None
-            small_reference = None
             rejected_frames = 0
-            last_visual_change = time.monotonic()
+            slicing_frames = 0
             warmup_frames_remaining = 3
             continue
 
@@ -153,19 +147,25 @@ def _camera_worker(camera_id: str, stream_url: str, generation: int):
             continue
 
         if has_slicing_artifact(small_current):
+            slicing_frames += 1
+            # Drop isolated suspicious frames, but reconnect only after a
+            # short consecutive streak. A single office scene with repeated
+            # geometry must not trigger a reconnect storm.
+            if slicing_frames < 3:
+                continue
             logger.warning(
-                f"Camera {camera_id} produced a repeated-tile slicing artifact; "
+                f"Camera {camera_id} produced 3 repeated-tile slicing artifacts; "
                 "reopening decoder and waiting for a clean keyframe"
             )
             cap.release()
             time.sleep(0.5)
             cap = _create_camera_capture(stream_url)
             reference_frame = None
-            small_reference = None
             rejected_frames = 0
-            last_visual_change = time.monotonic()
+            slicing_frames = 0
             warmup_frames_remaining = 3
             continue
+        slicing_frames = 0
 
         # Do not publish the first decoded pictures. RTSP reconnects can begin
         # between keyframes, where P/B frames are incomplete even though
@@ -179,48 +179,21 @@ def _camera_worker(camera_id: str, stream_url: str, generation: int):
             else:
                 warmup_frames_remaining -= 1
             reference_frame = frame
-            small_reference = small_current
-            last_visual_change = time.monotonic()
             continue
 
-        if small_reference is not None and reference_frame is not None and frame.shape == reference_frame.shape:
-            visual_delta = float(cv2.absdiff(small_current, small_reference).mean())
-        else:
-            visual_delta = float("inf")
-
-        if visual_delta < 0.02:
-            # Some RTSP/FFmpeg combinations return the last decoded frame over
-            # and over instead of reporting a read failure.
-            if time.monotonic() - last_visual_change >= 3.0:
-                logger.warning(
-                    f"Camera {camera_id} decoder is frozen; reopening RTSP stream"
-                )
-                cap.release()
-                time.sleep(0.25)
-                cap = _create_camera_capture(stream_url)
-                reference_frame = None
-                small_reference = None
-                rejected_frames = 0
-                last_visual_change = time.monotonic()
-                warmup_frames_remaining = 3
-            continue
-
-        last_visual_change = time.monotonic()
-
-        if not _is_temporally_valid(frame, small_current, small_reference):
+        if not _is_structurally_valid(frame, reference_frame):
             rejected_frames += 1
             if rejected_frames >= 3:
                 logger.warning(
-                    f"Camera {camera_id} produced {rejected_frames} corrupt or "
-                    "discontinuous frames; reopening decoder"
+                    f"Camera {camera_id} produced {rejected_frames} malformed or "
+                    "resolution-changing frames; reopening decoder"
                 )
                 cap.release()
                 time.sleep(0.5)
                 cap = _create_camera_capture(stream_url)
                 reference_frame = None
-                small_reference = None
                 rejected_frames = 0
-                last_visual_change = time.monotonic()
+                slicing_frames = 0
                 warmup_frames_remaining = 3
             continue
 
@@ -231,7 +204,6 @@ def _camera_worker(camera_id: str, stream_url: str, generation: int):
         RTSPService.latest_frames[camera_id] = cached_frame
         RTSPService.latest_frame_times[camera_id] = time.time()
         reference_frame = cached_frame
-        small_reference = small_current
         
     cap.release()
     logger.info(

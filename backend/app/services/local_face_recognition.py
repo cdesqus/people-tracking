@@ -10,6 +10,7 @@ Matching is done via cosine similarity (no cloud calls, no per-image cost).
 import asyncio
 import logging
 import io
+import os
 import threading
 import uuid
 import time
@@ -75,6 +76,77 @@ def _run_face_analysis(app, frame):
     """Run ONNX inference off-loop and serialize access to the shared model."""
     with _insight_inference_lock:
         return app.get(frame)
+
+
+def _tile_regions(width: int, height: int, overlap_ratio: float = 0.15):
+    """Build two overlapping vertical regions that cover a wide CCTV frame."""
+    split_x = width // 2
+    overlap_x = max(16, int(split_x * overlap_ratio))
+    return [
+        (0, 0, min(width, split_x + overlap_x), height),
+        (max(0, split_x - overlap_x), 0, width, height),
+    ]
+
+
+def _bbox_iou(first, second) -> float:
+    """Intersection-over-union for pixel-space [x1, y1, x2, y2] boxes."""
+    x1 = max(float(first[0]), float(second[0]))
+    y1 = max(float(first[1]), float(second[1]))
+    x2 = min(float(first[2]), float(second[2]))
+    y2 = min(float(first[3]), float(second[3]))
+    intersection = max(0.0, x2 - x1) * max(0.0, y2 - y1)
+    first_area = max(0.0, float(first[2] - first[0])) * max(
+        0.0, float(first[3] - first[1])
+    )
+    second_area = max(0.0, float(second[2] - second[0])) * max(
+        0.0, float(second[3] - second[1])
+    )
+    union = first_area + second_area - intersection
+    return intersection / union if union > 0 else 0.0
+
+
+def _deduplicate_candidates(candidates, iou_threshold: float = 0.35):
+    """Keep the strongest copy of faces found in overlapping tiles."""
+    kept = []
+    for candidate in sorted(
+        candidates, key=lambda item: item["confidence"], reverse=True
+    ):
+        if all(
+            _bbox_iou(candidate["bbox"], existing["bbox"]) < iou_threshold
+            for existing in kept
+        ):
+            kept.append(candidate)
+    return kept
+
+
+def _run_crowd_face_analysis(app, frame, overlap_ratio: float = 0.15):
+    """Run two tile inferences under one model lock and restore global boxes."""
+    height, width = frame.shape[:2]
+    candidates = []
+    with _insight_inference_lock:
+        for x1, y1, x2, y2 in _tile_regions(width, height, overlap_ratio):
+            tile = frame[y1:y2, x1:x2]
+            for face in app.get(tile):
+                local_box = face.bbox
+                global_box = np.array(
+                    [
+                        max(0.0, float(local_box[0]) + x1),
+                        max(0.0, float(local_box[1]) + y1),
+                        min(float(width), float(local_box[2]) + x1),
+                        min(float(height), float(local_box[3]) + y1),
+                    ],
+                    dtype=np.float32,
+                )
+                if global_box[2] <= global_box[0] or global_box[3] <= global_box[1]:
+                    continue
+                candidates.append(
+                    {
+                        "bbox": global_box,
+                        "confidence": float(face.det_score),
+                        "embedding": face.normed_embedding,
+                    }
+                )
+    return _deduplicate_candidates(candidates)
 
 
 # ---------------------------------------------------------------------------
@@ -436,13 +508,35 @@ class LocalFaceRecognitionService:
             return []
 
         h, w = frame.shape[:2]
-        faces = await asyncio.to_thread(_run_face_analysis, app, frame)
+        crowd_mode = os.getenv("FACE_CROWD_MODE", "auto").strip().lower()
+        crowd_min_width = int(os.getenv("FACE_CROWD_MIN_WIDTH", "1280"))
+        use_crowd_tiles = crowd_mode == "on" or (
+            crowd_mode == "auto" and w >= crowd_min_width and w > h
+        )
+
+        if use_crowd_tiles:
+            overlap_ratio = min(
+                0.30, max(0.05, float(os.getenv("FACE_TILE_OVERLAP", "0.15")))
+            )
+            faces = await asyncio.to_thread(
+                _run_crowd_face_analysis, app, frame, overlap_ratio
+            )
+        else:
+            raw_faces = await asyncio.to_thread(_run_face_analysis, app, frame)
+            faces = [
+                {
+                    "bbox": face.bbox,
+                    "confidence": float(face.det_score),
+                    "embedding": face.normed_embedding,
+                }
+                for face in raw_faces
+            ]
 
         if not faces:
             return []
 
         def normalized_bbox(face) -> Dict[str, float]:
-            x1, y1, x2, y2 = face.bbox
+            x1, y1, x2, y2 = face["bbox"]
             return {
                 "Left":   max(0.0, float(x1) / w),
                 "Top":    max(0.0, float(y1) / h),
@@ -456,9 +550,9 @@ class LocalFaceRecognitionService:
 
         results = []
         for query_face in faces:
-            query_embedding = query_face.normed_embedding
+            query_embedding = query_face["embedding"]
             query_bbox = normalized_bbox(query_face)
-            confidence = float(query_face.det_score) * 100
+            confidence = query_face["confidence"] * 100
             
             best_emp = None
             best_sim = 0.0
