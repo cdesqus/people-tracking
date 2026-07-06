@@ -85,7 +85,15 @@ async def init_db():
                 try:
                     await session.commit()
                     async with engine.connect() as conn:
-                        await conn.execution_options(isolation_level="AUTOCOMMIT").execute(text("ALTER TYPE alerttype ADD VALUE IF NOT EXISTS 'intrusion';"))
+                        autocommit_conn = await conn.execution_options(
+                            isolation_level="AUTOCOMMIT"
+                        )
+                        await autocommit_conn.execute(
+                            text(
+                                "ALTER TYPE alerttype "
+                                "ADD VALUE IF NOT EXISTS 'intrusion';"
+                            )
+                        )
                 except Exception as e:
                     print(f"Migration warning alerts alerttype: {e}")
 
@@ -93,7 +101,10 @@ async def init_db():
                 # records, not as low/medium/high/critical security incidents.
                 try:
                     async with engine.connect() as conn:
-                        await conn.execution_options(isolation_level="AUTOCOMMIT").execute(
+                        autocommit_conn = await conn.execution_options(
+                            isolation_level="AUTOCOMMIT"
+                        )
+                        await autocommit_conn.execute(
                             text("ALTER TYPE alertseverity ADD VALUE IF NOT EXISTS 'INFO';")
                         )
                 except Exception as e:
@@ -105,7 +116,10 @@ async def init_db():
                 # statements within the same transaction.
                 try:
                     async with engine.connect() as conn:
-                        await conn.execution_options(isolation_level="AUTOCOMMIT").execute(
+                        autocommit_conn = await conn.execution_options(
+                            isolation_level="AUTOCOMMIT"
+                        )
+                        await autocommit_conn.execute(
                             text(
                                 "ALTER TABLE alerts "
                                 "DROP CONSTRAINT IF EXISTS alerts_face_id_fkey; "

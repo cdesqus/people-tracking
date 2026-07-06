@@ -15,6 +15,18 @@ from app.utils.rtsp_config import get_brand_config, RTSP_FORMATS
 logger = logging.getLogger(__name__)
 
 
+def _mjpeg_part(jpeg_bytes: bytes, latency_ms: Optional[int] = None) -> bytes:
+    """Build one proxy/browser-friendly multipart MJPEG frame."""
+    headers = (
+        b"--frame\r\n"
+        b"Content-Type: image/jpeg\r\n"
+        b"Content-Length: " + str(len(jpeg_bytes)).encode() + b"\r\n"
+    )
+    if latency_ms is not None:
+        headers += b"X-Frame-Latency: " + str(latency_ms).encode() + b"\r\n"
+    return headers + b"\r\n" + jpeg_bytes + b"\r\n"
+
+
 class RTSPService:
     """Service for managing RTSP streams and connections"""
     
@@ -250,12 +262,7 @@ class RTSPService:
                     start = time.monotonic()
                     frame = RTSPService.latest_frames.get(camera_id)
                     if frame is None:
-                        yield (
-                            b'--frame\r\n'
-                            b'Content-Type: image/jpeg\r\n\r\n'
-                            + waiting_buffer.tobytes()
-                            + b'\r\n'
-                        )
+                        yield _mjpeg_part(waiting_buffer.tobytes())
                         time.sleep(0.5)
                         continue
 
@@ -351,13 +358,7 @@ class RTSPService:
 
                     frame_latency_ms = int((time.monotonic() - start) * 1000)
 
-                    yield (
-                        b'--frame\r\n'
-                        b'Content-Type: image/jpeg\r\n'
-                        b'X-Frame-Latency: ' + str(frame_latency_ms).encode() + b'\r\n\r\n'
-                        + buffer.tobytes()
-                        + b'\r\n'
-                    )
+                    yield _mjpeg_part(buffer.tobytes(), frame_latency_ms)
 
                     elapsed = time.monotonic() - start
                     if elapsed < frame_interval:
@@ -494,13 +495,7 @@ class RTSPService:
                 # Measure frame processing latency
                 frame_latency_ms = int((time.monotonic() - start) * 1000)
 
-                yield (
-                    b'--frame\r\n'
-                    b'Content-Type: image/jpeg\r\n'
-                    b'X-Frame-Latency: ' + str(frame_latency_ms).encode() + b'\r\n\r\n'
-                    + buffer.tobytes()
-                    + b'\r\n'
-                )
+                yield _mjpeg_part(buffer.tobytes(), frame_latency_ms)
 
                 # Throttle to fps_limit
                 elapsed = time.monotonic() - start

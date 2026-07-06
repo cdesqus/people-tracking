@@ -8,21 +8,52 @@ import { API_BASE_URL } from '@/utils/constants';
 // Component to handle MJPEG streams properly and prevent browser connection exhaustion
 const MjpegStream: React.FC<{ src: string; alt: string; className: string }> = ({ src, alt, className }) => {
   const imgRef = React.useRef<HTMLImageElement>(null);
+  const retryTimerRef = React.useRef<ReturnType<typeof setTimeout> | null>(null);
+  const [retryAttempt, setRetryAttempt] = React.useState(0);
 
   React.useEffect(() => {
-    if (imgRef.current) {
-      imgRef.current.src = src;
-    }
-    return () => {
-      // Force the browser to close the MJPEG connection when the component unmounts
-      // A blank 1x1 GIF forces Chrome to kill the multipart TCP socket immediately.
-      if (imgRef.current) {
-        imgRef.current.src = 'data:image/gif;base64,R0lGODlhAQABAAD/ACwAAAAAAQABAAACADs=';
-      }
-    };
+    setRetryAttempt(0);
   }, [src]);
 
-  return <img ref={imgRef} alt={alt} className={className} />;
+  React.useEffect(() => {
+    const image = imgRef.current;
+    const separator = src.includes('?') ? '&' : '?';
+    const streamSrc =
+      retryAttempt === 0
+        ? src
+        : `${src}${separator}retry=${retryAttempt}-${Date.now()}`;
+
+    if (image) {
+      image.src = streamSrc;
+    }
+    return () => {
+      if (retryTimerRef.current) {
+        clearTimeout(retryTimerRef.current);
+        retryTimerRef.current = null;
+      }
+      // Force the browser to close the MJPEG connection when the component unmounts
+      // A blank 1x1 GIF forces Chrome to kill the multipart TCP socket immediately.
+      if (image) {
+        image.src = 'data:image/gif;base64,R0lGODlhAQABAAD/ACwAAAAAAQABAAACADs=';
+      }
+    };
+  }, [src, retryAttempt]);
+
+  return (
+    <img
+      ref={imgRef}
+      alt={alt}
+      className={className}
+      onError={() => {
+        if (retryTimerRef.current) return;
+        const delay = Math.min(1000 * 2 ** retryAttempt, 10000);
+        retryTimerRef.current = setTimeout(() => {
+          retryTimerRef.current = null;
+          setRetryAttempt((current) => current + 1);
+        }, delay);
+      }}
+    />
+  );
 };
 
 const Dashboard: React.FC = () => {
@@ -830,7 +861,7 @@ const Dashboard: React.FC = () => {
                     </div>
 
                     {/* Stream display */}
-                    <div className="bg-slate-50 relative flex items-center justify-center overflow-hidden">
+                    <div className="flex-1 min-h-[240px] bg-slate-50 relative flex items-center justify-center overflow-hidden">
                       {activeFocusedCamera.status === 'active' ? (
                         <>
                           <MjpegStream

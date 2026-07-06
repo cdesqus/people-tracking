@@ -1,13 +1,15 @@
-from pydantic import BaseModel
+from pydantic import AliasChoices, BaseModel, Field
 from datetime import datetime
 from typing import Optional, Dict, Any
 
 
 class BoundingBox(BaseModel):
-    top: float
-    left: float
-    width: float
-    height: float
+    # Accept legacy/AWS-style capitalized records while always returning the
+    # lowercase API shape expected by the frontend.
+    top: float = Field(validation_alias=AliasChoices("top", "Top"))
+    left: float = Field(validation_alias=AliasChoices("left", "Left"))
+    width: float = Field(validation_alias=AliasChoices("width", "Width"))
+    height: float = Field(validation_alias=AliasChoices("height", "Height"))
 
 
 class FaceBase(BaseModel):

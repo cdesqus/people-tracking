@@ -220,6 +220,7 @@ async def stream_camera(
             "Cache-Control": "no-cache, no-store, must-revalidate",
             "Pragma": "no-cache",
             "Expires": "0",
+            "X-Accel-Buffering": "no",
             "Access-Control-Allow-Origin": "*",
         }
     )
@@ -289,4 +290,3 @@ async def test_all_connections(db: AsyncSession = Depends(get_db)):
 async def get_all_brands():
     """Get list of all available brands (alternative endpoint)"""
     return CameraService.get_brand_suggestions()
-

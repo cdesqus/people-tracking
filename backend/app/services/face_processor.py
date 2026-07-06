@@ -226,10 +226,10 @@ def _crop_face_from_frame(frame, bounding_box: dict, padding: float = 0.20):
     try:
         h, w = frame.shape[:2]
         
-        f_left = bounding_box.get("Left", 0.0)
-        f_top = bounding_box.get("Top", 0.0)
-        f_width = bounding_box.get("Width", 0.0)
-        f_height = bounding_box.get("Height", 0.0)
+        f_left = bounding_box.get("left", bounding_box.get("Left", 0.0))
+        f_top = bounding_box.get("top", bounding_box.get("Top", 0.0))
+        f_width = bounding_box.get("width", bounding_box.get("Width", 0.0))
+        f_height = bounding_box.get("height", bounding_box.get("Height", 0.0))
         
         # Add padding around the face for better visual context
         pad_x = f_width * padding
@@ -258,10 +258,10 @@ def _crop_face_from_frame(frame, bounding_box: dict, padding: float = 0.20):
         logger.error(f"Error cropping face: {crop_err}")
     
     return None, {
-        "top": bounding_box.get("Top", 0.2),
-        "left": bounding_box.get("Left", 0.3),
-        "width": bounding_box.get("Width", 0.4),
-        "height": bounding_box.get("Height", 0.4),
+        "top": bounding_box.get("top", bounding_box.get("Top", 0.2)),
+        "left": bounding_box.get("left", bounding_box.get("Left", 0.3)),
+        "width": bounding_box.get("width", bounding_box.get("Width", 0.4)),
+        "height": bounding_box.get("height", bounding_box.get("Height", 0.4)),
     }
 
 
@@ -687,7 +687,9 @@ async def start_face_processor():
                             if confidence < 50.0:
                                 continue
 
-                            crop_bytes, _ = _crop_face_from_frame(frame, bounding_box)
+                            crop_bytes, normalized_box = _crop_face_from_frame(
+                                frame, bounding_box
+                            )
                             if crop_bytes is None:
                                 crop_bytes = frame_bytes
 
@@ -724,7 +726,7 @@ async def start_face_processor():
                                         person_id=active_employee.id,
                                         confidence=similarity / 100.0,
                                         face_match=face_match_id,
-                                        boundingbox=bounding_box,
+                                        boundingbox=normalized_box,
                                         timestamp=datetime.utcnow(),
                                         image_data=crop_bytes,
                                     )
@@ -746,7 +748,7 @@ async def start_face_processor():
                                     ]
                                     RTSPService.last_detections[camera.id].append({
                                         "name": active_employee.name,
-                                        "box": bounding_box,
+                                        "box": normalized_box,
                                         "timestamp": now
                                     })
 
@@ -812,7 +814,7 @@ async def start_face_processor():
                                     camera_id=camera.id,
                                     person_id=None,
                                     confidence=confidence / 100.0,
-                                    boundingbox=bounding_box,
+                                    boundingbox=normalized_box,
                                     timestamp=datetime.utcnow(),
                                     image_data=crop_bytes,
                                 )
@@ -864,7 +866,7 @@ async def start_face_processor():
                                 ]
                                 RTSPService.last_detections[camera.id].append({
                                     "name": "Unknown Subject",
-                                    "box": bounding_box,
+                                    "box": normalized_box,
                                     "timestamp": now
                                 })
 
