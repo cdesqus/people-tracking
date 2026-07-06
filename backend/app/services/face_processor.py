@@ -15,6 +15,7 @@ from app.models.alert import Alert, AlertSeverity, AlertType
 from app.services.face_recognition_factory import rekognition_service, NoFacesException
 from app.utils.websocket_manager import ws_manager
 from app.services import waha_service
+from app.services.frame_quality import has_slicing_artifact
 from app.config import settings
 from app.services.rtsp_service import RTSPService
 
@@ -51,11 +52,23 @@ def _create_camera_capture(stream_url: str):
     # Decoder errors are handled by ret/frame validation below. Keep FFmpeg's
     # repetitive macroblock/sws warnings from flooding container logs.
     os.environ["OPENCV_FFMPEG_LOGLEVEL"] = "8"
-    cap = cv2.VideoCapture(stream_url, cv2.CAP_FFMPEG)
+    # Open/read timeouts must be passed when the FFmpeg capture is created;
+    # setting them afterwards is ignored by several OpenCV builds.
     try:
-        cap.set(cv2.CAP_PROP_OPEN_TIMEOUT_MSECS, 3000)
-        cap.set(cv2.CAP_PROP_READ_TIMEOUT_MSECS, 3000)
-        # CRITICAL: Prevent OpenCV from buffering old frames which causes the "3 duplicated images" tearing/distortion bug
+        cap = cv2.VideoCapture(
+            stream_url,
+            cv2.CAP_FFMPEG,
+            [
+                cv2.CAP_PROP_OPEN_TIMEOUT_MSECS,
+                3000,
+                cv2.CAP_PROP_READ_TIMEOUT_MSECS,
+                3000,
+            ],
+        )
+    except (TypeError, cv2.error):
+        cap = cv2.VideoCapture(stream_url, cv2.CAP_FFMPEG)
+    try:
+        # Keep latency bounded on OpenCV backends that implement this property.
         cap.set(cv2.CAP_PROP_BUFFERSIZE, 1)
     except Exception:
         pass
@@ -84,21 +97,28 @@ def _camera_worker(camera_id: str, stream_url: str, generation: int):
         f"Started frame grabber thread for camera {camera_id} "
         f"(generation {generation})"
     )
-    reference_frame = RTSPService.latest_frames.get(camera_id)
-    small_reference = cv2.resize(reference_frame, (160, 90)) if reference_frame is not None else None
+    # Keep showing the last good cached frame while the new decoder warms up,
+    # but never use it as the temporal reference for a new decoder session.
+    reference_frame = None
+    small_reference = None
     
     rejected_frames = 0
     last_visual_change = time.monotonic()
+    warmup_frames_remaining = 3
     
     while (
         _camera_active.get(camera_id, False)
         and _camera_generations.get(camera_id) == generation
     ):
         if not cap.isOpened():
+            cap.release()
             time.sleep(1)
             if _camera_generations.get(camera_id) != generation:
                 break
             cap = _create_camera_capture(stream_url)
+            reference_frame = None
+            small_reference = None
+            warmup_frames_remaining = 3
             continue
             
         ret, frame = cap.read()
@@ -115,6 +135,7 @@ def _camera_worker(camera_id: str, stream_url: str, generation: int):
             small_reference = None
             rejected_frames = 0
             last_visual_change = time.monotonic()
+            warmup_frames_remaining = 3
             continue
 
         # Resize ONCE per frame instead of 4 times to prevent CPU overload
@@ -123,19 +144,34 @@ def _camera_worker(camera_id: str, stream_url: str, generation: int):
         except cv2.error:
             continue
 
-        # Detect 3-image tearing anomaly (dynamic resolution drop causing FFmpeg stride desync)
-        third = small_current.shape[1] // 3
-        left_part = small_current[:, :third]
-        middle_part = small_current[:, third:2*third]
-        tear_delta = float(cv2.absdiff(left_part, middle_part).mean())
-        if tear_delta < 5.0 and float(left_part.std()) > 10.0:
-            logger.warning(f"Camera {camera_id} produced 3-image tear anomaly; reopening decoder")
+        if has_slicing_artifact(small_current):
+            logger.warning(
+                f"Camera {camera_id} produced a repeated-tile slicing artifact; "
+                "reopening decoder and waiting for a clean keyframe"
+            )
             cap.release()
-            time.sleep(1)
+            time.sleep(0.5)
             cap = _create_camera_capture(stream_url)
             reference_frame = None
             small_reference = None
             rejected_frames = 0
+            last_visual_change = time.monotonic()
+            warmup_frames_remaining = 3
+            continue
+
+        # Do not publish the first decoded pictures. RTSP reconnects can begin
+        # between keyframes, where P/B frames are incomplete even though
+        # OpenCV reports a successful read.
+        if warmup_frames_remaining > 0:
+            if (
+                reference_frame is not None
+                and frame.shape != reference_frame.shape
+            ):
+                warmup_frames_remaining = 3
+            else:
+                warmup_frames_remaining -= 1
+            reference_frame = frame
+            small_reference = small_current
             last_visual_change = time.monotonic()
             continue
 
@@ -158,6 +194,7 @@ def _camera_worker(camera_id: str, stream_url: str, generation: int):
                 small_reference = None
                 rejected_frames = 0
                 last_visual_change = time.monotonic()
+                warmup_frames_remaining = 3
             continue
 
         last_visual_change = time.monotonic()
@@ -176,6 +213,7 @@ def _camera_worker(camera_id: str, stream_url: str, generation: int):
                 small_reference = None
                 rejected_frames = 0
                 last_visual_change = time.monotonic()
+                warmup_frames_remaining = 3
             continue
 
         rejected_frames = 0

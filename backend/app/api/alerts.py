@@ -1,9 +1,11 @@
-from fastapi import APIRouter, Depends, HTTPException, Response
+from typing import Optional
+
+from fastapi import APIRouter, Depends, HTTPException, Query, Response
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select, func, or_, cast, String
 from app.database import get_db
 from app.schemas.alert import AlertCreate, AlertResponse, PaginatedAlertResponse
-from app.models.alert import Alert
+from app.models.alert import Alert, AlertType
 import uuid
 
 router = APIRouter()
@@ -17,7 +19,7 @@ async def list_alerts(
     limit: int = None,
     search: str = None,
     status: bool = None,
-    type: str = None,
+    alert_type: Optional[AlertType] = Query(default=None, alias="type"),
     sort_by: str = "created_at",
     order: str = "desc",
     db: AsyncSession = Depends(get_db)
@@ -46,8 +48,10 @@ async def list_alerts(
     if status is not None:
         query = query.where(Alert.acknowledged == status)
 
-    if type is not None:
-        query = query.where(Alert.type == type)
+    if alert_type is not None:
+        # Parse and validate the public value (for example "match") before
+        # comparing it with the database enum.
+        query = query.where(Alert.type == alert_type)
 
     # Get total count
     count_stmt = select(func.count()).select_from(query.subquery())

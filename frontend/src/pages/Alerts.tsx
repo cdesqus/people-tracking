@@ -37,7 +37,7 @@ const Alerts: React.FC = () => {
     return () => clearTimeout(timer);
   }, [searchTerm]);
 
-  const fetchAlertsList = useCallback(async () => {
+  const fetchAlertsList = useCallback(async (signal?: AbortSignal) => {
     dispatch(fetchAlertsStart());
     try {
       const params = new URLSearchParams();
@@ -53,69 +53,49 @@ const Alerts: React.FC = () => {
       params.append('sort_by', sortKey);
       params.append('order', sortOrder);
 
-      const response = await fetch(`${API_BASE_URL}/alerts?${params.toString()}`);
+      const response = await fetch(`${API_BASE_URL}/alerts?${params.toString()}`, { signal });
       if (!response.ok) throw new Error('Failed to fetch alerts');
       const data = await response.json();
+      const items = (data.items || []).filter(
+        (alert: { type: string }) => typeFilter === 'all' || alert.type === typeFilter
+      );
       dispatch(
         fetchAlertsSuccess({
-          alerts: data.items || [],
+          alerts: items,
           total: data.total || 0,
         })
       );
     } catch (err) {
+      if (err instanceof DOMException && err.name === 'AbortError') return;
       dispatch(fetchAlertsError('Failed to fetch alerts from backend'));
-      
-      // Fallback Mock Alerts to keep UI fully functional
-      const mockAlerts: Alert[] = [
-        {
-          id: 'alert-1',
-          title: 'Unauthorized Entry',
-          description: 'Unrecognized individual detected near high-value asset storage zone.',
-          camera_id: 'CAM-03',
-          severity: 'critical',
-          type: 'unknown_face',
-          acknowledged: false,
-          created_at: new Date().toISOString(),
-          updated_at: new Date().toISOString(),
-        },
-        {
-          id: 'alert-2',
-          title: 'Motion Detected',
-          description: 'Automated cleaning crew detected in restricted office area.',
-          camera_id: 'CAM-02',
-          severity: 'high',
-          type: 'suspicious_activity',
-          acknowledged: false,
-          created_at: new Date(Date.now() - 1000 * 60 * 5).toISOString(),
-          updated_at: new Date(Date.now() - 1000 * 60 * 5).toISOString(),
-        },
-        {
-          id: 'alert-3',
-          title: 'Temp Deviation',
-          description: 'A/C unit failure or high load causing thermal threshold exceedance.',
-          camera_id: 'CAM-05',
-          severity: 'medium',
-          type: 'system_error',
-          acknowledged: true,
-          created_at: new Date(Date.now() - 1000 * 60 * 20).toISOString(),
-          updated_at: new Date(Date.now() - 1000 * 60 * 20).toISOString(),
-        },
-      ];
       dispatch(
         fetchAlertsSuccess({
-          alerts: mockAlerts,
-          total: mockAlerts.length,
+          alerts: [],
+          total: 0,
         })
       );
+      toast.error('Failed to load alerts from backend');
     }
   }, [dispatch, currentPage, pageSize, debouncedSearch, statusFilter, typeFilter, sortKey, sortOrder]);
 
   useEffect(() => {
-    fetchAlertsList();
+    const controller = new AbortController();
+    fetchAlertsList(controller.signal);
     if (cameras.length === 0) fetchCameras();
     // Reset selection when data changes
     setSelectedAlertIds([]);
+    return () => controller.abort();
   }, [fetchAlertsList]);
+
+  // Keep stale API responses or real-time store updates from leaking records
+  // that do not belong to the currently selected filters.
+  const visibleAlerts = alerts.filter((alert) => {
+    const matchesType = typeFilter === 'all' || alert.type === typeFilter;
+    const matchesStatus =
+      statusFilter === 'all' ||
+      (statusFilter === 'acknowledged' ? alert.acknowledged : !alert.acknowledged);
+    return matchesType && matchesStatus;
+  });
 
   const handleAcknowledge = async (alertId: string) => {
     dispatch(acknowledgeAlertStart());
@@ -173,7 +153,7 @@ const Alerts: React.FC = () => {
 
   const handleSelectAll = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.checked) {
-      const unacknowledgedIds = alerts.filter(a => !a.acknowledged).map(a => a.id);
+      const unacknowledgedIds = visibleAlerts.filter(a => !a.acknowledged).map(a => a.id);
       setSelectedAlertIds(unacknowledgedIds);
     } else {
       setSelectedAlertIds([]);
@@ -320,7 +300,7 @@ const Alerts: React.FC = () => {
               Acknowledge Selected ({selectedAlertIds.length})
             </Button>
           )}
-          <Button variant="secondary" onClick={fetchAlertsList} disabled={loading}>
+          <Button variant="secondary" onClick={() => fetchAlertsList()} disabled={loading}>
             Refresh Incident Log
           </Button>
         </div>
@@ -347,7 +327,10 @@ const Alerts: React.FC = () => {
             <select
               className="block w-full pl-10 pr-3 py-2 border border-gray-300 dark:border-slate-300 rounded-md leading-5 bg-white dark:bg-slate-50 text-gray-900 dark:text-slate-900 focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500 sm:text-sm shadow-sm"
               value={typeFilter}
-              onChange={(e) => setTypeFilter(e.target.value)}
+              onChange={(e) => {
+                setTypeFilter(e.target.value);
+                dispatch(setCurrentPage(1));
+              }}
             >
               <option value="all">All Types</option>
               <option value="match">Valid Employee</option>
@@ -363,7 +346,10 @@ const Alerts: React.FC = () => {
             <select
               className="block w-full pl-10 pr-3 py-2 border border-gray-300 dark:border-slate-300 rounded-md leading-5 bg-white dark:bg-slate-50 text-gray-900 dark:text-slate-900 focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500 sm:text-sm shadow-sm"
               value={statusFilter}
-              onChange={(e) => setStatusFilter(e.target.value)}
+              onChange={(e) => {
+                setStatusFilter(e.target.value);
+                dispatch(setCurrentPage(1));
+              }}
             >
               <option value="all">All Status</option>
               <option value="active">Active Only</option>
@@ -375,7 +361,7 @@ const Alerts: React.FC = () => {
 
       <Card>
         {/* Bulk select all checkbox mapping for UI helper */}
-        {alerts.length > 0 && alerts.some(a => !a.acknowledged) && (
+        {visibleAlerts.length > 0 && visibleAlerts.some(a => !a.acknowledged) && (
           <div className="px-6 py-3 border-b border-gray-200 dark:border-slate-300 bg-gray-50 dark:bg-slate-100 flex items-center gap-3">
             <input
               type="checkbox"
@@ -383,8 +369,8 @@ const Alerts: React.FC = () => {
               className="w-4 h-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500 cursor-pointer"
               onChange={handleSelectAll}
               checked={
-                alerts.some(a => !a.acknowledged) && 
-                selectedAlertIds.length === alerts.filter(a => !a.acknowledged).length
+                visibleAlerts.some(a => !a.acknowledged) &&
+                selectedAlertIds.length === visibleAlerts.filter(a => !a.acknowledged).length
               }
             />
             <label htmlFor="selectAll" className="text-sm font-medium text-gray-700 dark:text-slate-700 cursor-pointer">
@@ -394,7 +380,7 @@ const Alerts: React.FC = () => {
         )}
         <Table
           columns={columns}
-          data={alerts}
+          data={visibleAlerts}
           isLoading={loading}
           emptyMessage="No security alerts logged matching criteria"
           striped
