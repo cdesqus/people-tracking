@@ -2,7 +2,7 @@
 .env
 .env.local
 .env.*.local
-.*md
+*.md
 
 # Ignore credential/config files
 ../backend-.env*
