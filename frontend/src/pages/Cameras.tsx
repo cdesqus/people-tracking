@@ -26,7 +26,35 @@ interface CameraFormData {
   fps: string;
   status: 'active' | 'inactive' | 'error';
   branch: string;
+  ai_capabilities: Record<string, boolean>;
 }
+
+const DEFAULT_AI_CAPABILITIES: Record<string, boolean> = {
+  camera_offline: true,
+  camera_obstruction: true,
+  face_recognition: false,
+  unknown_person: false,
+  unauthorized_access: false,
+  loitering: false,
+  crowd_detected: false,
+  door_left_open: false,
+};
+
+const AI_FEATURE_OPTIONS = [
+  { key: 'camera_offline', label: 'Camera Offline Monitor', hint: 'Lightweight uptime/health check.' },
+  { key: 'camera_obstruction', label: 'Camera Obstruction', hint: 'Detect covered/dark/flat feed.' },
+  { key: 'face_recognition', label: 'Face Recognition Employee', hint: 'Heavy CPU: recognize registered employees.' },
+  { key: 'unknown_person', label: 'Unknown Person Detection', hint: 'Requires face analysis; enable on entry/critical cameras.' },
+  { key: 'unauthorized_access', label: 'Unauthorized Area Access', hint: 'Requires restricted zones.' },
+  { key: 'loitering', label: 'Loitering Detection', hint: 'Requires loitering zones.' },
+  { key: 'crowd_detected', label: 'Crowd Detection', hint: 'Requires crowd zones.' },
+  { key: 'door_left_open', label: 'Door Left Open', hint: 'Requires door_area zones; opt-in only.' },
+];
+
+const mergeAiCapabilities = (value?: Record<string, any>) => ({
+  ...DEFAULT_AI_CAPABILITIES,
+  ...(value || {}),
+});
 
 const CamerasPage: React.FC = () => {
   const dispatch = useAppDispatch();
@@ -52,6 +80,7 @@ const CamerasPage: React.FC = () => {
     fps: '30',
     status: 'inactive',
     branch: 'br-hq',
+    ai_capabilities: { ...DEFAULT_AI_CAPABILITIES },
   });
   const [errors, setErrors] = useState<Record<string, string>>({});
 
@@ -86,6 +115,7 @@ const CamerasPage: React.FC = () => {
               resolution: '1920x1080',
               fps: 30,
               branch: 'br-hq',
+              ai_capabilities: { ...DEFAULT_AI_CAPABILITIES },
               created_at: new Date().toISOString(),
               updated_at: new Date().toISOString(),
             },
@@ -98,6 +128,7 @@ const CamerasPage: React.FC = () => {
               resolution: '1920x1080',
               fps: 15,
               branch: 'br-bdg',
+              ai_capabilities: { ...DEFAULT_AI_CAPABILITIES, face_recognition: true, unknown_person: true },
               created_at: new Date().toISOString(),
               updated_at: new Date().toISOString(),
             },
@@ -110,6 +141,7 @@ const CamerasPage: React.FC = () => {
               resolution: '1280x720',
               fps: 30,
               branch: 'br-sby',
+              ai_capabilities: { ...DEFAULT_AI_CAPABILITIES, unauthorized_access: true, door_left_open: true },
               created_at: new Date().toISOString(),
               updated_at: new Date().toISOString(),
             }
@@ -140,6 +172,25 @@ const CamerasPage: React.FC = () => {
     }
   };
 
+  const handleCapabilityChange = (key: string, checked: boolean) => {
+    setFormData((prev) => {
+      const nextCaps = {
+        ...mergeAiCapabilities(prev.ai_capabilities),
+        [key]: checked,
+      };
+      if (key === 'face_recognition' && !checked) {
+        nextCaps.unknown_person = false;
+      }
+      if (key === 'unknown_person' && checked) {
+        nextCaps.face_recognition = true;
+      }
+      return {
+        ...prev,
+        ai_capabilities: nextCaps,
+      };
+    });
+  };
+
   const handleOpenAddModal = () => {
     setFormData({
       name: '',
@@ -149,6 +200,7 @@ const CamerasPage: React.FC = () => {
       fps: '30',
       status: 'active',
       branch: 'br-hq',
+      ai_capabilities: { ...DEFAULT_AI_CAPABILITIES },
     });
     setErrors({});
     dispatch(selectCamera(null));
@@ -164,6 +216,7 @@ const CamerasPage: React.FC = () => {
       fps: camera.fps?.toString() || '30',
       status: camera.status || 'inactive',
       branch: camera.branch || 'br-hq',
+      ai_capabilities: mergeAiCapabilities(camera.ai_capabilities),
     });
     setErrors({});
     dispatch(selectCamera(camera));
@@ -191,6 +244,7 @@ const CamerasPage: React.FC = () => {
       fps: parseInt(formData.fps) || 30,
       status: formData.status,
       branch: formData.branch,
+      ai_capabilities: mergeAiCapabilities(formData.ai_capabilities),
     };
 
     if (selectedCamera) {
@@ -332,6 +386,32 @@ const CamerasPage: React.FC = () => {
           {value.toUpperCase()}
         </Badge>
       ),
+    },
+    {
+      key: 'ai_capabilities',
+      label: 'AI Features',
+      render: (_: any, row: Camera) => {
+        const caps = mergeAiCapabilities(row.ai_capabilities);
+        const active = AI_FEATURE_OPTIONS.filter((opt) => caps[opt.key]);
+        return (
+          <div className="flex gap-1 flex-wrap max-w-[220px]">
+            {active.length === 0 ? (
+              <span className="text-xs text-gray-400">No AI features</span>
+            ) : (
+              active.slice(0, 4).map((opt) => (
+                <span key={opt.key} className="text-[10px] px-2 py-0.5 rounded-full bg-blue-50 text-blue-700 border border-blue-100">
+                  {opt.label.replace(' Detection', '').replace(' Monitor', '')}
+                </span>
+              ))
+            )}
+            {active.length > 4 && (
+              <span className="text-[10px] px-2 py-0.5 rounded-full bg-slate-100 text-slate-600">
+                +{active.length - 4}
+              </span>
+            )}
+          </div>
+        );
+      },
     },
     {
       key: 'actions',
@@ -542,6 +622,49 @@ const CamerasPage: React.FC = () => {
               <option value="inactive">Inactive (Offline)</option>
               <option value="error">Error</option>
             </select>
+          </div>
+
+          <div className="rounded-xl border border-gray-200 dark:border-slate-300 bg-gray-50 dark:bg-slate-100 p-4">
+            <div className="flex items-start justify-between gap-3 mb-3">
+              <div>
+                <h3 className="text-sm font-bold text-gray-900 dark:text-slate-900">
+                  AI Feature Checklist
+                </h3>
+                <p className="text-xs text-gray-500 dark:text-slate-500 mt-0.5">
+                  Enable heavy analytics only on cameras that need it. This keeps 32-camera deployments stable on CPU.
+                </p>
+              </div>
+            </div>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              {AI_FEATURE_OPTIONS.map((feature) => {
+                const checked = !!mergeAiCapabilities(formData.ai_capabilities)[feature.key];
+                return (
+                  <label
+                    key={feature.key}
+                    className={`flex gap-3 items-start rounded-lg border p-3 cursor-pointer transition-colors ${
+                      checked
+                        ? 'bg-blue-50 border-blue-200'
+                        : 'bg-white border-gray-200 hover:bg-gray-50'
+                    }`}
+                  >
+                    <input
+                      type="checkbox"
+                      checked={checked}
+                      onChange={(e) => handleCapabilityChange(feature.key, e.target.checked)}
+                      className="mt-1 h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                    />
+                    <span>
+                      <span className="block text-sm font-semibold text-gray-800">
+                        {feature.label}
+                      </span>
+                      <span className="block text-xs text-gray-500 mt-0.5">
+                        {feature.hint}
+                      </span>
+                    </span>
+                  </label>
+                );
+              })}
+            </div>
           </div>
 
           <div className="flex gap-3 justify-end pt-4 border-t border-gray-200 dark:border-slate-300">

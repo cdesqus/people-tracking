@@ -157,7 +157,11 @@ async def init_db():
                         await autocommit_conn.execute(
                             text(
                                 "ALTER TABLE alerts "
-                                "DROP CONSTRAINT IF EXISTS alerts_face_id_fkey; "
+                                "DROP CONSTRAINT IF EXISTS alerts_face_id_fkey;"
+                            )
+                        )
+                        await autocommit_conn.execute(
+                            text(
                                 "ALTER TABLE alerts "
                                 "ADD CONSTRAINT alerts_face_id_fkey "
                                 "FOREIGN KEY (face_id) REFERENCES faces(id) "

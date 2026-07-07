@@ -26,6 +26,20 @@ interface Zone {
   door_open_threshold_seconds?: number;
 }
 
+const DEFAULT_AI_CAPABILITIES: Record<string, boolean> = {
+  unauthorized_access: false,
+  loitering: false,
+  crowd_detected: false,
+  door_left_open: false,
+};
+
+const capabilityForZoneType: Record<string, string> = {
+  restricted_area: 'unauthorized_access',
+  loitering_area: 'loitering',
+  crowd_area: 'crowd_detected',
+  door_area: 'door_left_open',
+};
+
 const ZoneEditor: React.FC<ZoneEditorProps> = ({ isOpen, onClose, onSave, camera }) => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const imgRef = useRef<HTMLImageElement>(null);
@@ -199,6 +213,7 @@ const ZoneEditor: React.FC<ZoneEditorProps> = ({ isOpen, onClose, onSave, camera
   };
 
   if (!camera) return null;
+  const cameraCapabilities = { ...DEFAULT_AI_CAPABILITIES, ...(camera.ai_capabilities || {}) };
 
   return (
     <Modal isOpen={isOpen} onClose={onClose} title={`Draw Intrusion Zone - ${camera.name}`} size="lg">
@@ -206,6 +221,9 @@ const ZoneEditor: React.FC<ZoneEditorProps> = ({ isOpen, onClose, onSave, camera
         <p className="text-sm text-gray-600 dark:text-slate-500">
           Click on the image to draw a polygon. Click near the starting point to close the shape. 
           Draw zones and choose the rule type. Door-left-open only runs on zones set to Door Area.
+        </p>
+        <p className="text-xs text-blue-700 bg-blue-50 border border-blue-100 rounded-lg px-3 py-2">
+          Note: zone rules only run when the matching AI feature is checked on this camera.
         </p>
 
         <div className="relative border border-gray-300 dark:border-slate-300 rounded-lg overflow-hidden bg-black flex justify-center items-center">
@@ -272,6 +290,11 @@ const ZoneEditor: React.FC<ZoneEditorProps> = ({ isOpen, onClose, onSave, camera
                       <option value="crowd_area">Crowd Area</option>
                       <option value="door_area">Door Area</option>
                     </select>
+                    {!cameraCapabilities[capabilityForZoneType[z.type || 'restricted_area']] && (
+                      <span className="text-[11px] text-amber-600">
+                        This zone is saved, but its camera feature is currently disabled.
+                      </span>
+                    )}
                   </div>
                   <button 
                     onClick={() => setZones(zones.filter((_, i) => i !== idx))}

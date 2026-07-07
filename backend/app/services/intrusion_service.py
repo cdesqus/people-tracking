@@ -20,6 +20,7 @@ from app.utils.websocket_manager import ws_manager
 from app.services.rtsp_service import RTSPService
 from app.services.waha_service import send_alert_notification
 from app.services.alert_service import create_or_update_active_alert, resolve_active_alerts
+from app.services.camera_capabilities import camera_has_any_capability, normalize_ai_capabilities
 from sqlalchemy import select
 
 logger = logging.getLogger(__name__)
@@ -29,6 +30,7 @@ class IntrusionService:
         self.model = None
         self.camera_tasks: Dict[str, asyncio.Task] = {}
         self.camera_zones: Dict[str, List[tuple]] = {}
+        self.camera_capabilities: Dict[str, dict] = {}
         self.last_alert_time: Dict[str, float] = {}
         self.zone_occupied_since: Dict[str, float] = {}
         self.door_baselines: Dict[str, np.ndarray] = {}
@@ -81,12 +83,21 @@ class IntrusionService:
             
             for cam in cameras:
                 if cam.intrusion_zones:
+                    if not camera_has_any_capability(
+                        cam,
+                        ["unauthorized_access", "loitering", "crowd_detected", "door_left_open"],
+                    ):
+                        if cam.id in self.camera_tasks:
+                            self.camera_tasks[cam.id].cancel()
+                            del self.camera_tasks[cam.id]
+                        continue
                     try:
                         zones_data = json.loads(cam.intrusion_zones)
                         if not zones_data:
                             continue
                             
                         active_cam_ids.add(cam.id)
+                        self.camera_capabilities[cam.id] = normalize_ai_capabilities(cam.ai_capabilities)
                         
                         # Set up or update zones
                         # Format expected: [[[x1, y1], [x2, y2], ...], ...]
@@ -150,6 +161,8 @@ class IntrusionService:
                 del self.camera_tasks[cam_id]
                 if cam_id in self.camera_zones:
                     del self.camera_zones[cam_id]
+                if cam_id in self.camera_capabilities:
+                    del self.camera_capabilities[cam_id]
                 logger.info(f"[Intrusion] Stopped monitoring task for camera {cam_id}")
 
     async def _monitor_camera(self, cam_id: str, cam_name: str, stream_url: str, resolution_wh: tuple):
@@ -200,6 +213,7 @@ class IntrusionService:
                             zone_mask = zone.trigger(detections=detections)
                             person_count = int(np.sum(zone_mask)) if len(zone_mask) else 0
                             zone_key = f"{cam_id}:{idx}:{zone_name}"
+                            caps = self.camera_capabilities.get(cam_id, {})
                             rules = set(enabled_rules or [])
                             if zone_type == "restricted_area":
                                 rules.add("unauthorized_access")
@@ -209,6 +223,7 @@ class IntrusionService:
                                 rules.add("crowd_detected")
                             if zone_type == "door_area":
                                 rules.add("door_left_open")
+                            rules = {rule for rule in rules if caps.get(rule, False)}
 
                             if person_count > 0:
                                 active_zone_keys.add(zone_key)

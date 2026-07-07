@@ -19,6 +19,7 @@ from app.services.frame_quality import has_slicing_artifact
 from app.config import settings
 from app.services.rtsp_service import RTSPService
 from app.services.alert_service import create_or_update_active_alert, resolve_active_alerts
+from app.services.camera_capabilities import camera_capability_enabled
 
 from ultralytics import YOLO
 import supervision as sv
@@ -285,6 +286,7 @@ def _open_and_read_frame(camera_id: str, stream_url: str):
         generation = _camera_generations.get(camera_id, 0) + 1
         _camera_generations[camera_id] = generation
         _camera_active[camera_id] = True
+        RTSPService.latest_frame_times[camera_id] = now
         t = threading.Thread(
             target=_camera_worker,
             args=(camera_id, stream_url, generation),
@@ -553,6 +555,17 @@ async def start_face_processor():
             # --- REAL-TIME ACTIVE PROCESSING MODE (AWS Configured) ---
             for camera in cameras:
                 try:
+                    face_enabled = camera_capability_enabled(camera, "face_recognition")
+                    unknown_enabled = camera_capability_enabled(camera, "unknown_person")
+                    obstruction_enabled = camera_capability_enabled(camera, "camera_obstruction", True)
+
+                    if not obstruction_enabled and not face_enabled and not unknown_enabled:
+                        logger.debug(
+                            "Skipping frame read for camera %s because face/unknown/obstruction are disabled.",
+                            camera.name,
+                        )
+                        continue
+
                     logger.debug(f"Grabbing frame from camera: {camera.name}")
                     
                     # Run the blocking OpenCV stream opening and frame reading in a background thread executor
@@ -569,73 +582,81 @@ async def start_face_processor():
                         continue
 
                     # Check for camera obstruction (tampering)
-                    try:
-                        # Analyze only the center 50% region to avoid watermarks/timestamps at the edges
-                        h, w = frame.shape[:2]
-                        cy, cx = h // 2, w // 2
-                        dy, dx = h // 4, w // 4
-                        center_crop = frame[cy-dy:cy+dy, cx-dx:cx+dx]
+                    if obstruction_enabled:
+                        try:
+                            # Analyze only the center 50% region to avoid watermarks/timestamps at the edges
+                            h, w = frame.shape[:2]
+                            cy, cx = h // 2, w // 2
+                            dy, dx = h // 4, w // 4
+                            center_crop = frame[cy-dy:cy+dy, cx-dx:cx+dx]
 
-                        gray = cv2.cvtColor(center_crop, cv2.COLOR_BGR2GRAY)
-                        mean_val, std_val = cv2.meanStdDev(gray)
-                        mean = mean_val[0][0]
-                        std_dev = std_val[0][0]
+                            gray = cv2.cvtColor(center_crop, cv2.COLOR_BGR2GRAY)
+                            mean_val, std_val = cv2.meanStdDev(gray)
+                            mean = mean_val[0][0]
+                            std_dev = std_val[0][0]
 
-                        # Obstructed if center region is too dark (mean < 20.0) or too flat/uniform (std_dev < 15.0)
-                        is_obstructed = (mean < 20.0) or (std_dev < 15.0)
+                            # Obstructed if center region is too dark (mean < 20.0) or too flat/uniform (std_dev < 15.0)
+                            is_obstructed = (mean < 20.0) or (std_dev < 15.0)
 
-                        if is_obstructed:
-                            obstructed_counts[camera.id] = obstructed_counts.get(camera.id, 0) + 1
-                            logger.warning(
-                                f"Camera {camera.name} is possibly obstructed (Mean={mean:.2f}, StdDev={std_dev:.2f}). Count={obstructed_counts[camera.id]}"
-                            )
+                            if is_obstructed:
+                                obstructed_counts[camera.id] = obstructed_counts.get(camera.id, 0) + 1
+                                logger.warning(
+                                    f"Camera {camera.name} is possibly obstructed (Mean={mean:.2f}, StdDev={std_dev:.2f}). Count={obstructed_counts[camera.id]}"
+                                )
 
-                            # Trigger alert if consecutive count reaches 3 (approx 9 seconds of solid blockage)
-                            if obstructed_counts[camera.id] >= 3:
-                                now = datetime.utcnow()
-                                last_sent = last_alert_sent.get(camera.id)
-                                if not last_sent or (now - last_sent).total_seconds() > 60.0:
-                                    last_alert_sent[camera.id] = now
+                                # Trigger alert if consecutive count reaches 3 (approx 9 seconds of solid blockage)
+                                if obstructed_counts[camera.id] >= 3:
+                                    now = datetime.utcnow()
+                                    last_sent = last_alert_sent.get(camera.id)
+                                    if not last_sent or (now - last_sent).total_seconds() > 60.0:
+                                        last_alert_sent[camera.id] = now
 
-                                    # Encode current frame to attach as proof
-                                    resized = cv2.resize(frame, (640, 480))
-                                    _, buffer = cv2.imencode(".jpg", resized)
-                                    obstruction_image_bytes = buffer.tobytes()
+                                        # Encode current frame to attach as proof
+                                        resized = cv2.resize(frame, (640, 480))
+                                        _, buffer = cv2.imencode(".jpg", resized)
+                                        obstruction_image_bytes = buffer.tobytes()
 
+                                        async with async_session() as session:
+                                            db_alert = await create_or_update_active_alert(
+                                                session,
+                                                alert_type=AlertType.CAMERA_OBSTRUCTION,
+                                                severity=AlertSeverity.CRITICAL,
+                                                title="Camera Obstructed / Tampering Detected",
+                                                description=f"Camera {camera.name} is obstructed or covered (feed signal is too dark or flat).",
+                                                camera_id=camera.id,
+                                                dedupe_key="obstruction",
+                                                image_data=obstruction_image_bytes,
+                                                camera_name=camera.name,
+                                                metadata={
+                                                    "capability": "camera_obstruction",
+                                                    "mean": mean,
+                                                    "std_dev": std_dev,
+                                                    "consecutive_frames": obstructed_counts[camera.id],
+                                                },
+                                            )
+                                        logger.error(f"CRITICAL: Camera {camera.name} is obstructed! Alert {db_alert.id}")
+                            else:
+                                # Reset count if it is clear
+                                if obstructed_counts.get(camera.id, 0) > 0:
+                                    logger.info(f"Camera {camera.name} obstruction cleared.")
                                     async with async_session() as session:
-                                        db_alert = await create_or_update_active_alert(
+                                        await resolve_active_alerts(
                                             session,
                                             alert_type=AlertType.CAMERA_OBSTRUCTION,
-                                            severity=AlertSeverity.CRITICAL,
-                                            title="Camera Obstructed / Tampering Detected",
-                                            description=f"Camera {camera.name} is obstructed or covered (feed signal is too dark or flat).",
                                             camera_id=camera.id,
                                             dedupe_key="obstruction",
-                                            image_data=obstruction_image_bytes,
-                                            camera_name=camera.name,
-                                            metadata={
-                                                "capability": "camera_obstruction",
-                                                "mean": mean,
-                                                "std_dev": std_dev,
-                                                "consecutive_frames": obstructed_counts[camera.id],
-                                            },
+                                            note="Camera obstruction cleared.",
                                         )
-                                    logger.error(f"CRITICAL: Camera {camera.name} is obstructed! Alert {db_alert.id}")
-                        else:
-                            # Reset count if it is clear
-                            if obstructed_counts.get(camera.id, 0) > 0:
-                                logger.info(f"Camera {camera.name} obstruction cleared.")
-                                async with async_session() as session:
-                                    await resolve_active_alerts(
-                                        session,
-                                        alert_type=AlertType.CAMERA_OBSTRUCTION,
-                                        camera_id=camera.id,
-                                        dedupe_key="obstruction",
-                                        note="Camera obstruction cleared.",
-                                    )
-                            obstructed_counts[camera.id] = 0
-                    except Exception as tamper_err:
-                        logger.error(f"Error checking camera tampering for {camera.name}: {tamper_err}")
+                                obstructed_counts[camera.id] = 0
+                        except Exception as tamper_err:
+                            logger.error(f"Error checking camera tampering for {camera.name}: {tamper_err}")
+
+                    if not face_enabled and not unknown_enabled:
+                        logger.debug(
+                            "Skipping face analysis for camera %s because face/unknown capabilities are disabled.",
+                            camera.name,
+                        )
+                        continue
 
                     # --- DIRECT AWS REKOGNITION FACE DETECTION & RECOGNITION ---
                     # Encode current frame as JPEG bytes
@@ -679,7 +700,7 @@ async def start_face_processor():
                             active_employee = None
                             matched_face_details = None
                             
-                            if match:
+                            if match and face_enabled:
                                 face_match_details = match.get("Face", {})
                                 external_id = face_match_details.get("ExternalImageId")
                                 
@@ -693,7 +714,7 @@ async def start_face_processor():
                                     matched_face_details = face_match_details
 
                             # Process the result for this specific face
-                            if active_employee:
+                            if active_employee and face_enabled:
                                 similarity = match.get("Similarity", 0.0)
                                 face_match_id = matched_face_details.get("FaceId")
 
@@ -787,7 +808,7 @@ async def start_face_processor():
                                                 "created_at": db_face.timestamp.isoformat(),
                                             },
                                         })
-                            else:
+                            elif not active_employee and unknown_enabled:
                                 # Found face but no match -> Unknown Face
                                 logger.info(f"Unknown face detected on camera {camera.name}")
 

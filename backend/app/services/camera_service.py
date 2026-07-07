@@ -12,6 +12,7 @@ from sqlalchemy import select, update, delete
 from app.models.camera import Camera, CameraStatus
 from app.schemas.camera import CameraCreate, CameraUpdate
 from app.services.rtsp_service import RTSPService
+from app.services.camera_capabilities import normalize_ai_capabilities
 from app.utils.rtsp_config import get_brand_config
 
 logger = logging.getLogger(__name__)
@@ -77,7 +78,7 @@ class CameraService:
             rtsp_channel=camera_data.rtsp_channel,
             rtsp_stream_path=camera_data.rtsp_stream_path,
             intrusion_zones=camera_data.intrusion_zones,
-            ai_capabilities=camera_data.ai_capabilities,
+            ai_capabilities=normalize_ai_capabilities(camera_data.ai_capabilities),
             status=CameraStatus.INACTIVE
         )
         
@@ -159,6 +160,9 @@ class CameraService:
                     raise
         
         # Update camera fields
+        if "ai_capabilities" in update_dict:
+            update_dict["ai_capabilities"] = normalize_ai_capabilities(update_dict["ai_capabilities"])
+
         for key, value in update_dict.items():
             if value is not None:
                 setattr(camera, key, value)

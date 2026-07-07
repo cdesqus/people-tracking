@@ -125,4 +125,3 @@ class CameraEnvelope(BaseModel):
 class EmptyEnvelope(BaseModel):
     success: bool = True
     message: Optional[str] = None
-
