@@ -18,6 +18,20 @@ from app.services import waha_service
 
 router = APIRouter()
 
+DEFAULT_ALERT_TYPES = [
+    "match",
+    "unknown_face",
+    "suspicious_activity",
+    "intrusion",
+    "system_error",
+    "camera_obstruction",
+    "camera_offline",
+    "unauthorized_access",
+    "loitering",
+    "door_left_open",
+    "crowd_detected",
+]
+
 
 # ─── Pydantic Schemas ─────────────────────────────────────────────────────────
 
@@ -27,7 +41,7 @@ class WhatsappConfigUpdate(BaseModel):
     session_name: str = "default"
     is_enabled: bool = False
     alert_severities: list[str] = ["critical", "high"]
-    alert_types: list[str] = ["match", "unknown_face", "suspicious_activity", "system_error"]
+    alert_types: list[str] = DEFAULT_ALERT_TYPES
 
 
 class RecipientCreate(BaseModel):
@@ -70,7 +84,7 @@ async def get_whatsapp_config(db: AsyncSession = Depends(get_db)):
             "session_name": "default",
             "is_enabled": False,
             "alert_severities": ["critical", "high"],
-            "alert_types": ["match", "unknown_face", "suspicious_activity", "system_error"],
+            "alert_types": DEFAULT_ALERT_TYPES,
         }
     return {
         "id": cfg.id,

@@ -1,0 +1,35 @@
+{
+  "version": 1,
+  "skills": {
+    "code-simplifier": {
+      "source": "rtk-ai/rtk",
+      "sourceType": "github",
+      "skillPath": ".agents/skills/code-simplifier/SKILL.md",
+      "computedHash": "a5eaf681615f57db415556938b41cf1cf9c9857d3371f52c890f806d775aba59"
+    },
+    "design-patterns": {
+      "source": "rtk-ai/rtk",
+      "sourceType": "github",
+      "skillPath": ".agents/skills/design-patterns/SKILL.md",
+      "computedHash": "0ff8316b62f7ed05c1d46ee5680fb563225c131c8241071209f574a0d027cdaa"
+    },
+    "issue-triage": {
+      "source": "rtk-ai/rtk",
+      "sourceType": "github",
+      "skillPath": ".agents/skills/issue-triage/SKILL.md",
+      "computedHash": "f758ca6868527f8cfe1260b14ce18ef16fcc058b6751f3086dde77933d3bb60c"
+    },
+    "pr-triage": {
+      "source": "rtk-ai/rtk",
+      "sourceType": "github",
+      "skillPath": ".agents/skills/pr-triage/SKILL.md",
+      "computedHash": "023c066a283537e0e2d09799491699980960e7ee4bf36d95de15d88fef17d2c1"
+    },
+    "using-superpowers": {
+      "source": "obra/superpowers",
+      "sourceType": "github",
+      "skillPath": ".agents/skills/using-superpowers/SKILL.md",
+      "computedHash": "55379fe7c1c473a02c61961c822996bff30e1320d6921d9062509bc508482c05"
+    }
+  }
+}

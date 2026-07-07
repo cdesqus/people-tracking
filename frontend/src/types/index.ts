@@ -8,6 +8,7 @@ export interface Camera {
   fps: number;
   branch?: string;
   intrusion_zones?: string;
+  ai_capabilities?: Record<string, any>;
   created_at: string;
   updated_at: string;
 }
@@ -30,7 +31,18 @@ export interface Face {
 
 export interface Alert {
   id: string;
-  type: 'match' | 'unknown_face' | 'suspicious_activity' | 'system_error' | 'intrusion';
+  type:
+    | 'match'
+    | 'unknown_face'
+    | 'suspicious_activity'
+    | 'system_error'
+    | 'intrusion'
+    | 'camera_obstruction'
+    | 'camera_offline'
+    | 'unauthorized_access'
+    | 'loitering'
+    | 'door_left_open'
+    | 'crowd_detected';
   severity: 'info' | 'low' | 'medium' | 'high' | 'critical';
   title: string;
   description: string;
@@ -38,6 +50,13 @@ export interface Alert {
   person_id?: string;
   face_id?: string;
   acknowledged: boolean;
+  first_seen_at?: string;
+  last_seen_at?: string;
+  acknowledged_at?: string;
+  resolved_at?: string;
+  false_positive?: boolean;
+  resolution_note?: string;
+  metadata?: Record<string, any>;
   has_image?: boolean;
   created_at: string;
   updated_at: string;

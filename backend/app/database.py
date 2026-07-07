@@ -68,6 +68,26 @@ async def init_db():
                     await session.execute(text("ALTER TABLE cameras ADD COLUMN IF NOT EXISTS intrusion_zones TEXT;"))
                 except Exception as e:
                     print(f"Migration warning cameras intrusion_zones: {e}")
+
+                try:
+                    await session.execute(text("ALTER TABLE cameras ADD COLUMN IF NOT EXISTS ai_capabilities JSONB;"))
+                except Exception as e:
+                    print(f"Migration warning cameras ai_capabilities: {e}")
+
+                for ddl in [
+                    "ALTER TABLE alerts ADD COLUMN IF NOT EXISTS first_seen_at TIMESTAMP WITH TIME ZONE;",
+                    "ALTER TABLE alerts ADD COLUMN IF NOT EXISTS last_seen_at TIMESTAMP WITH TIME ZONE;",
+                    "ALTER TABLE alerts ADD COLUMN IF NOT EXISTS acknowledged_at TIMESTAMP WITH TIME ZONE;",
+                    "ALTER TABLE alerts ADD COLUMN IF NOT EXISTS resolved_at TIMESTAMP WITH TIME ZONE;",
+                    "ALTER TABLE alerts ADD COLUMN IF NOT EXISTS false_positive BOOLEAN NOT NULL DEFAULT FALSE;",
+                    "ALTER TABLE alerts ADD COLUMN IF NOT EXISTS resolution_note TEXT;",
+                    "ALTER TABLE alerts ADD COLUMN IF NOT EXISTS metadata JSONB;",
+                    "UPDATE alerts SET first_seen_at = COALESCE(first_seen_at, created_at), last_seen_at = COALESCE(last_seen_at, created_at);",
+                ]:
+                    try:
+                        await session.execute(text(ddl))
+                    except Exception as e:
+                        print(f"Migration warning alerts phase1 column: {e}")
                 
                 # Correct foreign keys to point to employees instead of persons
                 try:
@@ -88,12 +108,27 @@ async def init_db():
                         autocommit_conn = await conn.execution_options(
                             isolation_level="AUTOCOMMIT"
                         )
-                        await autocommit_conn.execute(
-                            text(
-                                "ALTER TYPE alerttype "
-                                "ADD VALUE IF NOT EXISTS 'intrusion';"
+                        for value in [
+                            # SQLAlchemy Enum stores Python enum *names* by default.
+                            "INTRUSION",
+                            "CAMERA_OBSTRUCTION",
+                            "CAMERA_OFFLINE",
+                            "UNAUTHORIZED_ACCESS",
+                            "LOITERING",
+                            "DOOR_LEFT_OPEN",
+                            "CROWD_DETECTED",
+                            # Keep value labels too for older manual migrations/configs.
+                            "intrusion",
+                            "camera_obstruction",
+                            "camera_offline",
+                            "unauthorized_access",
+                            "loitering",
+                            "door_left_open",
+                            "crowd_detected",
+                        ]:
+                            await autocommit_conn.execute(
+                                text(f"ALTER TYPE alerttype ADD VALUE IF NOT EXISTS '{value}';")
                             )
-                        )
                 except Exception as e:
                     print(f"Migration warning alerts alerttype: {e}")
 
@@ -146,6 +181,29 @@ async def init_db():
                     
                 try:
                     await session.execute(text("ALTER TABLE cameras ADD COLUMN intrusion_zones TEXT;"))
+                except Exception:
+                    pass
+                    
+                try:
+                    await session.execute(text("ALTER TABLE cameras ADD COLUMN ai_capabilities JSON;"))
+                except Exception:
+                    pass
+
+                for ddl in [
+                    "ALTER TABLE alerts ADD COLUMN first_seen_at DATETIME;",
+                    "ALTER TABLE alerts ADD COLUMN last_seen_at DATETIME;",
+                    "ALTER TABLE alerts ADD COLUMN acknowledged_at DATETIME;",
+                    "ALTER TABLE alerts ADD COLUMN resolved_at DATETIME;",
+                    "ALTER TABLE alerts ADD COLUMN false_positive BOOLEAN DEFAULT 0;",
+                    "ALTER TABLE alerts ADD COLUMN resolution_note TEXT;",
+                    "ALTER TABLE alerts ADD COLUMN metadata JSON;",
+                ]:
+                    try:
+                        await session.execute(text(ddl))
+                    except Exception:
+                        pass
+                try:
+                    await session.execute(text("UPDATE alerts SET first_seen_at = COALESCE(first_seen_at, created_at), last_seen_at = COALESCE(last_seen_at, created_at);"))
                 except Exception:
                     pass
             await session.commit()

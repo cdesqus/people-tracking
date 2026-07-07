@@ -114,6 +114,23 @@ const Alerts: React.FC = () => {
     }
   };
 
+  const handleLifecycleAction = async (
+    alertId: string,
+    action: 'resolve' | 'false-positive'
+  ) => {
+    try {
+      const response = await fetch(`${API_BASE_URL}/alerts/${alertId}/${action}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+      });
+      if (!response.ok) throw new Error(`Failed to ${action} alert`);
+      toast.success(action === 'resolve' ? 'Alert resolved' : 'Alert marked false positive');
+      fetchAlertsList();
+    } catch (err) {
+      toast.error(action === 'resolve' ? 'Failed to resolve alert' : 'Failed to mark false positive');
+    }
+  };
+
   const handleBulkAcknowledge = async () => {
     if (selectedAlertIds.length === 0) return;
     
@@ -257,8 +274,16 @@ const Alerts: React.FC = () => {
       key: 'acknowledged',
       label: 'Status',
       render: (value: boolean, row: Alert) => (
-        <Badge color={row.type === 'match' || value ? 'green' : 'red'}>
-          {row.type === 'match' ? 'RECORDED' : value ? 'ACKNOWLEDGED' : 'ACTIVE'}
+        <Badge color={row.resolved_at || row.type === 'match' ? 'green' : value ? 'yellow' : 'red'}>
+          {row.type === 'match'
+            ? 'RECORDED'
+            : row.false_positive
+              ? 'FALSE POSITIVE'
+              : row.resolved_at
+                ? 'RESOLVED'
+                : value
+                  ? 'ACKNOWLEDGED'
+                  : 'ACTIVE'}
         </Badge>
       ),
     },
@@ -277,6 +302,30 @@ const Alerts: React.FC = () => {
               }}
             >
               Acknowledge
+            </Button>
+          )}
+          {row.type !== 'match' && !row.resolved_at && (
+            <Button
+              variant="secondary"
+              size="sm"
+              onClick={(e) => {
+                e.stopPropagation();
+                handleLifecycleAction(row.id, 'resolve');
+              }}
+            >
+              Resolve
+            </Button>
+          )}
+          {row.type !== 'match' && !row.false_positive && (
+            <Button
+              variant="secondary"
+              size="sm"
+              onClick={(e) => {
+                e.stopPropagation();
+                handleLifecycleAction(row.id, 'false-positive');
+              }}
+            >
+              False+
             </Button>
           )}
         </div>
@@ -335,6 +384,12 @@ const Alerts: React.FC = () => {
               <option value="all">All Types</option>
               <option value="match">Valid Employee</option>
               <option value="intrusion">Intrusion</option>
+              <option value="unauthorized_access">Unauthorized Access</option>
+              <option value="loitering">Loitering</option>
+              <option value="crowd_detected">Crowd Detection</option>
+              <option value="door_left_open">Door Left Open</option>
+              <option value="camera_obstruction">Camera Obstruction</option>
+              <option value="camera_offline">Camera Offline</option>
               <option value="unknown_face">Unknown Face</option>
               <option value="system_error">System Error</option>
             </select>

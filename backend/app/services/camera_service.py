@@ -76,6 +76,8 @@ class CameraService:
             rtsp_password=camera_data.rtsp_password,
             rtsp_channel=camera_data.rtsp_channel,
             rtsp_stream_path=camera_data.rtsp_stream_path,
+            intrusion_zones=camera_data.intrusion_zones,
+            ai_capabilities=camera_data.ai_capabilities,
             status=CameraStatus.INACTIVE
         )
         

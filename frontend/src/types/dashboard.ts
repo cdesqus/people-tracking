@@ -33,8 +33,19 @@ export interface DetectionRecord {
 
 export interface AlertRecord {
   id: string;
-  type: 'match' | 'unknown_face' | 'suspicious_activity' | 'system_error';
-  severity: 'low' | 'medium' | 'high' | 'critical';
+  type:
+    | 'match'
+    | 'unknown_face'
+    | 'suspicious_activity'
+    | 'system_error'
+    | 'intrusion'
+    | 'camera_obstruction'
+    | 'camera_offline'
+    | 'unauthorized_access'
+    | 'loitering'
+    | 'door_left_open'
+    | 'crowd_detected';
+  severity: 'info' | 'low' | 'medium' | 'high' | 'critical';
   title: string;
   description: string;
   cameraId: string;

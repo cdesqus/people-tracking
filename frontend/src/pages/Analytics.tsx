@@ -30,6 +30,7 @@ ChartJS.register(
 
 const Analytics: React.FC = () => {
   const [data, setData] = useState<any>(null);
+  const [kpis, setKpis] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -52,6 +53,11 @@ const Analytics: React.FC = () => {
         
         const json = await response.json();
         setData(json);
+
+        const kpiResponse = await fetch(`/api/kpis/security?from=${fromStr}&to=${toStr}`);
+        if (kpiResponse.ok) {
+          setKpis(await kpiResponse.json());
+        }
       } catch (err: any) {
         setError(err.message);
       } finally {
@@ -188,6 +194,49 @@ const Analytics: React.FC = () => {
         <h1 className="text-3xl font-bold text-gray-900 font-sans">Analytics & Trends</h1>
         <p className="text-gray-600 mt-1">Historical analysis of face detections, alert volumes, and system health</p>
       </div>
+
+      {kpis && (
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+          <Card title="AI Incidents" subtitle="Detected by Phase 1 rules">
+            <div className="text-3xl font-bold text-slate-900">{kpis.incident_detected_ai}</div>
+          </Card>
+          <Card title="Avg Response" subtitle="Security acknowledge time">
+            <div className="text-3xl font-bold text-slate-900">
+              {kpis.response_time_security?.avg_seconds == null
+                ? '—'
+                : `${Math.round(kpis.response_time_security.avg_seconds)}s`}
+            </div>
+          </Card>
+          <Card title="CCTV Uptime" subtitle={`${kpis.cctv_uptime?.online_cameras || 0}/${kpis.cctv_uptime?.total_cameras || 0} online`}>
+            <div className="text-3xl font-bold text-slate-900">{kpis.cctv_uptime?.percent ?? 0}%</div>
+          </Card>
+          <Card title="False Positive" subtitle="Marked by operator">
+            <div className="text-3xl font-bold text-slate-900">{kpis.false_positive_rate?.percent ?? 0}%</div>
+          </Card>
+          <Card title="Unauthorized Prevented" subtitle="Acknowledged/resolved access incidents">
+            <div className="text-3xl font-bold text-slate-900">{kpis.unauthorized_access_prevented}</div>
+          </Card>
+          <Card title="AI Coverage" subtitle="Camera rules configured">
+            <div className="text-sm text-slate-700 space-y-1">
+              <div>Unauthorized: {kpis.area_coverage_ai?.rules?.unauthorized_access || 0}</div>
+              <div>Door: {kpis.area_coverage_ai?.rules?.door_left_open || 0}</div>
+              <div>Crowd: {kpis.area_coverage_ai?.rules?.crowd_detected || 0}</div>
+            </div>
+          </Card>
+          <Card title="Workload Reduction" subtitle={kpis.security_workload_reduction?.formula}>
+            <div className="text-3xl font-bold text-slate-900">
+              {kpis.security_workload_reduction?.estimated_minutes_saved || 0}m
+            </div>
+          </Card>
+          <Card title="Investigation Reduction" subtitle="Vs 15m baseline">
+            <div className="text-3xl font-bold text-slate-900">
+              {kpis.incident_investigation_time_reduction?.percent == null
+                ? '—'
+                : `${kpis.incident_investigation_time_reduction.percent}%`}
+            </div>
+          </Card>
+        </div>
+      )}
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         <Card title="Daily Biometric Detections" subtitle="Volume of matched faces in the last 7 days">

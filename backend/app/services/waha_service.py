@@ -50,7 +50,19 @@ async def _get_config() -> Optional[dict]:
                     "session": cfg.session_name,
                     "is_enabled": cfg.is_enabled,
                     "alert_severities": cfg.alert_severities or ["critical", "high"],
-                    "alert_types": cfg.alert_types or ["match", "unknown_face", "suspicious_activity", "intrusion", "system_error"],
+                    "alert_types": cfg.alert_types or [
+                        "match",
+                        "unknown_face",
+                        "suspicious_activity",
+                        "intrusion",
+                        "system_error",
+                        "camera_obstruction",
+                        "camera_offline",
+                        "unauthorized_access",
+                        "loitering",
+                        "door_left_open",
+                        "crowd_detected",
+                    ],
                 }
                 _config_cache_ttl = now + _CONFIG_CACHE_SECONDS
                 return _config_cache
@@ -205,6 +217,12 @@ def _format_alert_caption(
         "match": "Face Matched",
         "suspicious_activity": "Suspicious Activity",
         "intrusion": "Intrusion Zone",
+        "camera_obstruction": "Camera Obstruction",
+        "camera_offline": "Camera Offline",
+        "unauthorized_access": "Unauthorized Area Access",
+        "loitering": "Loitering Detection",
+        "door_left_open": "Door Left Open",
+        "crowd_detected": "Crowd Detection",
         "system_error": "System Error",
     }.get(alert_type.lower(), alert_type.replace("_", " ").title())
 

@@ -15,8 +15,12 @@ class WhatsappConfig(Base):
     is_enabled = Column(Boolean, default=False, nullable=False)
     # JSON array of severity strings to notify: ["critical", "high", "medium", "low"]
     alert_severities = Column(JSON, nullable=False, default=["critical", "high"])
-    # JSON array of alert types to notify: ["match", "unknown_face", "suspicious_activity", "intrusion", "system_error"]
-    alert_types = Column(JSON, nullable=False, default=["match", "unknown_face", "suspicious_activity", "intrusion", "system_error"])
+    # JSON array of alert types to notify.
+    alert_types = Column(JSON, nullable=False, default=[
+        "match", "unknown_face", "suspicious_activity", "intrusion", "system_error",
+        "camera_obstruction", "camera_offline", "unauthorized_access", "loitering",
+        "door_left_open", "crowd_detected",
+    ])
     created_at = Column(DateTime(timezone=True), server_default=func.now(), nullable=False)
     updated_at = Column(
         DateTime(timezone=True),

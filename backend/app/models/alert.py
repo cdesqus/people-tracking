@@ -1,4 +1,4 @@
-from sqlalchemy import Column, String, DateTime, Enum, Boolean, ForeignKey, Index, LargeBinary
+from sqlalchemy import Column, String, DateTime, Enum, Boolean, ForeignKey, Index, LargeBinary, JSON, Text
 from sqlalchemy.sql import func
 from datetime import datetime
 import enum
@@ -11,6 +11,12 @@ class AlertType(str, enum.Enum):
     SUSPICIOUS_ACTIVITY = "suspicious_activity"
     SYSTEM_ERROR = "system_error"
     INTRUSION = "intrusion"
+    CAMERA_OBSTRUCTION = "camera_obstruction"
+    CAMERA_OFFLINE = "camera_offline"
+    UNAUTHORIZED_ACCESS = "unauthorized_access"
+    LOITERING = "loitering"
+    DOOR_LEFT_OPEN = "door_left_open"
+    CROWD_DETECTED = "crowd_detected"
 
 
 class AlertSeverity(str, enum.Enum):
@@ -33,6 +39,13 @@ class Alert(Base):
     person_id = Column(String(36), ForeignKey("employees.id"), nullable=True, index=True)
     face_id = Column(String(36), ForeignKey("faces.id"), nullable=True)
     acknowledged = Column(Boolean, default=False, index=True)
+    first_seen_at = Column(DateTime(timezone=True), nullable=True, index=True)
+    last_seen_at = Column(DateTime(timezone=True), nullable=True, index=True)
+    acknowledged_at = Column(DateTime(timezone=True), nullable=True, index=True)
+    resolved_at = Column(DateTime(timezone=True), nullable=True, index=True)
+    false_positive = Column(Boolean, default=False, nullable=False, index=True)
+    resolution_note = Column(Text, nullable=True)
+    metadata_json = Column("metadata", JSON, nullable=True)
     image_data = Column(LargeBinary, nullable=True)
     created_at = Column(DateTime(timezone=True), server_default=func.now(), nullable=False, index=True)
     updated_at = Column(

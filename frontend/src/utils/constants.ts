@@ -37,6 +37,12 @@ export const ALERT_TYPES = {
   UNKNOWN_FACE: 'unknown_face',
   SUSPICIOUS_ACTIVITY: 'suspicious_activity',
   INTRUSION: 'intrusion',
+  CAMERA_OBSTRUCTION: 'camera_obstruction',
+  CAMERA_OFFLINE: 'camera_offline',
+  UNAUTHORIZED_ACCESS: 'unauthorized_access',
+  LOITERING: 'loitering',
+  DOOR_LEFT_OPEN: 'door_left_open',
+  CROWD_DETECTED: 'crowd_detected',
   SYSTEM_ERROR: 'system_error',
 } as const;
 

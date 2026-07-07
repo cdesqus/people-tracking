@@ -78,6 +78,12 @@ const ALERT_TYPE_OPTIONS = [
   { value: 'match', label: 'Face Matched', color: 'bg-emerald-500/20 text-emerald-600 border-emerald-500/30', dot: 'bg-emerald-500' },
   { value: 'suspicious_activity', label: 'Suspicious Activity', color: 'bg-orange-500/20 text-orange-400 border-orange-500/30', dot: 'bg-orange-500' },
   { value: 'intrusion', label: 'Intrusion Zone', color: 'bg-purple-500/20 text-purple-400 border-purple-500/30', dot: 'bg-purple-500' },
+  { value: 'camera_obstruction', label: 'Camera Obstruction', color: 'bg-red-500/20 text-red-500 border-red-500/30', dot: 'bg-red-500' },
+  { value: 'camera_offline', label: 'Camera Offline', color: 'bg-slate-500/20 text-slate-500 border-slate-500/30', dot: 'bg-slate-500' },
+  { value: 'unauthorized_access', label: 'Unauthorized Access', color: 'bg-purple-500/20 text-purple-500 border-purple-500/30', dot: 'bg-purple-500' },
+  { value: 'loitering', label: 'Loitering', color: 'bg-yellow-500/20 text-yellow-600 border-yellow-500/30', dot: 'bg-yellow-500' },
+  { value: 'door_left_open', label: 'Door Left Open', color: 'bg-orange-500/20 text-orange-500 border-orange-500/30', dot: 'bg-orange-500' },
+  { value: 'crowd_detected', label: 'Crowd Detected', color: 'bg-blue-500/20 text-blue-500 border-blue-500/30', dot: 'bg-blue-500' },
   { value: 'system_error', label: 'System Error', color: 'bg-slate-500/20 text-slate-500 border-slate-500/30', dot: 'bg-slate-500' },
 ];
 
@@ -111,7 +117,7 @@ const WhatsAppSettings: React.FC = () => {
     session_name: 'default',
     is_enabled: false,
     alert_severities: ['critical', 'high'],
-    alert_types: ['match', 'unknown_face', 'suspicious_activity', 'intrusion', 'system_error'],
+    alert_types: ['match', 'unknown_face', 'suspicious_activity', 'intrusion', 'system_error', 'camera_obstruction', 'camera_offline', 'unauthorized_access', 'loitering', 'door_left_open', 'crowd_detected'],
   });
   const [showApiKey, setShowApiKey] = useState(false);
   const [savingConfig, setSavingConfig] = useState(false);

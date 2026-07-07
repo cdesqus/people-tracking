@@ -1,4 +1,4 @@
-from sqlalchemy import Column, String, Integer, Float, DateTime, Enum, Boolean
+from sqlalchemy import Column, String, Integer, Float, DateTime, Enum, Boolean, JSON
 from sqlalchemy.sql import func
 from datetime import datetime
 import enum
@@ -34,6 +34,7 @@ class Camera(Base):
     
     # Intrusion Detection settings
     intrusion_zones = Column(String, nullable=True)  # Store JSON as string: [[[x1,y1], [x2,y2], ...], ...]
+    ai_capabilities = Column(JSON, nullable=True)  # Optional per-camera feature toggles/rule defaults
     
     # Status tracking
     last_status_check = Column(DateTime(timezone=True), nullable=True)

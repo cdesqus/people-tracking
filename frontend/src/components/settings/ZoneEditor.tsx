@@ -18,6 +18,12 @@ interface Point {
 interface Zone {
   name: string;
   points: Point[];
+  type?: 'restricted_area' | 'loitering_area' | 'crowd_area' | 'door_area';
+  enabled_rules?: string[];
+  loitering_threshold_seconds?: number;
+  crowd_threshold?: number;
+  crowd_duration_seconds?: number;
+  door_open_threshold_seconds?: number;
 }
 
 const ZoneEditor: React.FC<ZoneEditorProps> = ({ isOpen, onClose, onSave, camera }) => {
@@ -36,9 +42,18 @@ const ZoneEditor: React.FC<ZoneEditorProps> = ({ isOpen, onClose, onSave, camera
           const parsed = JSON.parse(camera.intrusion_zones);
           const mappedZones = parsed.map((z: any, idx: number) => {
             if (Array.isArray(z)) {
-              return { name: `Zone ${idx + 1}`, points: z };
+              return { name: `Zone ${idx + 1}`, points: z, type: 'restricted_area', enabled_rules: ['unauthorized_access'] };
             }
-            return { name: z.name || `Zone ${idx + 1}`, points: z.points || [] };
+            return {
+              name: z.name || `Zone ${idx + 1}`,
+              points: z.points || [],
+              type: z.type || z.zone_type || 'restricted_area',
+              enabled_rules: z.enabled_rules || z.rules || ['unauthorized_access'],
+              loitering_threshold_seconds: z.loitering_threshold_seconds,
+              crowd_threshold: z.crowd_threshold,
+              crowd_duration_seconds: z.crowd_duration_seconds,
+              door_open_threshold_seconds: z.door_open_threshold_seconds,
+            };
           });
           setZones(mappedZones);
         } catch (e) {
@@ -134,7 +149,29 @@ const ZoneEditor: React.FC<ZoneEditorProps> = ({ isOpen, onClose, onSave, camera
         const dist = Math.sqrt(Math.pow(x - startPt.x, 2) + Math.pow(y - startPt.y, 2));
         if (dist < 20) {
           const zoneName = prompt("Enter a name for this zone:", `Zone ${zones.length + 1}`) || `Zone ${zones.length + 1}`;
-          setZones([...zones, { name: zoneName, points }]);
+          const zoneTypeInput = prompt(
+            "Zone type: restricted_area, loitering_area, crowd_area, door_area",
+            "restricted_area"
+          ) || "restricted_area";
+          const zoneType = ['restricted_area', 'loitering_area', 'crowd_area', 'door_area'].includes(zoneTypeInput)
+            ? zoneTypeInput as Zone['type']
+            : 'restricted_area';
+          const defaultRules = {
+            restricted_area: ['unauthorized_access'],
+            loitering_area: ['loitering'],
+            crowd_area: ['crowd_detected'],
+            door_area: ['door_left_open'],
+          }[zoneType || 'restricted_area'];
+          setZones([...zones, {
+            name: zoneName,
+            points,
+            type: zoneType,
+            enabled_rules: defaultRules,
+            loitering_threshold_seconds: zoneType === 'loitering_area' ? 60 : undefined,
+            crowd_threshold: zoneType === 'crowd_area' ? 5 : undefined,
+            crowd_duration_seconds: zoneType === 'crowd_area' ? 10 : undefined,
+            door_open_threshold_seconds: zoneType === 'door_area' ? 60 : undefined,
+          }]);
           setPoints([]);
           setIsDrawing(false);
           return;
@@ -168,7 +205,7 @@ const ZoneEditor: React.FC<ZoneEditorProps> = ({ isOpen, onClose, onSave, camera
       <div className="space-y-4">
         <p className="text-sm text-gray-600 dark:text-slate-500">
           Click on the image to draw a polygon. Click near the starting point to close the shape. 
-          Any person entering these red zones will trigger an alert.
+          Draw zones and choose the rule type. Door-left-open only runs on zones set to Door Area.
         </p>
 
         <div className="relative border border-gray-300 dark:border-slate-300 rounded-lg overflow-hidden bg-black flex justify-center items-center">
@@ -196,16 +233,46 @@ const ZoneEditor: React.FC<ZoneEditorProps> = ({ isOpen, onClose, onSave, camera
             <div className="space-y-2">
               {zones.map((z, idx) => (
                 <div key={idx} className="flex justify-between items-center bg-gray-50 dark:bg-slate-800 p-2 rounded border border-gray-200 dark:border-slate-700">
-                  <input 
-                    type="text" 
-                    value={z.name} 
-                    onChange={(e) => {
-                      const newZones = [...zones];
-                      newZones[idx].name = e.target.value;
-                      setZones(newZones);
-                    }}
-                    className="bg-transparent border-b border-dashed border-gray-400 focus:border-blue-500 text-sm font-medium focus:ring-0 outline-none w-2/3 dark:text-white"
-                  />
+                  <div className="flex flex-col gap-1 flex-1 mr-2">
+                    <input
+                      type="text"
+                      value={z.name}
+                      onChange={(e) => {
+                        const newZones = [...zones];
+                        newZones[idx].name = e.target.value;
+                        setZones(newZones);
+                      }}
+                      className="bg-transparent border-b border-dashed border-gray-400 focus:border-blue-500 text-sm font-medium focus:ring-0 outline-none dark:text-white"
+                    />
+                    <select
+                      value={z.type || 'restricted_area'}
+                      onChange={(e) => {
+                        const type = e.target.value as Zone['type'];
+                        const newZones = [...zones];
+                        newZones[idx] = {
+                          ...newZones[idx],
+                          type,
+                          enabled_rules: {
+                            restricted_area: ['unauthorized_access'],
+                            loitering_area: ['loitering'],
+                            crowd_area: ['crowd_detected'],
+                            door_area: ['door_left_open'],
+                          }[type || 'restricted_area'],
+                          loitering_threshold_seconds: type === 'loitering_area' ? (newZones[idx].loitering_threshold_seconds || 60) : undefined,
+                          crowd_threshold: type === 'crowd_area' ? (newZones[idx].crowd_threshold || 5) : undefined,
+                          crowd_duration_seconds: type === 'crowd_area' ? (newZones[idx].crowd_duration_seconds || 10) : undefined,
+                          door_open_threshold_seconds: type === 'door_area' ? (newZones[idx].door_open_threshold_seconds || 60) : undefined,
+                        };
+                        setZones(newZones);
+                      }}
+                      className="text-xs rounded border border-gray-300 bg-white dark:bg-slate-700 dark:text-white px-2 py-1"
+                    >
+                      <option value="restricted_area">Restricted / Unauthorized</option>
+                      <option value="loitering_area">Loitering Area</option>
+                      <option value="crowd_area">Crowd Area</option>
+                      <option value="door_area">Door Area</option>
+                    </select>
+                  </div>
                   <button 
                     onClick={() => setZones(zones.filter((_, i) => i !== idx))}
                     className="text-red-500 hover:text-red-700 p-1 bg-red-50 dark:bg-red-900/30 rounded"

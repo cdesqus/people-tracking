@@ -1,6 +1,6 @@
 from pydantic import BaseModel, HttpUrl, Field
 from datetime import datetime
-from typing import Optional
+from typing import Optional, Any
 
 
 class RTSPConfig(BaseModel):
@@ -21,6 +21,7 @@ class CameraBase(BaseModel):
     fps: Optional[int] = 30
     branch: Optional[str] = "br-hq"
     intrusion_zones: Optional[str] = None  # JSON string of zones
+    ai_capabilities: Optional[dict[str, Any]] = None
 
 
 class CameraCreate(CameraBase):
@@ -51,6 +52,7 @@ class CameraUpdate(BaseModel):
     rtsp_channel: Optional[str] = None
     rtsp_stream_path: Optional[str] = None
     intrusion_zones: Optional[str] = None
+    ai_capabilities: Optional[dict[str, Any]] = None
 
 
 class CameraResponse(CameraBase):
@@ -123,5 +125,4 @@ class CameraEnvelope(BaseModel):
 class EmptyEnvelope(BaseModel):
     success: bool = True
     message: Optional[str] = None
-
 

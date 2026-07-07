@@ -18,6 +18,7 @@ from app.services import waha_service
 from app.services.frame_quality import has_slicing_artifact
 from app.config import settings
 from app.services.rtsp_service import RTSPService
+from app.services.alert_service import create_or_update_active_alert, resolve_active_alerts
 
 from ultralytics import YOLO
 import supervision as sv
@@ -601,55 +602,37 @@ async def start_face_processor():
                                     _, buffer = cv2.imencode(".jpg", resized)
                                     obstruction_image_bytes = buffer.tobytes()
 
-                                    # Create critical suspicious activity alert
-                                    alert_id = str(uuid.uuid4())
-                                    db_alert = Alert(
-                                        id=alert_id,
-                                        type=AlertType.SUSPICIOUS_ACTIVITY,
-                                        severity=AlertSeverity.CRITICAL,
-                                        title="Camera Obstructed / Tampering Detected",
-                                        description=f"Camera {camera.name} is obstructed or covered (feed signal is too dark or flat).",
-                                        camera_id=camera.id,
-                                        person_id=None,
-                                        face_id=None,
-                                        acknowledged=False,
-                                        image_data=obstruction_image_bytes
-                                    )
-
                                     async with async_session() as session:
-                                        session.add(db_alert)
-                                        await session.commit()
-
-                                    # Broadcast alert via WebSocket
-                                    await ws_manager.broadcast({
-                                        "type": "new_alert",
-                                        "data": {
-                                            "id": alert_id,
-                                            "type": db_alert.type.value,
-                                            "title": db_alert.title,
-                                            "description": db_alert.description,
-                                            "camera_id": camera.id,
-                                            "severity": "critical",
-                                            "created_at": now.isoformat(),
-                                        }
-                                    })
-                                    logger.error(f"CRITICAL: Camera {camera.name} is obstructed! Raised Alert {alert_id}")
-
-                                    # Send WhatsApp notification (non-blocking)
-                                    _safe_create_task(waha_service.send_alert_notification(
-                                        alert_id=alert_id,
-                                        alert_title=db_alert.title,
-                                        alert_description=db_alert.description,
-                                        severity="critical",
-                                        alert_type="suspicious_activity",
-                                        camera_name=camera.name,
-                                        timestamp=now,
-                                        face_image_bytes=obstruction_image_bytes,
-                                    ), name=f"waha_obstruction_{alert_id[:8]}")
+                                        db_alert = await create_or_update_active_alert(
+                                            session,
+                                            alert_type=AlertType.CAMERA_OBSTRUCTION,
+                                            severity=AlertSeverity.CRITICAL,
+                                            title="Camera Obstructed / Tampering Detected",
+                                            description=f"Camera {camera.name} is obstructed or covered (feed signal is too dark or flat).",
+                                            camera_id=camera.id,
+                                            dedupe_key="obstruction",
+                                            image_data=obstruction_image_bytes,
+                                            camera_name=camera.name,
+                                            metadata={
+                                                "capability": "camera_obstruction",
+                                                "mean": mean,
+                                                "std_dev": std_dev,
+                                                "consecutive_frames": obstructed_counts[camera.id],
+                                            },
+                                        )
+                                    logger.error(f"CRITICAL: Camera {camera.name} is obstructed! Alert {db_alert.id}")
                         else:
                             # Reset count if it is clear
                             if obstructed_counts.get(camera.id, 0) > 0:
                                 logger.info(f"Camera {camera.name} obstruction cleared.")
+                                async with async_session() as session:
+                                    await resolve_active_alerts(
+                                        session,
+                                        alert_type=AlertType.CAMERA_OBSTRUCTION,
+                                        camera_id=camera.id,
+                                        dedupe_key="obstruction",
+                                        note="Camera obstruction cleared.",
+                                    )
                             obstructed_counts[camera.id] = 0
                     except Exception as tamper_err:
                         logger.error(f"Error checking camera tampering for {camera.name}: {tamper_err}")

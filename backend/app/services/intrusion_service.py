@@ -19,6 +19,7 @@ import uuid
 from app.utils.websocket_manager import ws_manager
 from app.services.rtsp_service import RTSPService
 from app.services.waha_service import send_alert_notification
+from app.services.alert_service import create_or_update_active_alert, resolve_active_alerts
 from sqlalchemy import select
 
 logger = logging.getLogger(__name__)
@@ -29,6 +30,9 @@ class IntrusionService:
         self.camera_tasks: Dict[str, asyncio.Task] = {}
         self.camera_zones: Dict[str, List[tuple]] = {}
         self.last_alert_time: Dict[str, float] = {}
+        self.zone_occupied_since: Dict[str, float] = {}
+        self.door_baselines: Dict[str, np.ndarray] = {}
+        self.door_open_since: Dict[str, float] = {}
         self.is_running = False
 
     def load_model(self):
@@ -100,11 +104,25 @@ class IntrusionService:
                         for idx, polygon_data in enumerate(zones_data):
                             pts = []
                             zone_name = f"Zone {idx + 1}"
+                            zone_type = "restricted_area"
+                            enabled_rules = ["unauthorized_access"]
+                            thresholds = {
+                                "loitering_threshold_seconds": 60,
+                                "crowd_threshold": 5,
+                                "crowd_duration_seconds": 10,
+                                "door_open_threshold_seconds": 60,
+                                "door_change_threshold": 0.18,
+                            }
                             
                             points_data = polygon_data
                             if isinstance(polygon_data, dict) and "points" in polygon_data:
                                 points_data = polygon_data["points"]
                                 zone_name = polygon_data.get("name", zone_name)
+                                zone_type = polygon_data.get("type") or polygon_data.get("zone_type") or zone_type
+                                enabled_rules = polygon_data.get("enabled_rules") or polygon_data.get("rules") or enabled_rules
+                                for key in thresholds:
+                                    if key in polygon_data:
+                                        thresholds[key] = polygon_data[key]
 
                             for p in points_data:
                                 if isinstance(p, dict):
@@ -113,7 +131,7 @@ class IntrusionService:
                                     pts.append([int(p[0]), int(p[1])])
                             pts_array = np.array(pts, dtype=np.int32)
                             zone = sv.PolygonZone(polygon=pts_array, frame_resolution_wh=resolution_wh)
-                            self.camera_zones[cam.id].append((zone, zone_name))
+                            self.camera_zones[cam.id].append((zone, zone_name, zone_type, enabled_rules, thresholds))
 
                         # Start task if not running
                         if cam.id not in self.camera_tasks or self.camera_tasks[cam.id].done():
@@ -169,20 +187,110 @@ class IntrusionService:
                         detections = detections[detections.class_id == 0]
                         
                         zones = self.camera_zones.get(cam_id, [])
-                        is_intrusion = False
-                        triggered_zone_names = set()
-                        
-                        for idx, (zone, zone_name) in enumerate(zones):
+                        triggered_events = []
+                        active_zone_keys = set()
+
+                        for idx, (zone, zone_name, zone_type, enabled_rules, thresholds) in enumerate(zones):
                             # Update zone resolution if frame size changed
                             if zone.frame_resolution_wh != (w, h):
                                 zone = sv.PolygonZone(polygon=zone.polygon, frame_resolution_wh=(w, h))
-                                self.camera_zones[cam_id][idx] = (zone, zone_name)
+                                self.camera_zones[cam_id][idx] = (zone, zone_name, zone_type, enabled_rules, thresholds)
                             
                             # Check if any detection is inside the zone
                             zone_mask = zone.trigger(detections=detections)
-                            if np.any(zone_mask):
-                                is_intrusion = True
-                                triggered_zone_names.add(zone_name)
+                            person_count = int(np.sum(zone_mask)) if len(zone_mask) else 0
+                            zone_key = f"{cam_id}:{idx}:{zone_name}"
+                            rules = set(enabled_rules or [])
+                            if zone_type == "restricted_area":
+                                rules.add("unauthorized_access")
+                            if zone_type == "loitering_area":
+                                rules.add("loitering")
+                            if zone_type == "crowd_area":
+                                rules.add("crowd_detected")
+                            if zone_type == "door_area":
+                                rules.add("door_left_open")
+
+                            if person_count > 0:
+                                active_zone_keys.add(zone_key)
+                                if "unauthorized_access" in rules or "intrusion" in rules:
+                                    triggered_events.append({
+                                        "type": AlertType.UNAUTHORIZED_ACCESS,
+                                        "title": "Unauthorized Area Access",
+                                        "description": f"Person detected entering restricted zone {zone_name}.",
+                                        "dedupe_key": f"unauthorized:{zone_name}",
+                                        "zone_name": zone_name,
+                                        "person_count": person_count,
+                                    })
+
+                                if "loitering" in rules:
+                                    started = self.zone_occupied_since.setdefault(zone_key, time.monotonic())
+                                    duration = time.monotonic() - started
+                                    threshold = float(thresholds.get("loitering_threshold_seconds", 60))
+                                    if duration >= threshold:
+                                        triggered_events.append({
+                                            "type": AlertType.LOITERING,
+                                            "title": "Loitering Detected",
+                                            "description": f"Person stayed in {zone_name} for {int(duration)} seconds.",
+                                            "dedupe_key": f"loitering:{zone_name}",
+                                            "zone_name": zone_name,
+                                            "person_count": person_count,
+                                            "duration_seconds": int(duration),
+                                            "threshold_seconds": threshold,
+                                        })
+                            else:
+                                self.zone_occupied_since.pop(zone_key, None)
+
+                            if "crowd_detected" in rules or "crowd_detection" in rules:
+                                threshold = int(thresholds.get("crowd_threshold", 5))
+                                if person_count >= threshold:
+                                    started = self.zone_occupied_since.setdefault(f"{zone_key}:crowd", time.monotonic())
+                                    duration = time.monotonic() - started
+                                    min_duration = float(thresholds.get("crowd_duration_seconds", 10))
+                                    if duration >= min_duration:
+                                        triggered_events.append({
+                                            "type": AlertType.CROWD_DETECTED,
+                                            "title": "Crowd Detected",
+                                            "description": f"{person_count} people detected in {zone_name}.",
+                                            "dedupe_key": f"crowd:{zone_name}",
+                                            "zone_name": zone_name,
+                                            "person_count": person_count,
+                                            "threshold": threshold,
+                                        })
+                                else:
+                                    self.zone_occupied_since.pop(f"{zone_key}:crowd", None)
+
+                            if "door_left_open" in rules:
+                                mask = np.zeros((h, w), dtype=np.uint8)
+                                cv2.fillPoly(mask, [zone.polygon], 255)
+                                x, y, bw, bh = cv2.boundingRect(zone.polygon)
+                                if bw > 8 and bh > 8:
+                                    gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
+                                    crop = gray[y:y + bh, x:x + bw]
+                                    crop_mask = mask[y:y + bh, x:x + bw]
+                                    normalized = cv2.resize(cv2.bitwise_and(crop, crop, mask=crop_mask), (96, 96))
+                                    baseline_key = f"{zone_key}:door"
+                                    if baseline_key not in self.door_baselines:
+                                        self.door_baselines[baseline_key] = normalized
+                                    diff = cv2.absdiff(normalized, self.door_baselines[baseline_key])
+                                    change_ratio = float(np.count_nonzero(diff > 35) / diff.size)
+                                    change_threshold = float(thresholds.get("door_change_threshold", 0.18))
+                                    if change_ratio >= change_threshold:
+                                        started = self.door_open_since.setdefault(baseline_key, time.monotonic())
+                                        duration = time.monotonic() - started
+                                        threshold = float(thresholds.get("door_open_threshold_seconds", 60))
+                                        if duration >= threshold:
+                                            triggered_events.append({
+                                                "type": AlertType.DOOR_LEFT_OPEN,
+                                                "title": "Door Left Open",
+                                                "description": f"Door area {zone_name} appears open for {int(duration)} seconds.",
+                                                "dedupe_key": f"door:{zone_name}",
+                                                "zone_name": zone_name,
+                                                "duration_seconds": int(duration),
+                                                "threshold_seconds": threshold,
+                                                "change_ratio": round(change_ratio, 4),
+                                            })
+                                    else:
+                                        self.door_open_since.pop(baseline_key, None)
                                 
                         # Populate YOLO detections for Live View
                         yolo_objects = []
@@ -232,7 +340,7 @@ class IntrusionService:
                             
                         RTSPService.last_yolo_detections[cam_id] = yolo_objects
                         
-                        if is_intrusion:
+                        if triggered_events:
                             now = time.monotonic()
                             last_alert = self.last_alert_time.get(cam_id, 0)
                             
@@ -244,11 +352,6 @@ class IntrusionService:
                                 # Build friendly labels with class name and confidence score
                                 class_names = results[0].names
                                 labels = []
-                                import os
-                                aws_key = os.getenv("AWS_ACCESS_KEY_ID")
-                                aws_secret = os.getenv("AWS_SECRET_ACCESS_KEY")
-                                is_aws_configured = bool(aws_key and aws_key.strip()) and bool(aws_secret and aws_secret.strip())
-                                
                                 for i in range(len(detections)):
                                     # Only use detections in the zone for the alert image
                                     x1, y1, x2, y2 = map(int, detections.xyxy[i])
@@ -262,7 +365,7 @@ class IntrusionService:
                                 # Draw polygon and bounding boxes for the alert image
                                 box_annotator = sv.BoxAnnotator(thickness=2)
                                 frame = box_annotator.annotate(scene=frame, detections=detections, labels=labels)
-                                for z, z_name in zones:
+                                for z, z_name, *_ in zones:
                                     # Simple drawing of polygon
                                     cv2.polylines(frame, [z.polygon], isClosed=True, color=(0, 0, 255), thickness=3)
                                     # Optional: Draw zone name
@@ -271,58 +374,27 @@ class IntrusionService:
                                 _, buffer = cv2.imencode('.jpg', frame, [cv2.IMWRITE_JPEG_QUALITY, 85])
                                 img_bytes = buffer.tobytes()
                                 
-                                alert_id_str = str(uuid.uuid4())
-                                
-                                # Save alert to database
-                                async def save_alert():
-                                    try:
-                                        async with async_session() as session:
-                                            new_alert = Alert(
-                                                id=alert_id_str,
-                                                type=AlertType.INTRUSION,
-                                                severity=AlertSeverity.CRITICAL,
-                                                title="Intrusion Detected",
-                                                description=f"An object or person was detected entering {', '.join(triggered_zone_names) or 'a restricted zone'}.",
-                                                camera_id=cam_id,
-                                                image_data=img_bytes,
-                                                acknowledged=False
-                                            )
-                                            session.add(new_alert)
-                                            await session.commit()
-                                            
-                                            await ws_manager.broadcast({
-                                                "type": "new_alert",
-                                                "data": {
-                                                    "id": alert_id_str,
-                                                    "type": new_alert.type.value,
-                                                    "title": new_alert.title,
-                                                    "description": new_alert.description,
-                                                    "severity": new_alert.severity.value,
-                                                    "camera_id": cam_id,
-                                                    "acknowledged": False,
-                                                    "has_image": True,
-                                                    "created_at": datetime.utcnow().isoformat(),
-                                                    "updated_at": datetime.utcnow().isoformat()
-                                                }
-                                            })
-                                    except Exception as db_err:
-                                        logger.error(f"[Intrusion] Failed to save alert to DB: {db_err}")
-                                
-                                asyncio.create_task(save_alert())
-                                
-                                # Trigger WA notification
-                                asyncio.create_task(
-                                    send_alert_notification(
-                                        alert_id=alert_id_str,
-                                        alert_title="Intrusion Detected",
-                                        alert_description=f"An object or person was detected entering {', '.join(triggered_zone_names) or 'a restricted zone'}.",
-                                        severity="critical",
-                                        alert_type="intrusion",
-                                        camera_name=cam_name,
-                                        timestamp=datetime.utcnow(),
-                                        face_image_bytes=img_bytes
-                                    )
-                                )
+                                async with async_session() as session:
+                                    for event in triggered_events:
+                                        await create_or_update_active_alert(
+                                            session,
+                                            alert_type=event["type"],
+                                            severity=AlertSeverity.CRITICAL,
+                                            title=event["title"],
+                                            description=event["description"],
+                                            camera_id=cam_id,
+                                            dedupe_key=event["dedupe_key"],
+                                            image_data=img_bytes,
+                                            camera_name=cam_name,
+                                            metadata={
+                                                "capability": event["type"].value,
+                                                **{
+                                                    k: v
+                                                    for k, v in event.items()
+                                                    if k not in {"type", "title", "description"}
+                                                },
+                                            },
+                                        )
 
                 # Throttle
                 elapsed = time.monotonic() - start_time
