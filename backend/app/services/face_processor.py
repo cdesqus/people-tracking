@@ -53,7 +53,7 @@ def _create_camera_capture(stream_url: str):
     os.environ.pop("OPENCV_FFMPEG_THREADS", None)
     # Decoder errors are handled by ret/frame validation below. Keep FFmpeg's
     # repetitive macroblock/sws warnings from flooding container logs.
-    os.environ["OPENCV_FFMPEG_LOGLEVEL"] = "8"
+    os.environ.setdefault("OPENCV_FFMPEG_LOGLEVEL", "-8")
     # OpenCV uses the singular *_MSEC names. Some distro builds do not expose
     # these properties at all, so construct the capture without parameters
     # instead of letting every camera worker thread crash.

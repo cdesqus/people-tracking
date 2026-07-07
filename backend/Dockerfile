@@ -2,6 +2,10 @@ FROM python:3.10-slim
 
 WORKDIR /app
 
+ENV OPENCV_FFMPEG_CAPTURE_OPTIONS="rtsp_transport;tcp|timeout;5000000" \
+    OPENCV_FFMPEG_LOGLEVEL="-8" \
+    OPENCV_LOG_LEVEL="ERROR"
+
 # Install system dependencies
 # libgomp1  : required by ONNX Runtime (InsightFace) on CPU
 # libgl1    : required by OpenCV

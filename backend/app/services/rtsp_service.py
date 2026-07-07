@@ -20,7 +20,7 @@ def configure_ffmpeg_capture_options() -> None:
         "OPENCV_FFMPEG_CAPTURE_OPTIONS",
         "rtsp_transport;tcp|timeout;5000000",
     )
-    os.environ.setdefault("OPENCV_FFMPEG_LOGLEVEL", "8")
+    os.environ.setdefault("OPENCV_FFMPEG_LOGLEVEL", "-8")
     os.environ.pop("OPENCV_FFMPEG_THREADS", None)
 
 
