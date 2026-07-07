@@ -53,8 +53,7 @@ class IntrusionService:
     async def start(self):
         """Start the background manager to monitor cameras."""
         self.is_running = True
-        self.load_model()
-        logger.info("[Intrusion] Intrusion Service started.")
+        logger.info("[Intrusion] Intrusion Service started (YOLO lazy-load enabled).")
         
         while self.is_running:
             try:
@@ -146,8 +145,16 @@ class IntrusionService:
 
                         # Start task if not running
                         if cam.id not in self.camera_tasks or self.camera_tasks[cam.id].done():
+                            analytics_stream_url = cam.sub_stream_url or cam.stream_url
+                            analytics_stream_key = f"{cam.id}:sub" if cam.sub_stream_url else cam.id
                             self.camera_tasks[cam.id] = asyncio.create_task(
-                                self._monitor_camera(cam.id, cam.name, cam.stream_url, resolution_wh)
+                                self._monitor_camera(
+                                    cam.id,
+                                    cam.name,
+                                    analytics_stream_url,
+                                    resolution_wh,
+                                    analytics_stream_key,
+                                )
                             )
                             logger.info(f"[Intrusion] Started monitoring task for camera {cam.name}")
                             
@@ -165,7 +172,7 @@ class IntrusionService:
                     del self.camera_capabilities[cam_id]
                 logger.info(f"[Intrusion] Stopped monitoring task for camera {cam_id}")
 
-    async def _monitor_camera(self, cam_id: str, cam_name: str, stream_url: str, resolution_wh: tuple):
+    async def _monitor_camera(self, cam_id: str, cam_name: str, stream_url: str, resolution_wh: tuple, stream_key: str):
         """Background task that processes RTSP stream at low FPS."""
         fps_target = 3  # Target FPS for CPU inference
         frame_time = 1.0 / fps_target
@@ -176,7 +183,7 @@ class IntrusionService:
                 
                 # We use get_snapshot from RTSPService to avoid keeping continuous connections open if network is flaky
                 # Alternatively, use a persistent cv2.VideoCapture loop here. For simplicity and reliability, get_snapshot:
-                snapshot_bytes = RTSPService.get_snapshot(stream_url, jpeg_quality=80, camera_id=cam_id)
+                snapshot_bytes = RTSPService.get_snapshot(stream_url, jpeg_quality=80, camera_id=stream_key)
                 
                 if snapshot_bytes:
                     nparr = np.frombuffer(snapshot_bytes, np.uint8)

@@ -15,6 +15,15 @@ from app.utils.rtsp_config import get_brand_config, RTSP_FORMATS
 logger = logging.getLogger(__name__)
 
 
+def configure_ffmpeg_capture_options() -> None:
+    os.environ.setdefault(
+        "OPENCV_FFMPEG_CAPTURE_OPTIONS",
+        "rtsp_transport;tcp|timeout;5000000",
+    )
+    os.environ.setdefault("OPENCV_FFMPEG_LOGLEVEL", "8")
+    os.environ.pop("OPENCV_FFMPEG_THREADS", None)
+
+
 def _mjpeg_part(jpeg_bytes: bytes, latency_ms: Optional[int] = None) -> bytes:
     """Build one proxy/browser-friendly multipart MJPEG frame."""
     headers = (
@@ -120,6 +129,7 @@ class RTSPService:
         """
         try:
             logger.info(f"Testing RTSP connection: {RTSPService._mask_credentials(rtsp_url)}")
+            configure_ffmpeg_capture_options()
             
             open_timeout_prop = getattr(cv2, "CAP_PROP_OPEN_TIMEOUT_MSEC", None)
             read_timeout_prop = getattr(cv2, "CAP_PROP_READ_TIMEOUT_MSEC", None)
@@ -184,7 +194,9 @@ class RTSPService:
         Uses cached frame if available to prevent connection exhaustion.
         """
         if camera_id:
-            frame = RTSPService.latest_frames.get(camera_id)
+            from app.services.frame_grabber import get_latest_frame
+
+            frame = get_latest_frame(camera_id, rtsp_url, start=True)
             if frame is not None:
                 try:
                     _, buffer = cv2.imencode(
@@ -199,9 +211,7 @@ class RTSPService:
             return None
 
         # Fallback to direct RTSP capture
-        os.environ['OPENCV_FFMPEG_CAPTURE_OPTIONS'] = 'rtsp_transport;tcp|timeout;5000000'
-        os.environ.pop('OPENCV_FFMPEG_THREADS', None)
-        os.environ['OPENCV_FFMPEG_LOGLEVEL'] = '8'
+        configure_ffmpeg_capture_options()
         cap = cv2.VideoCapture(rtsp_url, cv2.CAP_FFMPEG)
         try:
             ret, frame = cap.read()
@@ -228,6 +238,7 @@ class RTSPService:
         fps_limit: int = 15,
         jpeg_quality: int = 60,
         camera_id: Optional[str] = None,
+        overlay_camera_id: Optional[str] = None,
         intrusion_zones: Optional[str] = None,
     ) -> Generator[bytes, None, None]:
         """
@@ -237,10 +248,14 @@ class RTSPService:
         frame_interval = 1.0 / fps_limit
         last_zones_json = None
         zones = []
+        overlay_id = overlay_camera_id or camera_id
 
         # --- CACHED STREAMING PATH ---
         if camera_id:
             logger.info(f"Serving cached MJPEG stream for camera {camera_id}")
+            from app.services.frame_grabber import ensure_reader
+
+            ensure_reader(camera_id, rtsp_url)
             waiting_frame = np.zeros((480, 640, 3), dtype=np.uint8)
             waiting_text = "CONNECTING TO CAMERA..."
             waiting_size = cv2.getTextSize(
@@ -321,10 +336,10 @@ class RTSPService:
                         cv2.putText(frame_copy, text, (tx, ty), font, 1.0, (0, 0, 255), 2, cv2.LINE_AA)
                     else:
                         # Draw face bounding boxes and names if active detections exist
-                        if camera_id in RTSPService.last_detections:
+                        if overlay_id in RTSPService.last_detections:
                             from datetime import datetime
                             now = datetime.utcnow()
-                            detections = RTSPService.last_detections[camera_id]
+                            detections = RTSPService.last_detections[overlay_id]
                             active_detections = [
                                 d for d in detections 
                                 if (now - d["timestamp"]).total_seconds() < 4.0
@@ -376,9 +391,7 @@ class RTSPService:
 
         # --- DIRECT STREAMING FALLBACK PATH ---
         logger.info(f"Serving direct RTSP MJPEG stream for {rtsp_url}")
-        os.environ['OPENCV_FFMPEG_CAPTURE_OPTIONS'] = 'rtsp_transport;tcp|timeout;5000000'
-        os.environ.pop('OPENCV_FFMPEG_THREADS', None)
-        os.environ['OPENCV_FFMPEG_LOGLEVEL'] = '8'
+        configure_ffmpeg_capture_options()
 
         cap = cv2.VideoCapture(rtsp_url, cv2.CAP_FFMPEG)
 
@@ -422,10 +435,10 @@ class RTSPService:
                             logger.error(f"Error parsing dynamic intrusion zones in direct stream: {e}")
 
                 # Draw face bounding boxes and names if active detections exist
-                if camera_id and camera_id in RTSPService.last_detections:
+                if overlay_id and overlay_id in RTSPService.last_detections:
                     from datetime import datetime
                     now = datetime.utcnow()
-                    detections = RTSPService.last_detections[camera_id]
+                    detections = RTSPService.last_detections[overlay_id]
                     active_detections = [
                         d for d in detections 
                         if (now - d["timestamp"]).total_seconds() < 4.0
@@ -456,10 +469,10 @@ class RTSPService:
                         cv2.putText(frame, label, (left + 5, top - 5), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (255, 255, 255), 1, cv2.LINE_AA)
                         
                 # Draw YOLO bounding boxes
-                if camera_id and camera_id in RTSPService.last_yolo_detections:
+                if overlay_id and overlay_id in RTSPService.last_yolo_detections:
                     from datetime import datetime
                     now = datetime.utcnow()
-                    yolo_detections = RTSPService.last_yolo_detections[camera_id]
+                    yolo_detections = RTSPService.last_yolo_detections[overlay_id]
                     active_yolo = [
                         d for d in yolo_detections 
                         if (now - d["timestamp"]).total_seconds() < 4.0

@@ -69,6 +69,15 @@ async def init_db():
                 except Exception as e:
                     print(f"Migration warning cameras intrusion_zones: {e}")
 
+                for ddl in [
+                    "ALTER TABLE cameras ADD COLUMN IF NOT EXISTS main_stream_url VARCHAR(500);",
+                    "ALTER TABLE cameras ADD COLUMN IF NOT EXISTS sub_stream_url VARCHAR(500);",
+                ]:
+                    try:
+                        await session.execute(text(ddl))
+                    except Exception as e:
+                        print(f"Migration warning cameras stream profiles: {e}")
+
                 try:
                     await session.execute(text("ALTER TABLE cameras ADD COLUMN IF NOT EXISTS ai_capabilities JSONB;"))
                 except Exception as e:
@@ -187,6 +196,15 @@ async def init_db():
                     await session.execute(text("ALTER TABLE cameras ADD COLUMN intrusion_zones TEXT;"))
                 except Exception:
                     pass
+
+                for ddl in [
+                    "ALTER TABLE cameras ADD COLUMN main_stream_url VARCHAR(500);",
+                    "ALTER TABLE cameras ADD COLUMN sub_stream_url VARCHAR(500);",
+                ]:
+                    try:
+                        await session.execute(text(ddl))
+                    except Exception:
+                        pass
                     
                 try:
                     await session.execute(text("ALTER TABLE cameras ADD COLUMN ai_capabilities JSON;"))

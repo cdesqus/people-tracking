@@ -27,6 +27,8 @@ class CameraBase(BaseModel):
 class CameraCreate(CameraBase):
     """Create camera with RTSP configuration"""
     stream_url: Optional[str] = None  # Will be generated from RTSP config
+    main_stream_url: Optional[str] = None
+    sub_stream_url: Optional[str] = None
     rtsp_config: Optional[RTSPConfig] = None
     brand: Optional[str] = None
     rtsp_ip: Optional[str] = None
@@ -44,6 +46,8 @@ class CameraUpdate(BaseModel):
     fps: Optional[int] = None
     branch: Optional[str] = None
     stream_url: Optional[str] = None
+    main_stream_url: Optional[str] = None
+    sub_stream_url: Optional[str] = None
     brand: Optional[str] = None
     rtsp_ip: Optional[str] = None
     rtsp_port: Optional[int] = None
@@ -59,6 +63,8 @@ class CameraResponse(CameraBase):
     id: str
     status: str
     stream_url: str
+    main_stream_url: Optional[str] = None
+    sub_stream_url: Optional[str] = None
     brand: Optional[str] = None
     rtsp_ip: Optional[str] = None
     rtsp_port: Optional[int] = None

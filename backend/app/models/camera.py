@@ -19,6 +19,8 @@ class Camera(Base):
     location = Column(String(255), nullable=False)
     status = Column(Enum(CameraStatus), default=CameraStatus.INACTIVE)
     stream_url = Column(String(500), nullable=False)
+    main_stream_url = Column(String(500), nullable=True)
+    sub_stream_url = Column(String(500), nullable=True)
     resolution = Column(String(50))
     fps = Column(Integer, default=30)
     branch = Column(String(100), nullable=True, default="br-hq")

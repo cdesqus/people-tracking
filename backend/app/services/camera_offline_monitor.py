@@ -65,7 +65,7 @@ class CameraOfflineMonitor:
         result = await loop.run_in_executor(
             None,
             RTSPService.test_rtsp_connection,
-            camera.stream_url,
+            camera.main_stream_url or camera.stream_url,
             timeout,
         )
         connected = result.get("status") == "connected"

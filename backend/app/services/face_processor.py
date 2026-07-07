@@ -269,34 +269,18 @@ def _crop_face_from_frame(frame, bounding_box: dict, padding: float = 0.20):
 
 def _open_and_read_frame(camera_id: str, stream_url: str):
     """Get the latest frame from the background grabber thread with watchdog self-healing."""
+    from app.services.frame_grabber import ensure_reader
+
     now = time.time()
     last_update = RTSPService.latest_frame_times.get(camera_id, 0)
-    thread_is_alive = camera_id in _camera_threads and _camera_threads[camera_id].is_alive()
-    
-    # If the thread is dead, OR if it has been alive but hasn't updated the frame in 10 seconds:
-    if not thread_is_alive or (now - last_update > 10.0):
-        if thread_is_alive:
-            logger.warning(f"Watchdog: Camera thread for {camera_id} is hung (no update for {now - last_update:.1f}s). Restarting...")
-        else:
-            logger.info(f"Starting frame grabber thread for camera {camera_id}")
-            
-        # Invalidate the old generation before starting the replacement. A
-        # boolean alone is unsafe because setting it True for the new thread
-        # also revives the old thread.
-        generation = _camera_generations.get(camera_id, 0) + 1
-        _camera_generations[camera_id] = generation
-        _camera_active[camera_id] = True
-        RTSPService.latest_frame_times[camera_id] = now
-        t = threading.Thread(
-            target=_camera_worker,
-            args=(camera_id, stream_url, generation),
-            daemon=True,
+    if now - last_update > 10.0:
+        logger.warning(
+            f"Watchdog: shared frame reader for {camera_id} has no fresh frame "
+            f"for {now - last_update:.1f}s; ensuring reader is running"
         )
-        _camera_threads[camera_id] = t
-        t.start()
-        # Give it a moment to fetch the first frame
-        time.sleep(1.0)
-        
+    ensure_reader(camera_id, stream_url)
+    time.sleep(0.2)
+
     frame = RTSPService.latest_frames.get(camera_id)
     if frame is not None:
         return True, frame.copy()
@@ -571,8 +555,9 @@ async def start_face_processor():
                     # Run the blocking OpenCV stream opening and frame reading in a background thread executor
                     # to prevent blocking the main asyncio event loop (which causes login/HTTP requests to freeze).
                     loop = asyncio.get_running_loop()
+                    face_stream_url = camera.main_stream_url or camera.stream_url
                     ret, frame = await loop.run_in_executor(
-                        None, _open_and_read_frame, camera.id, camera.stream_url
+                        None, _open_and_read_frame, f"{camera.id}:main", face_stream_url
                     )
 
                     if not ret or frame is None:

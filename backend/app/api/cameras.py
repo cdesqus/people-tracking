@@ -1,3 +1,5 @@
+import asyncio
+
 from fastapi import APIRouter, Depends, HTTPException, Query
 from fastapi.responses import StreamingResponse
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -18,6 +20,18 @@ from app.services.rtsp_service import RTSPService
 from app.utils.rtsp_config import get_brand_config, get_supported_brands
 
 router = APIRouter()
+
+
+def _main_stream_url(camera) -> str:
+    return camera.main_stream_url or camera.stream_url
+
+
+def _preview_stream_url(camera) -> str:
+    return camera.sub_stream_url or camera.stream_url
+
+
+def _preview_stream_key(camera) -> str:
+    return f"{camera.id}:sub" if camera.sub_stream_url else camera.id
 
 
 @router.get("/brands", response_model=dict[str, dict])
@@ -203,7 +217,9 @@ async def stream_camera(
     if not camera:
         raise HTTPException(status_code=404, detail="Camera not found")
     
-    if not camera.stream_url:
+    stream_url = _preview_stream_url(camera)
+    stream_key = _preview_stream_key(camera)
+    if not stream_url:
         raise HTTPException(status_code=400, detail="Camera has no stream URL configured")
     
     # Update zone cache with latest database values
@@ -211,8 +227,9 @@ async def stream_camera(
 
     return StreamingResponse(
         RTSPService.generate_mjpeg_stream(
-            camera.stream_url,
-            camera_id=camera.id,
+            stream_url,
+            camera_id=stream_key,
+            overlay_camera_id=camera.id,
             intrusion_zones=camera.intrusion_zones
         ),
         media_type="multipart/x-mixed-replace; boundary=frame",
@@ -241,7 +258,9 @@ async def get_camera_snapshot(
     if not camera:
         raise HTTPException(status_code=404, detail="Camera not found")
     
-    if not camera.stream_url:
+    stream_url = _preview_stream_url(camera)
+    stream_key = _preview_stream_key(camera)
+    if not stream_url:
         raise HTTPException(status_code=400, detail="Camera has no stream URL configured")
     
     import asyncio
@@ -249,7 +268,7 @@ async def get_camera_snapshot(
     loop = asyncio.get_running_loop()
     # Run cv2 operations in threadpool to avoid blocking event loop
     snapshot_bytes = await loop.run_in_executor(
-        None, partial(RTSPService.get_snapshot, camera.stream_url, camera_id=camera.id)
+        None, partial(RTSPService.get_snapshot, stream_url, camera_id=stream_key)
     )
     
     if not snapshot_bytes:

@@ -59,6 +59,8 @@ services:
       - FACE_CROWD_MODE=${FACE_CROWD_MODE:-auto}
       - FACE_CROWD_MIN_WIDTH=${FACE_CROWD_MIN_WIDTH:-1280}
       - FACE_TILE_OVERLAP=${FACE_TILE_OVERLAP:-0.15}
+      - "OPENCV_FFMPEG_CAPTURE_OPTIONS=${OPENCV_FFMPEG_CAPTURE_OPTIONS:-rtsp_transport;tcp|timeout;5000000}"
+      - OPENCV_FFMPEG_LOGLEVEL=${OPENCV_FFMPEG_LOGLEVEL:-8}
     depends_on:
       postgres:
         condition: service_healthy

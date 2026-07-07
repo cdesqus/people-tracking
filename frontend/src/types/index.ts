@@ -4,6 +4,8 @@ export interface Camera {
   location: string;
   status: 'active' | 'inactive' | 'error';
   stream_url: string;
+  main_stream_url?: string;
+  sub_stream_url?: string;
   resolution: string;
   fps: number;
   branch?: string;

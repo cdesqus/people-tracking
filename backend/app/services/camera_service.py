@@ -67,6 +67,8 @@ class CameraService:
             name=camera_data.name,
             location=camera_data.location,
             stream_url=stream_url,
+            main_stream_url=camera_data.main_stream_url or stream_url,
+            sub_stream_url=camera_data.sub_stream_url,
             resolution=camera_data.resolution,
             fps=camera_data.fps,
             branch=camera_data.branch,
@@ -222,7 +224,7 @@ class CameraService:
         
         loop = asyncio.get_running_loop()
         result = await loop.run_in_executor(
-            None, RTSPService.test_rtsp_connection, camera.stream_url, timeout
+            None, RTSPService.test_rtsp_connection, camera.main_stream_url or camera.stream_url, timeout
         )
         
         # Update camera status based on test result

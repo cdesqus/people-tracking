@@ -22,6 +22,8 @@ interface CameraFormData {
   name: string;
   location: string;
   stream_url: string;
+  main_stream_url: string;
+  sub_stream_url: string;
   resolution: string;
   fps: string;
   status: 'active' | 'inactive' | 'error';
@@ -76,6 +78,8 @@ const CamerasPage: React.FC = () => {
     name: '',
     location: '',
     stream_url: '',
+    main_stream_url: '',
+    sub_stream_url: '',
     resolution: '1920x1080',
     fps: '30',
     status: 'inactive',
@@ -112,6 +116,8 @@ const CamerasPage: React.FC = () => {
               location: 'Building A, Ground Floor',
               status: 'active',
               stream_url: 'rtsp://192.168.18.204:8554/live/main_lobby',
+              main_stream_url: 'rtsp://192.168.18.204:8554/live/main_lobby',
+              sub_stream_url: '',
               resolution: '1920x1080',
               fps: 30,
               branch: 'br-hq',
@@ -125,6 +131,8 @@ const CamerasPage: React.FC = () => {
               location: 'Outdoor Area Gates',
               status: 'active',
               stream_url: 'rtsp://192.168.18.204:8554/live/parking_exit',
+              main_stream_url: 'rtsp://192.168.18.204:8554/live/parking_exit',
+              sub_stream_url: '',
               resolution: '1920x1080',
               fps: 15,
               branch: 'br-bdg',
@@ -138,6 +146,8 @@ const CamerasPage: React.FC = () => {
               location: 'Building B, Floor 3',
               status: 'error',
               stream_url: 'rtsp://192.168.18.204:8554/live/server_room',
+              main_stream_url: 'rtsp://192.168.18.204:8554/live/server_room',
+              sub_stream_url: '',
               resolution: '1280x720',
               fps: 30,
               branch: 'br-sby',
@@ -196,6 +206,8 @@ const CamerasPage: React.FC = () => {
       name: '',
       location: '',
       stream_url: '',
+      main_stream_url: '',
+      sub_stream_url: '',
       resolution: '1920x1080',
       fps: '30',
       status: 'active',
@@ -212,6 +224,8 @@ const CamerasPage: React.FC = () => {
       name: camera.name,
       location: camera.location,
       stream_url: camera.stream_url,
+      main_stream_url: camera.main_stream_url || camera.stream_url || '',
+      sub_stream_url: camera.sub_stream_url || '',
       resolution: camera.resolution || '1920x1080',
       fps: camera.fps?.toString() || '30',
       status: camera.status || 'inactive',
@@ -240,6 +254,8 @@ const CamerasPage: React.FC = () => {
       name: formData.name,
       location: formData.location,
       stream_url: formData.stream_url,
+      main_stream_url: formData.main_stream_url || formData.stream_url,
+      sub_stream_url: formData.sub_stream_url || null,
       resolution: formData.resolution,
       fps: parseInt(formData.fps) || 30,
       status: formData.status,
@@ -567,6 +583,22 @@ const CamerasPage: React.FC = () => {
             hasError={!!errors.stream_url}
             error={errors.stream_url}
             required
+          />
+
+          <Input
+            label="Main Stream URL (Face Recognition)"
+            name="main_stream_url"
+            value={formData.main_stream_url}
+            onChange={handleInputChange}
+            placeholder="Optional. Defaults to Stream URL. Use 1080p main stream for face."
+          />
+
+          <Input
+            label="Sub Stream URL (Preview / YOLO)"
+            name="sub_stream_url"
+            value={formData.sub_stream_url}
+            onChange={handleInputChange}
+            placeholder="Optional. Use lower-res substream for preview, zone analytics."
           />
 
           <div className="grid grid-cols-2 gap-4">
