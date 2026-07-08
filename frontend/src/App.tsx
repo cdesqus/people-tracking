@@ -25,6 +25,11 @@ const App: React.FC = () => {
   const { isLoading: authLoading } = useAppSelector((state) => state.auth);
   const [initializing, setInitializing] = useState(true);
 
+  useEffect(() => {
+    document.documentElement.classList.remove('dark');
+    document.documentElement.style.colorScheme = 'light';
+  }, []);
+
   // Restore user session if token exists
   useEffect(() => {
     const restoreSession = async () => {
@@ -67,7 +72,7 @@ const App: React.FC = () => {
 
   if (initializing || authLoading) {
     return (
-      <div className="flex items-center justify-center h-screen bg-slate-50 text-white">
+      <div className="flex items-center justify-center h-screen bg-slate-50 text-slate-900">
         <div className="flex flex-col items-center gap-4">
           <Loader className="w-8 h-8 animate-spin text-blue-500" />
           <p className="text-slate-500 font-medium text-sm">Initializing Sentinel...</p>
