@@ -3,19 +3,13 @@ import { Outlet } from 'react-router-dom';
 import Navbar from './Navbar';
 import Sidebar from './Sidebar';
 import Footer from './Footer';
-import { useAppSelector } from '@store/store';
 
 const Layout: React.FC = () => {
-  const theme = useAppSelector((state) => state.ui.theme);
-
-  // Apply theme class to documentElement
+  // Force light UI. The app design is intentionally bright for CCTV operations.
   useEffect(() => {
-    if (theme === 'dark') {
-      document.documentElement.classList.add('dark');
-    } else {
-      document.documentElement.classList.remove('dark');
-    }
-  }, [theme]);
+    document.documentElement.classList.remove('dark');
+    document.documentElement.style.colorScheme = 'light';
+  }, []);
 
   return (
     <div className="flex flex-col h-screen bg-gray-50 dark:bg-slate-50 text-gray-900 dark:text-slate-800 transition-colors duration-200 overflow-hidden">

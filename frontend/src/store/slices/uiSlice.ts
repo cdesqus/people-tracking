@@ -2,7 +2,7 @@ import { createSlice, PayloadAction } from '@reduxjs/toolkit';
 
 interface UIState {
   sidebarOpen: boolean;
-  theme: 'light' | 'dark';
+  theme: 'light';
   notificationsEnabled: boolean;
   soundEnabled: boolean;
   showNotification: {
@@ -14,7 +14,7 @@ interface UIState {
 
 const initialState: UIState = {
   sidebarOpen: true,
-  theme: 'dark',
+  theme: 'light',
   notificationsEnabled: true,
   soundEnabled: true,
   showNotification: {
@@ -35,12 +35,12 @@ const uiSlice = createSlice({
       state.sidebarOpen = action.payload;
     },
 
-    setTheme: (state, action: PayloadAction<'light' | 'dark'>) => {
-      state.theme = action.payload;
+    setTheme: (state, _action: PayloadAction<'light' | 'dark'>) => {
+      state.theme = 'light';
     },
 
     toggleTheme: (state) => {
-      state.theme = state.theme === 'light' ? 'dark' : 'light';
+      state.theme = 'light';
     },
 
     setNotificationsEnabled: (state, action: PayloadAction<boolean>) => {

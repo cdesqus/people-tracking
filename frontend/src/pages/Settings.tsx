@@ -1,12 +1,11 @@
 import React from 'react';
 import { useAppDispatch, useAppSelector } from '@store/store';
-import { setTheme, setNotificationsEnabled, setSoundEnabled } from '@store/slices/uiSlice';
+import { setNotificationsEnabled, setSoundEnabled } from '@store/slices/uiSlice';
 import { Card, Button } from '@components/common';
 import toast from 'react-hot-toast';
 
 const Settings: React.FC = () => {
   const dispatch = useAppDispatch();
-  const theme = useAppSelector((state) => state.ui.theme);
   const notificationsEnabled = useAppSelector((state) => state.ui.notificationsEnabled);
   const soundEnabled = useAppSelector((state) => state.ui.soundEnabled);
 
@@ -19,7 +18,7 @@ const Settings: React.FC = () => {
       <div>
         <h1 className="text-3xl font-bold text-gray-900 dark:text-slate-900">Settings</h1>
         <p className="text-gray-600 dark:text-slate-500 mt-1">
-          Configure application settings, theme preferences, and alerts
+          Configure application settings and alerts
         </p>
       </div>
 
@@ -42,16 +41,11 @@ const Settings: React.FC = () => {
               </div>
               <div>
                 <label className="block text-sm font-medium text-gray-700 dark:text-slate-600 mb-1.5">
-                  Theme Preference
+                  Theme
                 </label>
-                <select
-                  value={theme}
-                  onChange={(e) => dispatch(setTheme(e.target.value as 'light' | 'dark'))}
-                  className="w-full px-3 py-2 border border-gray-300 dark:border-slate-650 rounded-lg bg-white dark:bg-slate-100 text-gray-900 dark:text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-colors cursor-pointer"
-                >
-                  <option value="light">Light Theme</option>
-                  <option value="dark">Dark Theme (Premium)</option>
-                </select>
+                <div className="w-full px-3 py-2 border border-gray-300 rounded-lg bg-white text-gray-900">
+                  Light Theme
+                </div>
               </div>
             </div>
           </div>
