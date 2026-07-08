@@ -16,6 +16,7 @@ from app.schemas.camera import (
     EmptyEnvelope
 )
 from app.services.camera_service import CameraService
+from app.services.intrusion_service import intrusion_service
 from app.services.rtsp_service import RTSPService
 from app.utils.rtsp_config import get_brand_config, get_supported_brands
 
@@ -304,6 +305,27 @@ async def test_camera_connection(
     if result["status"] == "error" and "not found" in result.get("message", "").lower():
         raise HTTPException(status_code=404, detail=result["message"])
     return result
+
+
+@router.post("/{camera_id}/door-baseline/reset")
+async def reset_camera_door_baseline(
+    camera_id: str,
+    zone_name: str | None = Query(default=None),
+    db: AsyncSession = Depends(get_db),
+):
+    """Reset door-left-open baseline for a camera or one specific door zone."""
+    camera = await CameraService.get_camera(db, camera_id)
+    if not camera:
+        raise HTTPException(status_code=404, detail="Camera not found")
+
+    reset_count = intrusion_service.reset_door_baselines(camera_id, zone_name)
+    return {
+        "success": True,
+        "message": "Door baseline reset. The next processed frame will become the new reference.",
+        "camera_id": camera_id,
+        "zone_name": zone_name,
+        "reset_count": reset_count,
+    }
 
 
 @router.post("/test-all/connections")

@@ -24,6 +24,7 @@ interface Zone {
   crowd_threshold?: number;
   crowd_duration_seconds?: number;
   door_open_threshold_seconds?: number;
+  door_change_threshold?: number;
 }
 
 const DEFAULT_AI_CAPABILITIES: Record<string, boolean> = {
@@ -47,6 +48,7 @@ const ZoneEditor: React.FC<ZoneEditorProps> = ({ isOpen, onClose, onSave, camera
   const [zones, setZones] = useState<Zone[]>([]);
   const [isDrawing, setIsDrawing] = useState(false);
   const [imgSize, setImgSize] = useState({ width: 0, height: 0 });
+  const [baselineResetMessage, setBaselineResetMessage] = useState<string | null>(null);
 
   // Load existing zones when opened
   useEffect(() => {
@@ -67,6 +69,7 @@ const ZoneEditor: React.FC<ZoneEditorProps> = ({ isOpen, onClose, onSave, camera
               crowd_threshold: z.crowd_threshold,
               crowd_duration_seconds: z.crowd_duration_seconds,
               door_open_threshold_seconds: z.door_open_threshold_seconds,
+              door_change_threshold: z.door_change_threshold,
             };
           });
           setZones(mappedZones);
@@ -184,7 +187,8 @@ const ZoneEditor: React.FC<ZoneEditorProps> = ({ isOpen, onClose, onSave, camera
             loitering_threshold_seconds: zoneType === 'loitering_area' ? 60 : undefined,
             crowd_threshold: zoneType === 'crowd_area' ? 5 : undefined,
             crowd_duration_seconds: zoneType === 'crowd_area' ? 10 : undefined,
-            door_open_threshold_seconds: zoneType === 'door_area' ? 60 : undefined,
+            door_open_threshold_seconds: zoneType === 'door_area' ? 30 : undefined,
+            door_change_threshold: zoneType === 'door_area' ? 0.12 : undefined,
           }]);
           setPoints([]);
           setIsDrawing(false);
@@ -212,6 +216,25 @@ const ZoneEditor: React.FC<ZoneEditorProps> = ({ isOpen, onClose, onSave, camera
     onClose();
   };
 
+  const resetDoorBaseline = async (zoneName?: string) => {
+    if (!camera) return;
+    setBaselineResetMessage(null);
+    const query = zoneName ? `?zone_name=${encodeURIComponent(zoneName)}` : '';
+    try {
+      const response = await fetch(`${API_BASE_URL}/cameras/${camera.id}/door-baseline/reset${query}`, {
+        method: 'POST',
+      });
+      if (!response.ok) throw new Error('Reset failed');
+      setBaselineResetMessage(
+        zoneName
+          ? `Baseline reset for ${zoneName}. Keep the door in normal/closed state for a few seconds.`
+          : 'Door baselines reset. Keep doors in normal/closed state for a few seconds.'
+      );
+    } catch {
+      setBaselineResetMessage('Failed to reset door baseline. Please try again.');
+    }
+  };
+
   if (!camera) return null;
   const cameraCapabilities = { ...DEFAULT_AI_CAPABILITIES, ...(camera.ai_capabilities || {}) };
 
@@ -225,6 +248,11 @@ const ZoneEditor: React.FC<ZoneEditorProps> = ({ isOpen, onClose, onSave, camera
         <p className="text-xs text-blue-700 bg-blue-50 border border-blue-100 rounded-lg px-3 py-2">
           Note: zone rules only run when the matching AI feature is checked on this camera.
         </p>
+        {baselineResetMessage && (
+          <p className="text-xs text-emerald-700 bg-emerald-50 border border-emerald-100 rounded-lg px-3 py-2">
+            {baselineResetMessage}
+          </p>
+        )}
 
         <div className="relative border border-gray-300 dark:border-slate-300 rounded-lg overflow-hidden bg-black flex justify-center items-center">
           <div className="relative">
@@ -246,7 +274,7 @@ const ZoneEditor: React.FC<ZoneEditorProps> = ({ isOpen, onClose, onSave, camera
         </div>
 
         {zones.length > 0 && (
-          <div className="mt-2 max-h-32 overflow-y-auto">
+          <div className="mt-2 max-h-64 overflow-y-auto">
             <h4 className="text-sm font-semibold mb-2 text-gray-700 dark:text-slate-300">Configured Zones:</h4>
             <div className="space-y-2">
               {zones.map((z, idx) => (
@@ -279,7 +307,8 @@ const ZoneEditor: React.FC<ZoneEditorProps> = ({ isOpen, onClose, onSave, camera
                           loitering_threshold_seconds: type === 'loitering_area' ? (newZones[idx].loitering_threshold_seconds || 60) : undefined,
                           crowd_threshold: type === 'crowd_area' ? (newZones[idx].crowd_threshold || 5) : undefined,
                           crowd_duration_seconds: type === 'crowd_area' ? (newZones[idx].crowd_duration_seconds || 10) : undefined,
-                          door_open_threshold_seconds: type === 'door_area' ? (newZones[idx].door_open_threshold_seconds || 60) : undefined,
+                          door_open_threshold_seconds: type === 'door_area' ? (newZones[idx].door_open_threshold_seconds || 30) : undefined,
+                          door_change_threshold: type === 'door_area' ? (newZones[idx].door_change_threshold || 0.12) : undefined,
                         };
                         setZones(newZones);
                       }}
@@ -294,6 +323,48 @@ const ZoneEditor: React.FC<ZoneEditorProps> = ({ isOpen, onClose, onSave, camera
                       <span className="text-[11px] text-amber-600">
                         This zone is saved, but its camera feature is currently disabled.
                       </span>
+                    )}
+                    {z.type === 'door_area' && (
+                      <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 mt-1">
+                        <label className="text-[11px] text-gray-600 dark:text-slate-300">
+                          Alert after (sec)
+                          <input
+                            type="number"
+                            min={5}
+                            max={300}
+                            value={z.door_open_threshold_seconds ?? 30}
+                            onChange={(e) => {
+                              const newZones = [...zones];
+                              newZones[idx].door_open_threshold_seconds = Number(e.target.value) || 30;
+                              setZones(newZones);
+                            }}
+                            className="mt-1 w-full text-xs rounded border border-gray-300 bg-white dark:bg-slate-700 dark:text-white px-2 py-1"
+                          />
+                        </label>
+                        <label className="text-[11px] text-gray-600 dark:text-slate-300">
+                          Sensitivity
+                          <input
+                            type="number"
+                            min={0.03}
+                            max={0.5}
+                            step={0.01}
+                            value={z.door_change_threshold ?? 0.12}
+                            onChange={(e) => {
+                              const newZones = [...zones];
+                              newZones[idx].door_change_threshold = Number(e.target.value) || 0.12;
+                              setZones(newZones);
+                            }}
+                            className="mt-1 w-full text-xs rounded border border-gray-300 bg-white dark:bg-slate-700 dark:text-white px-2 py-1"
+                          />
+                        </label>
+                        <button
+                          type="button"
+                          onClick={() => resetDoorBaseline(z.name)}
+                          className="self-end text-xs rounded border border-blue-200 bg-blue-50 text-blue-700 hover:bg-blue-100 px-2 py-1"
+                        >
+                          Reset Baseline
+                        </button>
+                      </div>
                     )}
                   </div>
                   <button 

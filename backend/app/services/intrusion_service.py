@@ -58,6 +58,7 @@ class IntrusionService:
         self.zone_occupied_since: Dict[str, float] = {}
         self.door_baselines: Dict[str, np.ndarray] = {}
         self.door_open_since: Dict[str, float] = {}
+        self.door_telemetry: Dict[str, dict] = {}
         self.is_running = False
 
     def load_model(self):
@@ -94,6 +95,35 @@ class IntrusionService:
             task.cancel()
         self.camera_tasks.clear()
         logger.info("[Intrusion] Intrusion Service stopped.")
+
+    def reset_door_baselines(self, camera_id: str | None = None, zone_name: str | None = None) -> int:
+        """Reset door baselines so the next processed frame becomes the new reference."""
+        def should_remove(key: str) -> bool:
+            if camera_id and not key.startswith(f"{camera_id}:"):
+                return False
+            if zone_name and f":{zone_name}:door" not in key:
+                return False
+            return True
+
+        keys = [
+            key
+            for key in set(self.door_baselines) | set(self.door_open_since)
+            if should_remove(key)
+        ]
+        for key in keys:
+            self.door_baselines.pop(key, None)
+            self.door_open_since.pop(key, None)
+
+        telemetry_keys = [
+            key
+            for key in self.door_telemetry
+            if (not camera_id or key.startswith(f"{camera_id}:"))
+            and (not zone_name or key.endswith(f":{zone_name}"))
+        ]
+        for key in telemetry_keys:
+            self.door_telemetry.pop(key, None)
+
+        return len(keys)
 
     async def _refresh_cameras(self):
         """Check DB for cameras with intrusion zones and start/stop tasks accordingly."""
@@ -143,8 +173,8 @@ class IntrusionService:
                                 "loitering_threshold_seconds": 60,
                                 "crowd_threshold": 5,
                                 "crowd_duration_seconds": 10,
-                                "door_open_threshold_seconds": 60,
-                                "door_change_threshold": 0.18,
+                                "door_open_threshold_seconds": 30,
+                                "door_change_threshold": 0.12,
                             }
                             
                             points_data = polygon_data
@@ -319,6 +349,24 @@ class IntrusionService:
                                     self.zone_occupied_since.pop(f"{zone_key}:crowd", None)
 
                             if "door_left_open" in rules:
+                                baseline_key = f"{zone_key}:door"
+                                telemetry_key = f"{cam_id}:{zone_name}"
+                                door_threshold = float(thresholds.get("door_open_threshold_seconds", 30))
+                                change_threshold = float(thresholds.get("door_change_threshold", 0.12))
+                                telemetry = {
+                                    "camera_id": cam_id,
+                                    "zone_index": idx,
+                                    "zone_name": zone_name,
+                                    "zone_type": zone_type,
+                                    "baseline_ready": baseline_key in self.door_baselines,
+                                    "change_ratio": None,
+                                    "change_threshold": change_threshold,
+                                    "open_duration_seconds": 0,
+                                    "alert_threshold_seconds": door_threshold,
+                                    "would_alert": False,
+                                    "last_checked_at": datetime.utcnow().isoformat(),
+                                    "state": "checking",
+                                }
                                 mask = np.zeros((h, w), dtype=np.uint8)
                                 cv2.fillPoly(mask, [scaled_polygon], 255)
                                 x, y, bw, bh = cv2.boundingRect(scaled_polygon)
@@ -331,22 +379,32 @@ class IntrusionService:
                                     crop = gray[y1:y2, x1:x2]
                                     crop_mask = mask[y1:y2, x1:x2]
                                     if crop.size == 0 or crop_mask.size == 0:
+                                        telemetry["state"] = "empty_crop"
+                                        self.door_telemetry[telemetry_key] = telemetry
                                         continue
                                     masked_crop = cv2.bitwise_and(crop, crop, mask=crop_mask)
                                     if masked_crop.size == 0:
+                                        telemetry["state"] = "empty_masked_crop"
+                                        self.door_telemetry[telemetry_key] = telemetry
                                         continue
                                     normalized = cv2.resize(masked_crop, (96, 96))
-                                    baseline_key = f"{zone_key}:door"
                                     if baseline_key not in self.door_baselines:
                                         self.door_baselines[baseline_key] = normalized
+                                        telemetry["baseline_ready"] = True
+                                        telemetry["state"] = "baseline_captured"
+                                        self.door_telemetry[telemetry_key] = telemetry
+                                        continue
                                     diff = cv2.absdiff(normalized, self.door_baselines[baseline_key])
                                     change_ratio = float(np.count_nonzero(diff > 35) / diff.size)
-                                    change_threshold = float(thresholds.get("door_change_threshold", 0.18))
+                                    telemetry["baseline_ready"] = True
+                                    telemetry["change_ratio"] = round(change_ratio, 4)
                                     if change_ratio >= change_threshold:
                                         started = self.door_open_since.setdefault(baseline_key, time.monotonic())
                                         duration = time.monotonic() - started
-                                        threshold = float(thresholds.get("door_open_threshold_seconds", 60))
-                                        if duration >= threshold:
+                                        telemetry["open_duration_seconds"] = int(duration)
+                                        telemetry["would_alert"] = duration >= door_threshold
+                                        telemetry["state"] = "open_candidate"
+                                        if duration >= door_threshold:
                                             triggered_events.append({
                                                 "type": AlertType.DOOR_LEFT_OPEN,
                                                 "title": "Door Left Open",
@@ -354,11 +412,16 @@ class IntrusionService:
                                                 "dedupe_key": f"door:{zone_name}",
                                                 "zone_name": zone_name,
                                                 "duration_seconds": int(duration),
-                                                "threshold_seconds": threshold,
+                                                "threshold_seconds": door_threshold,
                                                 "change_ratio": round(change_ratio, 4),
                                             })
                                     else:
                                         self.door_open_since.pop(baseline_key, None)
+                                        telemetry["state"] = "closed_or_unchanged"
+                                    self.door_telemetry[telemetry_key] = telemetry
+                                else:
+                                    telemetry["state"] = "zone_too_small_or_outside_frame"
+                                    self.door_telemetry[telemetry_key] = telemetry
                                 
                         # Populate YOLO detections for Live View
                         yolo_objects = []

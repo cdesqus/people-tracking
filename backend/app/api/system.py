@@ -8,6 +8,7 @@ from app.config import settings
 from app.models.camera import Camera
 from app.models.camera import CameraStatus
 from app.services.camera_capabilities import normalize_ai_capabilities
+from app.services.intrusion_service import intrusion_service
 from app.services.rtsp_service import RTSPService
 
 router = APIRouter()
@@ -117,6 +118,11 @@ async def get_ai_status(db: AsyncSession = Depends(get_db)):
             for detection in yolo_detections
             if now - detection["timestamp"].timestamp() <= 10
         ]
+        door_zones = [
+            telemetry
+            for key, telemetry in intrusion_service.door_telemetry.items()
+            if key.startswith(f"{camera.id}:")
+        ]
 
         items.append({
             "camera_id": camera.id,
@@ -132,6 +138,7 @@ async def get_ai_status(db: AsyncSession = Depends(get_db)):
             "last_yolo_detection_at": (
                 max((d["timestamp"] for d in yolo_detections), default=None)
             ),
+            "door_zones": door_zones,
         })
 
     return {
