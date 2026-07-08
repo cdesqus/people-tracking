@@ -9,6 +9,7 @@ from app.utils.websocket_manager import ws_manager
 from app.services.face_processor import start_face_processor
 from app.services.intrusion_service import intrusion_service
 from app.services.camera_offline_monitor import camera_offline_monitor
+from app.services.retention_service import retention_service
 
 
 @asynccontextmanager
@@ -31,10 +32,14 @@ async def lifespan(app: FastAPI):
 
     # Start camera offline monitor for uptime KPI and camera_offline alerts
     asyncio.create_task(camera_offline_monitor.start())
+
+    # Start retention cleanup scheduler
+    asyncio.create_task(retention_service.start())
     
     yield
     # Shutdown
     print("Shutting down application...")
+    await retention_service.stop()
     await camera_offline_monitor.stop()
     await intrusion_service.stop()
     if hasattr(app.state, "face_processor_task"):

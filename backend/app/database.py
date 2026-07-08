@@ -84,6 +84,16 @@ async def init_db():
                     print(f"Migration warning cameras ai_capabilities: {e}")
 
                 for ddl in [
+                    "ALTER TABLE system_settings ADD COLUMN IF NOT EXISTS obstruction_dark_mean_threshold DOUBLE PRECISION NOT NULL DEFAULT 20.0;",
+                    "ALTER TABLE system_settings ADD COLUMN IF NOT EXISTS obstruction_flat_stddev_threshold DOUBLE PRECISION NOT NULL DEFAULT 10.0;",
+                    "ALTER TABLE system_settings ADD COLUMN IF NOT EXISTS obstruction_consecutive_frames INTEGER NOT NULL DEFAULT 8;",
+                ]:
+                    try:
+                        await session.execute(text(ddl))
+                    except Exception as e:
+                        print(f"Migration warning system_settings obstruction column: {e}")
+
+                for ddl in [
                     "ALTER TABLE alerts ADD COLUMN IF NOT EXISTS first_seen_at TIMESTAMP WITH TIME ZONE;",
                     "ALTER TABLE alerts ADD COLUMN IF NOT EXISTS last_seen_at TIMESTAMP WITH TIME ZONE;",
                     "ALTER TABLE alerts ADD COLUMN IF NOT EXISTS acknowledged_at TIMESTAMP WITH TIME ZONE;",
@@ -210,6 +220,16 @@ async def init_db():
                     await session.execute(text("ALTER TABLE cameras ADD COLUMN ai_capabilities JSON;"))
                 except Exception:
                     pass
+
+                for ddl in [
+                    "ALTER TABLE system_settings ADD COLUMN obstruction_dark_mean_threshold REAL DEFAULT 20.0;",
+                    "ALTER TABLE system_settings ADD COLUMN obstruction_flat_stddev_threshold REAL DEFAULT 10.0;",
+                    "ALTER TABLE system_settings ADD COLUMN obstruction_consecutive_frames INTEGER DEFAULT 8;",
+                ]:
+                    try:
+                        await session.execute(text(ddl))
+                    except Exception:
+                        pass
 
                 for ddl in [
                     "ALTER TABLE alerts ADD COLUMN first_seen_at DATETIME;",

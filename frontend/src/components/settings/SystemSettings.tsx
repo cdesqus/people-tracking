@@ -54,7 +54,7 @@ const SystemSettings: React.FC = () => {
         <div className="space-y-4">
           <div className="flex items-center justify-between p-4 border border-gray-200 dark:border-gray-700 rounded-lg">
             <div>
-              <p className="font-medium text-gray-900 dark:text-slate-900">
+              <p className="font-medium text-gray-900 dark:text-slate-100">
                 Email Notifications
               </p>
               <p className="text-sm text-gray-600 dark:text-slate-500">
@@ -77,7 +77,7 @@ const SystemSettings: React.FC = () => {
 
           <div className="flex items-center justify-between p-4 border border-gray-200 dark:border-gray-700 rounded-lg">
             <div>
-              <p className="font-medium text-gray-900 dark:text-slate-900">
+              <p className="font-medium text-gray-900 dark:text-slate-100">
                 SMS Notifications
               </p>
               <p className="text-sm text-gray-600 dark:text-slate-500">
@@ -100,7 +100,7 @@ const SystemSettings: React.FC = () => {
 
           <div className="flex items-center justify-between p-4 border border-gray-200 dark:border-gray-700 rounded-lg">
             <div>
-              <p className="font-medium text-gray-900 dark:text-slate-900">
+              <p className="font-medium text-gray-900 dark:text-slate-100">
                 Slack Notifications
               </p>
               <p className="text-sm text-gray-600 dark:text-slate-500">
@@ -128,7 +128,7 @@ const SystemSettings: React.FC = () => {
         <div className="space-y-6">
           {/* Confidence Threshold */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-slate-600 mb-2">
+            <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-2">
               Confidence Threshold
             </label>
             <div className="flex items-center gap-4">
@@ -149,7 +149,7 @@ const SystemSettings: React.FC = () => {
                 }
                 className="flex-1 h-2 bg-gray-200 dark:bg-gray-700 rounded-lg appearance-none cursor-pointer accent-blue-500"
               />
-              <span className="text-xl font-bold text-gray-900 dark:text-slate-900 w-16 text-right">
+              <span className="text-xl font-bold text-gray-900 dark:text-slate-100 w-16 text-right">
                 {settings.thresholds.confidenceThreshold}%
               </span>
             </div>
@@ -160,7 +160,7 @@ const SystemSettings: React.FC = () => {
 
           {/* Detection Sensitivity */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-slate-600 mb-2">
+            <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-2">
               Detection Sensitivity
             </label>
             <div className="flex items-center gap-4">
@@ -181,7 +181,7 @@ const SystemSettings: React.FC = () => {
                 }
                 className="flex-1 h-2 bg-gray-200 dark:bg-gray-700 rounded-lg appearance-none cursor-pointer accent-green-500"
               />
-              <span className="text-xl font-bold text-gray-900 dark:text-slate-900 w-16 text-right">
+              <span className="text-xl font-bold text-gray-900 dark:text-slate-100 w-16 text-right">
                 {settings.thresholds.detectionSensitivity}%
               </span>
             </div>
@@ -194,28 +194,117 @@ const SystemSettings: React.FC = () => {
 
       {/* Camera Check Interval */}
       <Card title="Camera Monitoring" subtitle="Configure camera health checks">
-        <div>
-          <label className="block text-sm font-medium text-gray-700 dark:text-slate-600 mb-2">
-            Camera Check Interval (seconds)
-          </label>
-          <Input
-            type="number"
-            value={settings.camera.checkInterval}
-            onChange={(e) =>
-              setSettings({
-                ...settings,
-                camera: {
-                  ...settings.camera,
-                  checkInterval: parseInt(e.target.value),
-                },
-              })
-            }
-            min="10"
-            max="300"
-          />
-          <p className="text-xs text-gray-500 dark:text-slate-500 mt-2">
-            Frequency of camera health checks (10-300 seconds)
-          </p>
+        <div className="space-y-6">
+          <div>
+            <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-2">
+              Camera Check Interval (seconds)
+            </label>
+            <Input
+              type="number"
+              value={settings.camera.checkInterval}
+              onChange={(e) =>
+                setSettings({
+                  ...settings,
+                  camera: {
+                    ...settings.camera,
+                    checkInterval: parseInt(e.target.value),
+                  },
+                })
+              }
+              min="10"
+              max="300"
+            />
+            <p className="text-xs text-gray-500 dark:text-slate-500 mt-2">
+              Frequency of camera health checks (10-300 seconds)
+            </p>
+          </div>
+
+          <div className="border-t border-gray-200 dark:border-gray-700 pt-5">
+            <div className="mb-4">
+              <h4 className="font-semibold text-gray-900 dark:text-slate-100">
+                Camera Obstruction / Tamper Detection
+              </h4>
+              <p className="text-xs text-gray-500 dark:text-slate-500 mt-1">
+                Tune covered-camera alerts. More conservative values reduce false positives from RTSP artifacts.
+              </p>
+            </div>
+
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-2">
+                  Dark Mean Threshold
+                </label>
+                <Input
+                  type="number"
+                  value={settings.camera.obstructionDarkMeanThreshold}
+                  onChange={(e) =>
+                    setSettings({
+                      ...settings,
+                      camera: {
+                        ...settings.camera,
+                        obstructionDarkMeanThreshold: parseFloat(e.target.value),
+                      },
+                    })
+                  }
+                  min="0"
+                  max="80"
+                  step="1"
+                />
+                <p className="text-xs text-gray-500 dark:text-slate-500 mt-2">
+                  Alert candidate when center brightness is below this value. Default: 20.
+                </p>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-2">
+                  Flat StdDev Threshold
+                </label>
+                <Input
+                  type="number"
+                  value={settings.camera.obstructionFlatStddevThreshold}
+                  onChange={(e) =>
+                    setSettings({
+                      ...settings,
+                      camera: {
+                        ...settings.camera,
+                        obstructionFlatStddevThreshold: parseFloat(e.target.value),
+                      },
+                    })
+                  }
+                  min="1"
+                  max="50"
+                  step="0.5"
+                />
+                <p className="text-xs text-gray-500 dark:text-slate-500 mt-2">
+                  Lower is less sensitive to flat scenes. Default: 10.
+                </p>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-2">
+                  Consecutive Frames
+                </label>
+                <Input
+                  type="number"
+                  value={settings.camera.obstructionConsecutiveFrames}
+                  onChange={(e) =>
+                    setSettings({
+                      ...settings,
+                      camera: {
+                        ...settings.camera,
+                        obstructionConsecutiveFrames: parseInt(e.target.value),
+                      },
+                    })
+                  }
+                  min="1"
+                  max="60"
+                />
+                <p className="text-xs text-gray-500 dark:text-slate-500 mt-2">
+                  Required suspicious frames before alert. Higher = fewer false positives. Default: 8.
+                </p>
+              </div>
+            </div>
+          </div>
         </div>
       </Card>
 

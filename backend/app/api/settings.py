@@ -11,6 +11,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.database import get_db
 from app.models.system_settings import SystemSettings
+from app.services.retention_service import retention_service
 
 router = APIRouter()
 
@@ -30,6 +31,9 @@ class Thresholds(BaseModel):
 
 class CameraSettings(BaseModel):
     checkInterval: int = 30
+    obstructionDarkMeanThreshold: float = 20.0
+    obstructionFlatStddevThreshold: float = 10.0
+    obstructionConsecutiveFrames: int = 8
 
 
 class DataRetention(BaseModel):
@@ -106,6 +110,9 @@ async def update_settings(
         cfg.confidence_threshold = data.thresholds.confidenceThreshold
         cfg.detection_sensitivity = data.thresholds.detectionSensitivity
         cfg.camera_check_interval = data.camera.checkInterval
+        cfg.obstruction_dark_mean_threshold = data.camera.obstructionDarkMeanThreshold
+        cfg.obstruction_flat_stddev_threshold = data.camera.obstructionFlatStddevThreshold
+        cfg.obstruction_consecutive_frames = data.camera.obstructionConsecutiveFrames
         cfg.email_enabled = data.alertRules.emailEnabled
         cfg.sms_enabled = data.alertRules.smsEnabled
         cfg.slack_enabled = data.alertRules.slackEnabled
@@ -120,6 +127,9 @@ async def update_settings(
             confidence_threshold=data.thresholds.confidenceThreshold,
             detection_sensitivity=data.thresholds.detectionSensitivity,
             camera_check_interval=data.camera.checkInterval,
+            obstruction_dark_mean_threshold=data.camera.obstructionDarkMeanThreshold,
+            obstruction_flat_stddev_threshold=data.camera.obstructionFlatStddevThreshold,
+            obstruction_consecutive_frames=data.camera.obstructionConsecutiveFrames,
             email_enabled=data.alertRules.emailEnabled,
             sms_enabled=data.alertRules.smsEnabled,
             slack_enabled=data.alertRules.slackEnabled,
@@ -130,3 +140,13 @@ async def update_settings(
     await db.refresh(cfg)
 
     return cfg.to_frontend_dict()
+
+
+@router.get("/retention/status")
+async def get_retention_status():
+    return retention_service.status()
+
+
+@router.post("/retention/run")
+async def run_retention_cleanup():
+    return await retention_service.run_cleanup()

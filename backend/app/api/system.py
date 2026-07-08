@@ -8,6 +8,7 @@ from app.config import settings
 from app.models.camera import Camera
 from app.models.camera import CameraStatus
 from app.services.camera_capabilities import normalize_ai_capabilities
+from app.services.face_processor import obstruction_telemetry
 from app.services.intrusion_service import intrusion_service
 from app.services.rtsp_service import RTSPService
 
@@ -139,6 +140,7 @@ async def get_ai_status(db: AsyncSession = Depends(get_db)):
                 max((d["timestamp"] for d in yolo_detections), default=None)
             ),
             "door_zones": door_zones,
+            "obstruction": obstruction_telemetry.get(camera.id),
         })
 
     return {

@@ -77,7 +77,7 @@ const NotificationSettings: React.FC = () => {
         <div className="space-y-4">
           <div className="flex items-center justify-between p-4 border border-gray-200 dark:border-gray-700 rounded-lg">
             <div>
-              <p className="font-medium text-gray-900 dark:text-slate-900">
+              <p className="font-medium text-gray-900 dark:text-slate-100">
                 Enable Email Notifications
               </p>
               <p className="text-sm text-gray-600 dark:text-slate-500">
@@ -116,7 +116,7 @@ const NotificationSettings: React.FC = () => {
                     })
                   }
                 />
-                <label className="text-sm font-medium text-gray-700 dark:text-slate-600">
+                <label className="text-sm font-medium text-gray-700 dark:text-slate-300">
                   Send alerts
                 </label>
               </div>
@@ -137,7 +137,7 @@ const NotificationSettings: React.FC = () => {
                     })
                   }
                 />
-                <label className="text-sm font-medium text-gray-700 dark:text-slate-600">
+                <label className="text-sm font-medium text-gray-700 dark:text-slate-300">
                   Send daily report
                 </label>
               </div>
@@ -158,7 +158,7 @@ const NotificationSettings: React.FC = () => {
                     })
                   }
                 />
-                <label className="text-sm font-medium text-gray-700 dark:text-slate-600">
+                <label className="text-sm font-medium text-gray-700 dark:text-slate-300">
                   Send weekly summary
                 </label>
               </div>

@@ -1,4 +1,4 @@
-import React, { useMemo } from 'react';
+import React, { useMemo, useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import {
   LayoutDashboard,
@@ -12,6 +12,8 @@ import {
   FileText,
   ShieldAlert,
   ChevronLeft,
+  MoreHorizontal,
+  X,
   LucideIcon,
 } from 'lucide-react';
 import { useAppSelector } from '@store/store';
@@ -30,6 +32,7 @@ const Sidebar: React.FC = () => {
   const location = useLocation();
   const { sidebarOpen, toggle } = useSidebar();
   const userRole = useAppSelector((state) => state.auth.user?.role);
+  const [mobileMoreOpen, setMobileMoreOpen] = useState(false);
 
   const isActive = (path: string) => location.pathname === path;
 
@@ -111,6 +114,36 @@ const Sidebar: React.FC = () => {
     [userRole]
   );
 
+  const mobilePrimaryItems = useMemo(() => {
+    const priority = ['dashboard', 'cameras', 'alerts', 'visitors', 'employees', 'reports'];
+    const picked: MenuItem[] = [];
+
+    for (const id of priority) {
+      const item = menuItems.find((menuItem) => menuItem.id === id);
+      if (item && !picked.some((pickedItem) => pickedItem.id === item.id)) {
+        picked.push(item);
+      }
+      if (picked.length >= 4) break;
+    }
+
+    for (const item of menuItems) {
+      if (!picked.some((pickedItem) => pickedItem.id === item.id)) {
+        picked.push(item);
+      }
+      if (picked.length >= 4) break;
+    }
+
+    return picked;
+  }, [menuItems]);
+
+  const mobileMoreItems = useMemo(
+    () =>
+      menuItems.filter(
+        (item) => !mobilePrimaryItems.some((primaryItem) => primaryItem.id === item.id)
+      ),
+    [menuItems, mobilePrimaryItems]
+  );
+
   return (
     <>
       {/* Desktop Sidebar */}
@@ -183,9 +216,60 @@ const Sidebar: React.FC = () => {
         </div>
       </aside>
 
+      {/* Mobile More Sheet */}
+      {mobileMoreOpen && (
+        <div className="fixed inset-0 z-50 lg:hidden">
+          <div
+            className="absolute inset-0 bg-black/40"
+            onClick={() => setMobileMoreOpen(false)}
+          />
+          <div className="absolute left-0 right-0 bottom-20 bg-white border-t border-slate-200 rounded-t-2xl shadow-2xl p-4">
+            <div className="flex items-center justify-between mb-3">
+              <div>
+                <p className="text-sm font-bold text-slate-900">More Menu</p>
+                <p className="text-xs text-slate-500">Analytics, reports, settings, and admin tools</p>
+              </div>
+              <button
+                onClick={() => setMobileMoreOpen(false)}
+                className="w-9 h-9 rounded-lg flex items-center justify-center text-slate-500 hover:bg-slate-100"
+                aria-label="Close more menu"
+              >
+                <X size={20} />
+              </button>
+            </div>
+            <div className="grid grid-cols-2 gap-2 max-h-[45vh] overflow-y-auto pb-2">
+              {mobileMoreItems.map((item) => {
+                const Icon = item.icon;
+                const active = isActive(item.path);
+                return (
+                  <Link
+                    key={item.id}
+                    to={item.path}
+                    onClick={() => setMobileMoreOpen(false)}
+                    className={`flex items-center gap-3 rounded-xl border px-3 py-3 transition-all ${
+                      active
+                        ? 'border-blue-500 bg-blue-50 text-blue-600'
+                        : 'border-slate-200 bg-white text-slate-600 hover:bg-slate-50'
+                    }`}
+                  >
+                    <Icon size={20} />
+                    <span className="text-sm font-semibold truncate">{item.label}</span>
+                  </Link>
+                );
+              })}
+              {mobileMoreItems.length === 0 && (
+                <div className="col-span-2 text-center text-sm text-slate-500 py-6">
+                  No additional menu items
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Mobile Bottom Navigation */}
       <nav className="fixed bottom-0 left-0 right-0 bg-white border-t border-slate-200 flex lg:hidden justify-around items-center h-20 z-40 shadow-xl">
-        {menuItems.slice(0, 5).map((item) => {
+        {mobilePrimaryItems.map((item) => {
           const Icon = item.icon;
           const active = isActive(item.path);
 
@@ -193,6 +277,7 @@ const Sidebar: React.FC = () => {
             <Link
               key={item.id}
               to={item.path}
+              onClick={() => setMobileMoreOpen(false)}
               className={`flex flex-col items-center gap-1 px-4 py-3 flex-1 transition-all relative ${
                 active
                   ? 'text-blue-500'
@@ -214,6 +299,17 @@ const Sidebar: React.FC = () => {
             </Link>
           );
         })}
+        <button
+          type="button"
+          onClick={() => setMobileMoreOpen((open) => !open)}
+          className={`flex flex-col items-center gap-1 px-4 py-3 flex-1 transition-all relative ${
+            mobileMoreOpen ? 'text-blue-500' : 'text-slate-500 hover:text-slate-600'
+          }`}
+          title="More"
+        >
+          <MoreHorizontal size={24} />
+          <span className="text-xs font-medium text-center truncate">More</span>
+        </button>
       </nav>
     </>
   );

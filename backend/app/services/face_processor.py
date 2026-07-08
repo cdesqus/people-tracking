@@ -12,6 +12,7 @@ from app.models.camera import Camera, CameraStatus
 from app.models.employee import Employee
 from app.models.face import Face
 from app.models.alert import Alert, AlertSeverity, AlertType
+from app.models.system_settings import SystemSettings
 from app.services.face_recognition_factory import rekognition_service, NoFacesException
 from app.utils.websocket_manager import ws_manager
 from app.services import waha_service
@@ -25,6 +26,46 @@ from ultralytics import YOLO
 import supervision as sv
 
 logger = logging.getLogger(__name__)
+
+OBSTRUCTION_DARK_MEAN_THRESHOLD = float(os.getenv("OBSTRUCTION_DARK_MEAN_THRESHOLD", "20"))
+OBSTRUCTION_FLAT_STDDEV_THRESHOLD = float(os.getenv("OBSTRUCTION_FLAT_STDDEV_THRESHOLD", "10"))
+OBSTRUCTION_CONSECUTIVE_FRAMES = int(os.getenv("OBSTRUCTION_CONSECUTIVE_FRAMES", "8"))
+
+# Read-only diagnostics exposed by /api/system/ai-status.
+obstruction_telemetry: dict[str, dict] = {}
+_obstruction_runtime_config = {
+    "dark_mean_threshold": OBSTRUCTION_DARK_MEAN_THRESHOLD,
+    "flat_stddev_threshold": OBSTRUCTION_FLAT_STDDEV_THRESHOLD,
+    "consecutive_frames": OBSTRUCTION_CONSECUTIVE_FRAMES,
+}
+_obstruction_config_loaded_at = 0.0
+
+
+async def _get_obstruction_runtime_config() -> dict:
+    """Read obstruction thresholds from DB settings, falling back to env defaults."""
+    global _obstruction_config_loaded_at
+    now = time.monotonic()
+    if now - _obstruction_config_loaded_at < 30:
+        return _obstruction_runtime_config
+
+    try:
+        async with async_session() as session:
+            result = await session.execute(
+                select(SystemSettings).where(SystemSettings.id == "singleton")
+            )
+            cfg = result.scalar_one_or_none()
+            if cfg:
+                _obstruction_runtime_config.update({
+                    "dark_mean_threshold": float(cfg.obstruction_dark_mean_threshold),
+                    "flat_stddev_threshold": float(cfg.obstruction_flat_stddev_threshold),
+                    "consecutive_frames": max(1, int(cfg.obstruction_consecutive_frames)),
+                })
+    except Exception as err:
+        logger.warning("Could not load obstruction settings; using cached/env defaults: %s", err)
+    finally:
+        _obstruction_config_loaded_at = now
+
+    return _obstruction_runtime_config
 
 
 def _safe_create_task(coro, name: str = "waha_task"):
@@ -537,6 +578,11 @@ async def start_face_processor():
                 continue
 
             # --- REAL-TIME ACTIVE PROCESSING MODE (AWS Configured) ---
+            obstruction_config = await _get_obstruction_runtime_config()
+            obstruction_dark_mean_threshold = obstruction_config["dark_mean_threshold"]
+            obstruction_flat_stddev_threshold = obstruction_config["flat_stddev_threshold"]
+            obstruction_required_frames = obstruction_config["consecutive_frames"]
+
             for camera in cameras:
                 try:
                     face_enabled = camera_capability_enabled(camera, "face_recognition")
@@ -569,6 +615,29 @@ async def start_face_processor():
                     # Check for camera obstruction (tampering)
                     if obstruction_enabled:
                         try:
+                            telemetry = {
+                                "camera_id": camera.id,
+                                "camera_name": camera.name,
+                                "mean": None,
+                                "std_dev": None,
+                                "dark_mean_threshold": obstruction_dark_mean_threshold,
+                                "flat_stddev_threshold": obstruction_flat_stddev_threshold,
+                                "consecutive_frames": obstructed_counts.get(camera.id, 0),
+                                "required_consecutive_frames": obstruction_required_frames,
+                                "state": "checking",
+                                "last_checked_at": datetime.utcnow().isoformat(),
+                            }
+                            try:
+                                quality_probe = cv2.resize(frame, (160, 90))
+                                if has_slicing_artifact(quality_probe):
+                                    telemetry["state"] = "skipped_slicing_artifact"
+                                    obstruction_telemetry[camera.id] = telemetry
+                                    continue
+                            except cv2.error:
+                                telemetry["state"] = "skipped_invalid_frame"
+                                obstruction_telemetry[camera.id] = telemetry
+                                continue
+
                             # Analyze only the center 50% region to avoid watermarks/timestamps at the edges
                             h, w = frame.shape[:2]
                             cy, cx = h // 2, w // 2
@@ -579,18 +648,31 @@ async def start_face_processor():
                             mean_val, std_val = cv2.meanStdDev(gray)
                             mean = mean_val[0][0]
                             std_dev = std_val[0][0]
+                            telemetry["mean"] = round(float(mean), 2)
+                            telemetry["std_dev"] = round(float(std_dev), 2)
 
-                            # Obstructed if center region is too dark (mean < 20.0) or too flat/uniform (std_dev < 15.0)
-                            is_obstructed = (mean < 20.0) or (std_dev < 15.0)
+                            # Obstructed if center region is too dark or too flat/uniform.
+                            # Be conservative: transient decoder artifacts should not become obstruction alerts.
+                            is_obstructed = (
+                                mean < obstruction_dark_mean_threshold
+                            ) or (
+                                std_dev < obstruction_flat_stddev_threshold
+                            )
 
                             if is_obstructed:
                                 obstructed_counts[camera.id] = obstructed_counts.get(camera.id, 0) + 1
-                                logger.warning(
-                                    f"Camera {camera.name} is possibly obstructed (Mean={mean:.2f}, StdDev={std_dev:.2f}). Count={obstructed_counts[camera.id]}"
-                                )
+                                telemetry["consecutive_frames"] = obstructed_counts[camera.id]
+                                telemetry["state"] = "suspected"
+                                if obstructed_counts[camera.id] == 1 or obstructed_counts[camera.id] % 3 == 0:
+                                    logger.warning(
+                                        f"Camera {camera.name} is possibly obstructed "
+                                        f"(Mean={mean:.2f}, StdDev={std_dev:.2f}). "
+                                        f"Count={obstructed_counts[camera.id]}/{obstruction_required_frames}"
+                                    )
 
-                                # Trigger alert if consecutive count reaches 3 (approx 9 seconds of solid blockage)
-                                if obstructed_counts[camera.id] >= 3:
+                                # Trigger alert only after enough consecutive suspicious frames.
+                                if obstructed_counts[camera.id] >= obstruction_required_frames:
+                                    telemetry["state"] = "alerting"
                                     now = datetime.utcnow()
                                     last_sent = last_alert_sent.get(camera.id)
                                     if not last_sent or (now - last_sent).total_seconds() > 60.0:
@@ -617,6 +699,7 @@ async def start_face_processor():
                                                     "mean": mean,
                                                     "std_dev": std_dev,
                                                     "consecutive_frames": obstructed_counts[camera.id],
+                                                    "required_consecutive_frames": obstruction_required_frames,
                                                 },
                                             )
                                         logger.error(f"CRITICAL: Camera {camera.name} is obstructed! Alert {db_alert.id}")
@@ -633,6 +716,9 @@ async def start_face_processor():
                                             note="Camera obstruction cleared.",
                                         )
                                 obstructed_counts[camera.id] = 0
+                                telemetry["consecutive_frames"] = 0
+                                telemetry["state"] = "clear"
+                            obstruction_telemetry[camera.id] = telemetry
                         except Exception as tamper_err:
                             logger.error(f"Error checking camera tampering for {camera.name}: {tamper_err}")
 

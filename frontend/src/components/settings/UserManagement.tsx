@@ -39,30 +39,35 @@ const UserManagement: React.FC = () => {
   const [formData, setFormData] = useState<Partial<User>>({
     name: '',
     email: '',
-    role: 'user',
+    username: '',
+    role: 'operator',
     status: 'active',
   });
+  const [password, setPassword] = useState('');
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
 
   const handleCreateUser = () => {
     setFormData({
       name: '',
       email: '',
-      role: 'user',
+      username: '',
+      role: 'operator',
       status: 'active',
     });
+    setPassword('');
     dispatch(setSelectedUser(null));
     dispatch(setShowUserModal(true));
   };
 
   const handleEditUser = (user: User) => {
     setFormData(user);
+    setPassword('');
     dispatch(setSelectedUser(user));
     dispatch(setShowUserModal(true));
   };
 
   const handleSaveUser = async () => {
-    if (!formData.name || !formData.email) {
+    if (!formData.name || !formData.email || (!selectedUser && !password)) {
       alert('Please fill in all required fields');
       return;
     }
@@ -74,7 +79,7 @@ const UserManagement: React.FC = () => {
         const response = await fetch(`/api/users/${selectedUser.id}`, {
           method: 'PUT',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(formData),
+          body: JSON.stringify({ ...formData, password: password || undefined }),
         });
 
         if (!response.ok) throw new Error('Failed to update user');
@@ -86,7 +91,7 @@ const UserManagement: React.FC = () => {
         const response = await fetch('/api/users', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(formData),
+          body: JSON.stringify({ ...formData, password }),
         });
 
         if (!response.ok) throw new Error('Failed to create user');
@@ -156,7 +161,7 @@ const UserManagement: React.FC = () => {
         <Badge className={`${
           value === 'active'
             ? 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200'
-            : 'bg-gray-100 text-gray-800 dark:bg-gray-900 dark:text-slate-700'
+            : 'bg-gray-100 text-gray-800 dark:bg-gray-900 dark:text-slate-300'
         }`}>
           {value.toUpperCase()}
         </Badge>
@@ -239,15 +244,34 @@ const UserManagement: React.FC = () => {
             required
           />
 
+          <Input
+            label="Username"
+            value={formData.username || ''}
+            onChange={(e) => setFormData({ ...formData, username: e.target.value })}
+            placeholder="Optional; defaults to email prefix"
+          />
+
+          <Input
+            label={selectedUser ? 'New Password (optional)' : 'Password'}
+            type="password"
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+            placeholder={selectedUser ? 'Leave blank to keep current password' : 'Minimum 8 characters'}
+            required={!selectedUser}
+          />
+
           <Select
             label="Role"
-            value={formData.role || 'user'}
+            value={formData.role || 'operator'}
             onChange={(value) =>
-              setFormData({ ...formData, role: value as 'admin' | 'user' | 'viewer' })
+              setFormData({ ...formData, role: value as User['role'] })
             }
             options={[
               { value: 'admin', label: 'Administrator' },
-              { value: 'user', label: 'User' },
+              { value: 'manager', label: 'Manager' },
+              { value: 'operator', label: 'Operator' },
+              { value: 'security', label: 'Security' },
+              { value: 'receptionist', label: 'Receptionist' },
               { value: 'viewer', label: 'Viewer' },
             ]}
           />
@@ -291,7 +315,7 @@ const UserManagement: React.FC = () => {
           onClose={() => setShowDeleteConfirm(false)}
         >
           <div className="p-6 space-y-4">
-            <p className="text-gray-600 dark:text-slate-500">
+            <p className="text-gray-600 dark:text-slate-300">
               Are you sure you want to delete user <strong>{selectedUser.name}</strong>?
               This action cannot be undone.
             </p>

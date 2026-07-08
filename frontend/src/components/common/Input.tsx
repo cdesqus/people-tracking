@@ -54,11 +54,11 @@ const Input = forwardRef<HTMLInputElement, InputProps>(
       sizeStyles.padding,
       sizeStyles.fontSize,
       sizeStyles.height,
-      'bg-white dark:bg-slate-100',
-      'border border-gray-300 dark:border-slate-300',
+      'bg-white dark:bg-slate-800',
+      'border border-gray-300 dark:border-slate-600',
       'rounded-lg',
       'placeholder-gray-400 dark:placeholder-slate-500',
-      'text-gray-900 dark:text-slate-900',
+      'text-gray-900 dark:text-slate-100',
       hasError ? COMMON_STYLES.errorBorder : '',
       disabled ? COMMON_STYLES.disabledInput : '',
       COMMON_STYLES.focusRing,
@@ -76,7 +76,7 @@ const Input = forwardRef<HTMLInputElement, InputProps>(
         {label && (
           <label
             htmlFor={rest.id}
-            className="mb-1.5 block text-sm font-medium text-gray-700 dark:text-slate-600"
+            className="mb-1.5 block text-sm font-medium text-gray-700 dark:text-slate-300"
           >
             {label}
             {rest.required && <span className="text-red-500 ml-0.5">*</span>}

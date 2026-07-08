@@ -92,21 +92,21 @@ const RetentionSlider: React.FC<RetentionSliderProps> = ({
   const c = colorMap[color] || colorMap.blue;
 
   return (
-    <div className={`p-5 rounded-xl border-2 ${c.border} ${c.bg} transition-all hover:shadow-md`}>
+    <div className={`p-5 rounded-xl border-2 ${c.border} ${c.bg} dark:bg-slate-800 dark:border-slate-700 transition-all hover:shadow-md`}>
       {/* Header row */}
       <div className="flex items-start justify-between mb-4">
         <div className="flex items-center gap-3">
-          <div className={`w-10 h-10 rounded-lg ${c.bg} border ${c.border} flex items-center justify-center`}>
+          <div className={`w-10 h-10 rounded-lg ${c.bg} dark:bg-slate-900 border ${c.border} dark:border-slate-700 flex items-center justify-center`}>
             {icon}
           </div>
           <div>
-            <h4 className="text-base font-bold text-gray-900">{label}</h4>
-            <p className="text-sm text-gray-600 mt-0.5">{description}</p>
+            <h4 className="text-base font-bold text-gray-900 dark:text-slate-100">{label}</h4>
+            <p className="text-sm text-gray-600 dark:text-slate-400 mt-0.5">{description}</p>
           </div>
         </div>
         <div className="text-right flex-shrink-0 ml-4">
           <span className={`text-3xl font-extrabold ${c.text}`}>{value}</span>
-          <span className="text-base font-medium text-gray-500 ml-1">hari</span>
+          <span className="text-base font-medium text-gray-500 dark:text-slate-400 ml-1">hari</span>
           <p className="text-xs text-gray-500 mt-0.5">≈ {formatDuration(value)}</p>
         </div>
       </div>
@@ -126,8 +126,8 @@ const RetentionSlider: React.FC<RetentionSliderProps> = ({
           }}
         />
         <div className="flex justify-between mt-2">
-          <span className="text-xs font-medium text-gray-500">{min} hari</span>
-          <span className="text-xs font-medium text-gray-500">{max} hari</span>
+          <span className="text-xs font-medium text-gray-500 dark:text-slate-400">{min} hari</span>
+          <span className="text-xs font-medium text-gray-500 dark:text-slate-400">{max} hari</span>
         </div>
       </div>
     </div>
@@ -141,10 +141,19 @@ const DataRetentionPolicy: React.FC = () => {
   const { systemSettings, loading } = useAppSelector((state) => state.settings);
   const [settings, setSettings] = useState(systemSettings);
   const [saving, setSaving] = useState(false);
+  const [cleanupRunning, setCleanupRunning] = useState(false);
+  const [cleanupStatus, setCleanupStatus] = useState<any>(null);
 
   useEffect(() => {
     setSettings(systemSettings);
   }, [systemSettings]);
+
+  useEffect(() => {
+    fetch('/api/settings/retention/status')
+      .then((res) => (res.ok ? res.json() : null))
+      .then((data) => data && setCleanupStatus(data))
+      .catch(() => undefined);
+  }, []);
 
   const handleSave = async () => {
     dispatch(updateSettingsStart());
@@ -175,6 +184,22 @@ const DataRetentionPolicy: React.FC = () => {
     toast('Perubahan direset ke nilai terakhir', { icon: '↩️' });
   };
 
+  const runCleanupNow = async () => {
+    setCleanupRunning(true);
+    try {
+      const response = await fetch('/api/settings/retention/run', { method: 'POST' });
+      if (!response.ok) throw new Error('Gagal menjalankan cleanup');
+      const data = await response.json();
+      setCleanupStatus(data);
+      toast.success('Cleanup retensi selesai dijalankan');
+    } catch (error) {
+      const message = error instanceof Error ? error.message : 'Error menjalankan cleanup';
+      toast.error(message);
+    } finally {
+      setCleanupRunning(false);
+    }
+  };
+
   const hasChanges =
     settings.dataRetention.faceImageDays !== systemSettings.dataRetention.faceImageDays ||
     settings.dataRetention.detectionLogDays !== systemSettings.dataRetention.detectionLogDays ||
@@ -185,16 +210,16 @@ const DataRetentionPolicy: React.FC = () => {
     <div className="space-y-6">
 
       {/* ── Section 1: Data Retention Settings ── */}
-      <div className="bg-white border border-gray-200 rounded-2xl shadow-sm overflow-hidden">
+      <div className="bg-white dark:bg-slate-900 border border-gray-200 dark:border-slate-700 rounded-2xl shadow-sm overflow-hidden">
         {/* Section Header */}
-        <div className="px-6 py-5 border-b border-gray-200 bg-gradient-to-r from-gray-50 to-white">
+        <div className="px-6 py-5 border-b border-gray-200 dark:border-slate-700 bg-gradient-to-r from-gray-50 to-white dark:from-slate-800 dark:to-slate-900">
           <div className="flex items-center gap-3">
             <div className="w-11 h-11 rounded-xl bg-blue-100 border border-blue-200 flex items-center justify-center">
               <Database className="w-5 h-5 text-blue-600" />
             </div>
             <div>
-              <h2 className="text-lg font-bold text-gray-900">Pengaturan Retensi Data</h2>
-              <p className="text-sm text-gray-500 mt-0.5">Atur berapa lama data disimpan di sistem</p>
+              <h2 className="text-lg font-bold text-gray-900 dark:text-slate-100">Pengaturan Retensi Data</h2>
+              <p className="text-sm text-gray-500 dark:text-slate-400 mt-0.5">Atur berapa lama data disimpan di sistem</p>
             </div>
           </div>
         </div>
@@ -251,26 +276,26 @@ const DataRetentionPolicy: React.FC = () => {
       </div>
 
       {/* ── Section 2: Automatic Cleanup ── */}
-      <div className="bg-white border border-gray-200 rounded-2xl shadow-sm overflow-hidden">
-        <div className="px-6 py-5 border-b border-gray-200 bg-gradient-to-r from-gray-50 to-white">
+      <div className="bg-white dark:bg-slate-900 border border-gray-200 dark:border-slate-700 rounded-2xl shadow-sm overflow-hidden">
+        <div className="px-6 py-5 border-b border-gray-200 dark:border-slate-700 bg-gradient-to-r from-gray-50 to-white dark:from-slate-800 dark:to-slate-900">
           <div className="flex items-center gap-3">
             <div className="w-11 h-11 rounded-xl bg-red-100 border border-red-200 flex items-center justify-center">
               <Trash2 className="w-5 h-5 text-red-500" />
             </div>
             <div>
-              <h2 className="text-lg font-bold text-gray-900">Pembersihan Otomatis</h2>
-              <p className="text-sm text-gray-500 mt-0.5">Hapus data lama secara otomatis</p>
+              <h2 className="text-lg font-bold text-gray-900 dark:text-slate-100">Pembersihan Otomatis</h2>
+              <p className="text-sm text-gray-500 dark:text-slate-400 mt-0.5">Hapus data lama secara otomatis</p>
             </div>
           </div>
         </div>
 
         <div className="p-6">
-          <div className="flex items-center justify-between p-5 bg-gray-50 rounded-xl border border-gray-200">
+          <div className="flex items-center justify-between p-5 bg-gray-50 dark:bg-slate-800 rounded-xl border border-gray-200 dark:border-slate-700">
             <div className="flex items-center gap-3">
               <Info className="w-5 h-5 text-gray-400 flex-shrink-0" />
               <div>
-                <p className="text-base font-semibold text-gray-900">Auto-Delete Data Lama</p>
-                <p className="text-sm text-gray-500 mt-0.5">
+                <p className="text-base font-semibold text-gray-900 dark:text-slate-100">Auto-Delete Data Lama</p>
+                <p className="text-sm text-gray-500 dark:text-slate-400 mt-0.5">
                   File yang sudah melewati masa retensi akan dihapus otomatis
                 </p>
               </div>
@@ -301,16 +326,49 @@ const DataRetentionPolicy: React.FC = () => {
         </div>
       </div>
 
+      <div className="bg-white dark:bg-slate-900 border border-gray-200 dark:border-slate-700 rounded-2xl shadow-sm overflow-hidden">
+        <div className="px-6 py-5 border-b border-gray-200 dark:border-slate-700 bg-gradient-to-r from-gray-50 to-white dark:from-slate-800 dark:to-slate-900">
+          <div className="flex items-center gap-3">
+            <div className="w-11 h-11 rounded-xl bg-amber-100 border border-amber-200 flex items-center justify-center">
+              <Trash2 className="w-5 h-5 text-amber-600" />
+            </div>
+            <div>
+              <h2 className="text-lg font-bold text-gray-900 dark:text-slate-100">Cleanup Manual</h2>
+              <p className="text-sm text-gray-500 dark:text-slate-400 mt-0.5">Jalankan policy retensi sekarang dan lihat hasil terakhir</p>
+            </div>
+          </div>
+        </div>
+        <div className="p-6 flex flex-col lg:flex-row lg:items-center justify-between gap-4">
+          <div className="text-sm text-gray-600 dark:text-slate-300">
+            <p>Status terakhir: <span className="font-semibold">{cleanupStatus?.status || 'not_run'}</span></p>
+            {cleanupStatus?.ran_at && <p>Run terakhir: {new Date(cleanupStatus.ran_at).toLocaleString()}</p>}
+            {cleanupStatus?.deleted && (
+              <p>
+                Dibersihkan: {cleanupStatus.deleted.faceImagesCleared} image blob, {cleanupStatus.deleted.faceLogsDeleted} face log, {cleanupStatus.deleted.alertsDeleted} alert
+              </p>
+            )}
+          </div>
+          <button
+            onClick={runCleanupNow}
+            disabled={cleanupRunning}
+            className="px-5 py-3 bg-amber-600 hover:bg-amber-700 disabled:opacity-50 text-white text-sm font-semibold rounded-xl transition-colors flex items-center justify-center gap-2 shadow-sm"
+          >
+            {cleanupRunning ? <Loader2 className="w-4 h-4 animate-spin" /> : <Trash2 className="w-4 h-4" />}
+            Run Cleanup Now
+          </button>
+        </div>
+      </div>
+
       {/* ── Section 3: Summary ── */}
-      <div className="bg-white border border-gray-200 rounded-2xl shadow-sm overflow-hidden">
-        <div className="px-6 py-5 border-b border-gray-200 bg-gradient-to-r from-gray-50 to-white">
+      <div className="bg-white dark:bg-slate-900 border border-gray-200 dark:border-slate-700 rounded-2xl shadow-sm overflow-hidden">
+        <div className="px-6 py-5 border-b border-gray-200 dark:border-slate-700 bg-gradient-to-r from-gray-50 to-white dark:from-slate-800 dark:to-slate-900">
           <div className="flex items-center gap-3">
             <div className="w-11 h-11 rounded-xl bg-emerald-100 border border-emerald-200 flex items-center justify-center">
               <Clock className="w-5 h-5 text-emerald-600" />
             </div>
             <div>
-              <h2 className="text-lg font-bold text-gray-900">Ringkasan Retensi</h2>
-              <p className="text-sm text-gray-500 mt-0.5">Gambaran keseluruhan kebijakan retensi data</p>
+              <h2 className="text-lg font-bold text-gray-900 dark:text-slate-100">Ringkasan Retensi</h2>
+              <p className="text-sm text-gray-500 dark:text-slate-400 mt-0.5">Gambaran keseluruhan kebijakan retensi data</p>
             </div>
           </div>
         </div>

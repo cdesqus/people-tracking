@@ -1,4 +1,4 @@
-from sqlalchemy import Column, String, Integer, Boolean, DateTime
+from sqlalchemy import Column, String, Integer, Boolean, DateTime, Float
 from sqlalchemy.sql import func
 from app.database import Base
 
@@ -21,6 +21,11 @@ class SystemSettings(Base):
 
     # Camera
     camera_check_interval = Column(Integer, nullable=False, default=30)
+
+    # Camera obstruction/tamper detection
+    obstruction_dark_mean_threshold = Column(Float, nullable=False, default=20.0)
+    obstruction_flat_stddev_threshold = Column(Float, nullable=False, default=10.0)
+    obstruction_consecutive_frames = Column(Integer, nullable=False, default=8)
 
     # Alert Rules
     email_enabled = Column(Boolean, nullable=False, default=True)
@@ -59,6 +64,9 @@ class SystemSettings(Base):
             },
             "camera": {
                 "checkInterval": self.camera_check_interval,
+                "obstructionDarkMeanThreshold": self.obstruction_dark_mean_threshold,
+                "obstructionFlatStddevThreshold": self.obstruction_flat_stddev_threshold,
+                "obstructionConsecutiveFrames": self.obstruction_consecutive_frames,
             },
             "dataRetention": {
                 "faceImageDays": self.face_image_retention_days,

@@ -58,15 +58,15 @@ const Tabs: React.FC<TabsProps> = ({
       return `${baseClasses} rounded-full ${
         isActive
           ? 'bg-sky-500 text-white'
-          : 'text-gray-700 dark:text-slate-600 hover:bg-gray-100 dark:hover:bg-slate-200'
+          : 'text-gray-700 dark:text-slate-300 hover:bg-gray-100 dark:hover:bg-slate-800'
       }`;
     }
 
     if (variant === 'card') {
-      return `${baseClasses} border border-gray-200 dark:border-slate-300 rounded-t-lg ${
+      return `${baseClasses} border border-gray-200 dark:border-slate-700 rounded-t-lg ${
         isActive
-          ? 'bg-white dark:bg-slate-100 border-b-0 text-gray-900 dark:text-slate-900'
-          : 'bg-gray-50 dark:bg-slate-200 text-gray-700 dark:text-slate-500 hover:bg-gray-100 dark:hover:bg-slate-600'
+          ? 'bg-white dark:bg-slate-900 border-b-0 text-gray-900 dark:text-slate-100'
+          : 'bg-gray-50 dark:bg-slate-800 text-gray-700 dark:text-slate-300 hover:bg-gray-100 dark:hover:bg-slate-700'
       }`;
     }
 
@@ -82,7 +82,7 @@ const Tabs: React.FC<TabsProps> = ({
     <div className={`w-full ${className}`} {...rest}>
       {/* Tab list */}
       <div
-        className={`flex flex-wrap gap-1 border-b border-gray-200 dark:border-slate-300 ${
+        className={`flex flex-wrap gap-1 border-b border-gray-200 dark:border-slate-700 ${
           variant === 'card' ? 'gap-0 -mb-px' : ''
         }`}
         role="tablist"

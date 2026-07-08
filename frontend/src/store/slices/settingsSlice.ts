@@ -4,7 +4,8 @@ export interface User {
   id: string;
   name: string;
   email: string;
-  role: 'admin' | 'user' | 'viewer';
+  username?: string;
+  role: 'admin' | 'manager' | 'operator' | 'security' | 'receptionist' | 'viewer';
   status: 'active' | 'inactive';
   createdAt: string;
 }
@@ -31,6 +32,9 @@ export interface SystemSettings {
   };
   camera: {
     checkInterval: number;
+    obstructionDarkMeanThreshold: number;
+    obstructionFlatStddevThreshold: number;
+    obstructionConsecutiveFrames: number;
   };
   dataRetention: {
     faceImageDays: number;
@@ -88,6 +92,9 @@ const initialState: SettingsState = {
     },
     camera: {
       checkInterval: 30,
+      obstructionDarkMeanThreshold: 20,
+      obstructionFlatStddevThreshold: 10,
+      obstructionConsecutiveFrames: 8,
     },
     dataRetention: {
       faceImageDays: 90,

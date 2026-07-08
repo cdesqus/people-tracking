@@ -11,12 +11,10 @@ import {
 } from 'lucide-react';
 import { useAppDispatch, useAppSelector } from '@store/store';
 import { logout } from '@store/slices/authSlice';
-import { useSidebar } from '@hooks/useSidebar';
 
 const Navbar: React.FC = () => {
   const navigate = useNavigate();
   const dispatch = useAppDispatch();
-  const { sidebarOpen, toggle } = useSidebar();
   const user = useAppSelector((state) => state.auth.user);
   const [profileDropdownOpen, setProfileDropdownOpen] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
@@ -52,15 +50,6 @@ const Navbar: React.FC = () => {
         <div className="flex items-center justify-between h-10 gap-4">
           {/* Left: Hamburger + Logo */}
           <div className="flex items-center gap-4">
-            {/* Hamburger Menu */}
-            <button
-              onClick={toggle}
-              className="p-2 rounded-lg hover:bg-slate-200 transition-colors lg:hidden text-slate-600 hover:text-slate-900"
-              aria-label="Toggle sidebar"
-            >
-              {sidebarOpen ? <X size={24} /> : <Menu size={24} />}
-            </button>
-
             {/* Logo - Hidden on mobile */}
             <div className="hidden sm:flex items-center gap-2">
               <div className="w-8 h-8 rounded-lg bg-blue-600 flex items-center justify-center font-bold text-sm text-white">
