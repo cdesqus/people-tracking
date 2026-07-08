@@ -6,13 +6,21 @@ import { acknowledgeAlertStart, acknowledgeAlertSuccess } from '@store/slices/al
 import { API_BASE_URL } from '@/utils/constants';
 
 // Component to handle MJPEG streams properly and prevent browser connection exhaustion
-const MjpegStream: React.FC<{ src: string; alt: string; className: string }> = ({ src, alt, className }) => {
+const MjpegStream: React.FC<{
+  src: string;
+  alt: string;
+  className: string;
+  onFirstFrame?: (latencyMs: number) => void;
+}> = ({ src, alt, className, onFirstFrame }) => {
   const imgRef = React.useRef<HTMLImageElement>(null);
   const retryTimerRef = React.useRef<ReturnType<typeof setTimeout> | null>(null);
+  const startedAtRef = React.useRef<number>(performance.now());
+  const reportedFirstFrameRef = React.useRef(false);
   const [retryAttempt, setRetryAttempt] = React.useState(0);
 
   React.useEffect(() => {
     setRetryAttempt(0);
+    reportedFirstFrameRef.current = false;
   }, [src]);
 
   React.useEffect(() => {
@@ -24,6 +32,7 @@ const MjpegStream: React.FC<{ src: string; alt: string; className: string }> = (
         : `${src}${separator}retry=${retryAttempt}-${Date.now()}`;
 
     if (image) {
+      startedAtRef.current = performance.now();
       image.src = streamSrc;
     }
     return () => {
@@ -51,6 +60,11 @@ const MjpegStream: React.FC<{ src: string; alt: string; className: string }> = (
           retryTimerRef.current = null;
           setRetryAttempt((current) => current + 1);
         }, delay);
+      }}
+      onLoad={() => {
+        if (reportedFirstFrameRef.current) return;
+        reportedFirstFrameRef.current = true;
+        onFirstFrame?.(Math.round(performance.now() - startedAtRef.current));
       }}
     />
   );
@@ -91,13 +105,17 @@ const Dashboard: React.FC = () => {
     };
   }, []);
 
-  // Update snapshot timestamp every 3 seconds for thumbnails
+  // Refresh overview thumbnails only while the overview tab is visible.
+  // Live Monitor uses MJPEG; extra snapshot polling there makes camera switching feel slower.
   useEffect(() => {
+    if (activeTab !== 'overview') {
+      return;
+    }
     const snapshotInterval = setInterval(() => {
       setSnapshotTick(Date.now());
     }, 30000);
     return () => clearInterval(snapshotInterval);
-  }, []);
+  }, [activeTab]);
 
   // Handle alert acknowledgment via API
   const handleAcknowledgeAlert = async (alertId: string) => {
@@ -269,7 +287,7 @@ const Dashboard: React.FC = () => {
         image: c.status === 'active'
           ? `${API_BASE_URL}/cameras/${c.id}/stream`
           : '',
-        snapshotUrl: c.status === 'active'
+        snapshotUrl: c.status === 'active' && activeTab === 'overview'
           ? `${API_BASE_URL}/cameras/${c.id}/snapshot?t=${snapshotTick}`
           : '',
         resolution: c.resolution,
@@ -382,44 +400,17 @@ const Dashboard: React.FC = () => {
     };
   }, [activeTab]);
 
-  // Measure stream latency dynamically for the focused camera
+  // Keep focused-feed metadata cheap. Do not poll snapshots for latency:
+  // the MJPEG stream itself is the live connection, and AI workers have their own capture loop.
   useEffect(() => {
     if (activeTab !== 'monitor' || !activeFocusedCamera || activeFocusedCamera.status !== 'active') {
       return;
     }
-
-    const cameraId = activeFocusedCamera.id;
-
-    // Measure latency by timing how long it takes to fetch a snapshot
-    const measureLatency = async () => {
-      try {
-        const start = performance.now();
-        // Use snapshot instead of stream to prevent spawning a new OpenCV RTSP thread on the backend every 5 seconds
-        const response = await fetch(`${API_BASE_URL}/cameras/${cameraId}/snapshot`, {
-          method: 'GET',
-          signal: AbortSignal.timeout(3000),
-        });
-        
-        if (response.ok) {
-          const latency = Math.round(performance.now() - start);
-          setStreamLatency(latency);
-        }
-      } catch {
-        // Silently fail
-      }
-    };
-
-    measureLatency();
-    // Camera metadata already contains these values. Do not open another RTSP
-    // connection merely to populate the focused-feed badge.
+    setStreamLatency(null);
     setStreamInfo({
       resolution: activeFocusedCamera.resolution || '640x480',
       fps: `${Math.round(activeFocusedCamera.fps || 0)}`,
     });
-    
-    // Only poll latency, not test-connection
-    const interval = setInterval(measureLatency, 10000);
-    return () => clearInterval(interval);
   }, [
     activeTab,
     activeFocusedCamera?.id,
@@ -602,6 +593,8 @@ const Dashboard: React.FC = () => {
                         <img 
                           alt={camera.name} 
                           className="w-full h-full object-cover opacity-75 group-hover/cam:opacity-100 transition-opacity duration-300"
+                          decoding="async"
+                          loading="lazy"
                           src={camera.snapshotUrl || camera.image} 
                         />
                         
@@ -868,6 +861,7 @@ const Dashboard: React.FC = () => {
                             alt={activeFocusedCamera.name} 
                             className="w-full h-full object-contain"
                             src={activeFocusedCamera.image} 
+                            onFirstFrame={setStreamLatency}
                           />
                           {/* Targeting Reticle/Biometric Grid HUD */}
                           <div className="absolute inset-0 pointer-events-none border border-blue-500/10">
