@@ -28,16 +28,59 @@ ChartJS.register(
   Filler
 );
 
+const EMPTY_ANALYTICS_DATA = {
+  attendance: {
+    records: [],
+    summary: {
+      present: 0,
+      late: 0,
+      absent: 0,
+      earlyLeave: 0,
+    },
+  },
+  incidents: {
+    records: [],
+    summary: {
+      total: 0,
+    },
+  },
+  uptime: {
+    records: [],
+    summary: {
+      avgUptime: 0,
+    },
+  },
+};
+
+const fetchJsonWithTimeout = async (url: string, timeoutMs: number) => {
+  const controller = new AbortController();
+  const timeout = window.setTimeout(() => controller.abort(), timeoutMs);
+
+  try {
+    const response = await fetch(url, { signal: controller.signal });
+    if (!response.ok) {
+      throw new Error(`Request failed with status ${response.status}`);
+    }
+    return await response.json();
+  } finally {
+    window.clearTimeout(timeout);
+  }
+};
+
 const Analytics: React.FC = () => {
   const [data, setData] = useState<any>(null);
   const [kpis, setKpis] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [warning, setWarning] = useState<string | null>(null);
 
   useEffect(() => {
     const fetchData = async () => {
       try {
         setLoading(true);
+        setError(null);
+        setWarning(null);
+
         // Calculate last 7 days date range
         const toDate = new Date();
         const fromDate = new Date();
@@ -46,20 +89,31 @@ const Analytics: React.FC = () => {
         const toStr = toDate.toISOString().split('T')[0];
         const fromStr = fromDate.toISOString().split('T')[0];
 
-        const response = await fetch(`/api/reports/consolidated?from=${fromStr}&to=${toStr}`);
-        if (!response.ok) {
-          throw new Error('Failed to fetch analytics data');
-        }
-        
-        const json = await response.json();
-        setData(json);
+        const reportUrl = `/api/reports/consolidated?from=${fromStr}&to=${toStr}`;
+        const kpiUrl = `/api/kpis/security?from=${fromStr}&to=${toStr}`;
 
-        const kpiResponse = await fetch(`/api/kpis/security?from=${fromStr}&to=${toStr}`);
-        if (kpiResponse.ok) {
-          setKpis(await kpiResponse.json());
+        const [reportResult, kpiResult] = await Promise.allSettled([
+          fetchJsonWithTimeout(reportUrl, 8000),
+          fetchJsonWithTimeout(kpiUrl, 6000),
+        ]);
+
+        if (reportResult.status === 'fulfilled') {
+          setData(reportResult.value);
+        } else {
+          console.warn('Analytics consolidated report unavailable:', reportResult.reason);
+          setData(EMPTY_ANALYTICS_DATA);
+          setWarning('Detailed analytics report is still loading or unavailable, so this page is showing the latest KPI snapshot with empty chart fallback.');
+        }
+
+        if (kpiResult.status === 'fulfilled') {
+          setKpis(kpiResult.value);
+        } else {
+          console.warn('Security KPI report unavailable:', kpiResult.reason);
+          setWarning((current) => current || 'Security KPI endpoint is unavailable, so analytics is showing chart fallback only.');
         }
       } catch (err: any) {
-        setError(err.message);
+        setData(EMPTY_ANALYTICS_DATA);
+        setError(err.message || 'Failed to load analytics');
       } finally {
         setLoading(false);
       }
@@ -88,7 +142,7 @@ const Analytics: React.FC = () => {
     );
   }
 
-  if (error || !data) {
+  if (!data) {
     return (
       <div className="p-6 max-w-7xl mx-auto w-full">
         <div className="bg-red-50 text-red-500 p-4 rounded-lg border border-red-200">
@@ -194,6 +248,12 @@ const Analytics: React.FC = () => {
         <h1 className="text-3xl font-bold text-gray-900 font-sans">Analytics & Trends</h1>
         <p className="text-gray-600 mt-1">Historical analysis of face detections, alert volumes, and system health</p>
       </div>
+
+      {(warning || error) && (
+        <div className="rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800">
+          {warning || error}
+        </div>
+      )}
 
       {kpis && (
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
