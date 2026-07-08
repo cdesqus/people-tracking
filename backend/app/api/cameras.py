@@ -34,6 +34,16 @@ def _preview_stream_key(camera) -> str:
     return f"{camera.id}:sub" if camera.sub_stream_url else camera.id
 
 
+def _camera_resolution_wh(camera) -> tuple[int, int] | None:
+    if not camera.resolution:
+        return None
+    try:
+        width, height = map(int, camera.resolution.lower().split("x"))
+        return (width, height)
+    except (TypeError, ValueError):
+        return None
+
+
 @router.get("/brands", response_model=dict[str, dict])
 async def get_supported_brands_endpoint():
     """Get list of all supported CCTV brands with their configurations"""
@@ -230,7 +240,8 @@ async def stream_camera(
             stream_url,
             camera_id=stream_key,
             overlay_camera_id=camera.id,
-            intrusion_zones=camera.intrusion_zones
+            intrusion_zones=camera.intrusion_zones,
+            zone_resolution_wh=_camera_resolution_wh(camera),
         ),
         media_type="multipart/x-mixed-replace; boundary=frame",
         headers={

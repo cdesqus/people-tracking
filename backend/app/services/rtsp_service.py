@@ -36,6 +36,30 @@ def _mjpeg_part(jpeg_bytes: bytes, latency_ms: Optional[int] = None) -> bytes:
     return headers + b"\r\n" + jpeg_bytes + b"\r\n"
 
 
+def _scale_polygon_to_frame(
+    polygon: np.ndarray,
+    source_resolution_wh: Optional[tuple[int, int]],
+    target_resolution_wh: tuple[int, int],
+) -> np.ndarray:
+    """Scale configured zone coordinates to the frame currently being rendered."""
+    dst_w, dst_h = target_resolution_wh
+    if not source_resolution_wh:
+        scaled = polygon.copy()
+    else:
+        src_w, src_h = source_resolution_wh
+        if src_w <= 0 or src_h <= 0 or dst_w <= 0 or dst_h <= 0:
+            scaled = polygon.copy()
+        elif (src_w, src_h) == (dst_w, dst_h):
+            scaled = polygon.copy()
+        else:
+            scale = np.array([dst_w / src_w, dst_h / src_h], dtype=np.float32)
+            scaled = np.rint(polygon.astype(np.float32) * scale).astype(np.int32)
+
+    scaled[:, 0] = np.clip(scaled[:, 0], 0, max(dst_w - 1, 0))
+    scaled[:, 1] = np.clip(scaled[:, 1], 0, max(dst_h - 1, 0))
+    return scaled
+
+
 class RTSPService:
     """Service for managing RTSP streams and connections"""
     
@@ -240,6 +264,7 @@ class RTSPService:
         camera_id: Optional[str] = None,
         overlay_camera_id: Optional[str] = None,
         intrusion_zones: Optional[str] = None,
+        zone_resolution_wh: Optional[tuple[int, int]] = None,
     ) -> Generator[bytes, None, None]:
         """
         Generate MJPEG frames from an RTSP stream for browser display.
@@ -292,7 +317,10 @@ class RTSPService:
                     frame_copy = frame.copy()
 
                     # Dynamically check for zone updates
-                    current_zones_json = RTSPService.camera_zones_cache.get(camera_id, intrusion_zones)
+                    current_zones_json = RTSPService.camera_zones_cache.get(
+                        overlay_id,
+                        RTSPService.camera_zones_cache.get(camera_id, intrusion_zones),
+                    )
                     if current_zones_json != last_zones_json:
                         last_zones_json = current_zones_json
                         zones = []
@@ -371,7 +399,12 @@ class RTSPService:
 
                         # Draw intrusion zones
                         if zones:
-                            cv2.polylines(frame_copy, zones, isClosed=True, color=(0, 0, 255), thickness=2)
+                            h, w, _ = frame_copy.shape
+                            draw_zones = [
+                                _scale_polygon_to_frame(zone, zone_resolution_wh, (w, h))
+                                for zone in zones
+                            ]
+                            cv2.polylines(frame_copy, draw_zones, isClosed=True, color=(0, 0, 255), thickness=2)
 
                     _, buffer = cv2.imencode(
                         '.jpg', frame_copy,
@@ -408,7 +441,10 @@ class RTSPService:
                         break
 
                 # Dynamically check for zone updates
-                current_zones_json = RTSPService.camera_zones_cache.get(camera_id, intrusion_zones)
+                current_zones_json = RTSPService.camera_zones_cache.get(
+                    overlay_id,
+                    RTSPService.camera_zones_cache.get(camera_id, intrusion_zones),
+                )
                 if current_zones_json != last_zones_json:
                     last_zones_json = current_zones_json
                     zones = []
@@ -505,7 +541,12 @@ class RTSPService:
 
                 # Draw intrusion zones
                 if zones:
-                    cv2.polylines(frame, zones, isClosed=True, color=(0, 0, 255), thickness=2)
+                    h, w, _ = frame.shape
+                    draw_zones = [
+                        _scale_polygon_to_frame(zone, zone_resolution_wh, (w, h))
+                        for zone in zones
+                    ]
+                    cv2.polylines(frame, draw_zones, isClosed=True, color=(0, 0, 255), thickness=2)
 
                 _, buffer = cv2.imencode(
                     '.jpg', frame,

@@ -25,6 +25,29 @@ from sqlalchemy import select
 
 logger = logging.getLogger(__name__)
 
+
+def _scale_polygon_to_frame(
+    polygon: np.ndarray,
+    source_resolution_wh: tuple[int, int],
+    target_resolution_wh: tuple[int, int],
+) -> np.ndarray:
+    """Scale stored zone coordinates to the actual decoded frame size."""
+    src_w, src_h = source_resolution_wh
+    dst_w, dst_h = target_resolution_wh
+
+    if src_w <= 0 or src_h <= 0 or dst_w <= 0 or dst_h <= 0:
+        scaled = polygon.copy()
+    elif (src_w, src_h) == (dst_w, dst_h):
+        scaled = polygon.copy()
+    else:
+        scale = np.array([dst_w / src_w, dst_h / src_h], dtype=np.float32)
+        scaled = np.rint(polygon.astype(np.float32) * scale).astype(np.int32)
+
+    scaled[:, 0] = np.clip(scaled[:, 0], 0, max(dst_w - 1, 0))
+    scaled[:, 1] = np.clip(scaled[:, 1], 0, max(dst_h - 1, 0))
+    return scaled
+
+
 class IntrusionService:
     def __init__(self):
         self.model = None
@@ -141,7 +164,9 @@ class IntrusionService:
                                     pts.append([int(p[0]), int(p[1])])
                             pts_array = np.array(pts, dtype=np.int32)
                             zone = sv.PolygonZone(polygon=pts_array, frame_resolution_wh=resolution_wh)
-                            self.camera_zones[cam.id].append((zone, zone_name, zone_type, enabled_rules, thresholds))
+                            self.camera_zones[cam.id].append(
+                                (zone, zone_name, zone_type, enabled_rules, thresholds, resolution_wh)
+                            )
 
                         # Start task if not running
                         if cam.id not in self.camera_tasks or self.camera_tasks[cam.id].done():
@@ -210,14 +235,26 @@ class IntrusionService:
                         triggered_events = []
                         active_zone_keys = set()
 
-                        for idx, (zone, zone_name, zone_type, enabled_rules, thresholds) in enumerate(zones):
-                            # Update zone resolution if frame size changed
-                            if zone.frame_resolution_wh != (w, h):
-                                zone = sv.PolygonZone(polygon=zone.polygon, frame_resolution_wh=(w, h))
-                                self.camera_zones[cam_id][idx] = (zone, zone_name, zone_type, enabled_rules, thresholds)
+                        for idx, (
+                            zone,
+                            zone_name,
+                            zone_type,
+                            enabled_rules,
+                            thresholds,
+                            zone_resolution_wh,
+                        ) in enumerate(zones):
+                            scaled_polygon = _scale_polygon_to_frame(
+                                zone.polygon,
+                                zone_resolution_wh,
+                                (w, h),
+                            )
+                            runtime_zone = sv.PolygonZone(
+                                polygon=scaled_polygon,
+                                frame_resolution_wh=(w, h),
+                            )
                             
                             # Check if any detection is inside the zone
-                            zone_mask = zone.trigger(detections=detections)
+                            zone_mask = runtime_zone.trigger(detections=detections)
                             person_count = int(np.sum(zone_mask)) if len(zone_mask) else 0
                             zone_key = f"{cam_id}:{idx}:{zone_name}"
                             caps = self.camera_capabilities.get(cam_id, {})
@@ -283,13 +320,22 @@ class IntrusionService:
 
                             if "door_left_open" in rules:
                                 mask = np.zeros((h, w), dtype=np.uint8)
-                                cv2.fillPoly(mask, [zone.polygon], 255)
-                                x, y, bw, bh = cv2.boundingRect(zone.polygon)
-                                if bw > 8 and bh > 8:
+                                cv2.fillPoly(mask, [scaled_polygon], 255)
+                                x, y, bw, bh = cv2.boundingRect(scaled_polygon)
+                                x1 = max(0, x)
+                                y1 = max(0, y)
+                                x2 = min(w, x + bw)
+                                y2 = min(h, y + bh)
+                                if x2 - x1 > 8 and y2 - y1 > 8:
                                     gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
-                                    crop = gray[y:y + bh, x:x + bw]
-                                    crop_mask = mask[y:y + bh, x:x + bw]
-                                    normalized = cv2.resize(cv2.bitwise_and(crop, crop, mask=crop_mask), (96, 96))
+                                    crop = gray[y1:y2, x1:x2]
+                                    crop_mask = mask[y1:y2, x1:x2]
+                                    if crop.size == 0 or crop_mask.size == 0:
+                                        continue
+                                    masked_crop = cv2.bitwise_and(crop, crop, mask=crop_mask)
+                                    if masked_crop.size == 0:
+                                        continue
+                                    normalized = cv2.resize(masked_crop, (96, 96))
                                     baseline_key = f"{zone_key}:door"
                                     if baseline_key not in self.door_baselines:
                                         self.door_baselines[baseline_key] = normalized
@@ -387,9 +433,14 @@ class IntrusionService:
                                 # Draw polygon and bounding boxes for the alert image
                                 box_annotator = sv.BoxAnnotator(thickness=2)
                                 frame = box_annotator.annotate(scene=frame, detections=detections, labels=labels)
-                                for z, z_name, *_ in zones:
+                                for z, z_name, _zt, _rules, _thresholds, z_resolution_wh in zones:
+                                    scaled_polygon = _scale_polygon_to_frame(
+                                        z.polygon,
+                                        z_resolution_wh,
+                                        (w, h),
+                                    )
                                     # Simple drawing of polygon
-                                    cv2.polylines(frame, [z.polygon], isClosed=True, color=(0, 0, 255), thickness=3)
+                                    cv2.polylines(frame, [scaled_polygon], isClosed=True, color=(0, 0, 255), thickness=3)
                                     # Optional: Draw zone name
                                     # cv2.putText(frame, z_name, (z.polygon[0][0], z.polygon[0][1] - 10), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 0, 255), 2)
                                 
