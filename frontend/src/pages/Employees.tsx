@@ -61,7 +61,7 @@ const EmployeesPage: React.FC = () => {
       if (searchTerm) params.append('search', searchTerm);
       if (departmentFilter) params.append('department', departmentFilter);
 
-      const response = await fetch(`/api/employees?${params.toString()}`);
+      const response = await fetch(`/api/employees/?${params.toString()}`);
       if (!response.ok) throw new Error('Failed to fetch employees');
 
       const data = await response.json();

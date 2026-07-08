@@ -185,11 +185,17 @@ async def get_camera(camera_id: str, db: AsyncSession = Depends(get_db)):
 async def update_camera(
     camera_id: str,
     camera_update: CameraUpdate,
+    refresh_status: bool = Query(default=False),
     db: AsyncSession = Depends(get_db)
 ):
     """Update camera configuration"""
     try:
-        updated_camera = await CameraService.update_camera(db, camera_id, camera_update)
+        updated_camera = await CameraService.update_camera(
+            db,
+            camera_id,
+            camera_update,
+            refresh_status=refresh_status,
+        )
         if not updated_camera:
             raise HTTPException(status_code=404, detail="Camera not found")
         return {

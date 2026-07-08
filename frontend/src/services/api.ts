@@ -52,7 +52,7 @@ class ApiClient {
   // Cameras
   async getCameras(page: number = 1, pageSize: number = 20) {
     return this.client.get<ApiResponse<PaginatedResponse<any>>>(
-      `/cameras?page=${page}&page_size=${pageSize}`
+      `/cameras/?page=${page}&page_size=${pageSize}`
     );
   }
 

@@ -127,7 +127,8 @@ class CameraService:
     async def update_camera(
         db: AsyncSession,
         camera_id: str,
-        camera_data: CameraUpdate
+        camera_data: CameraUpdate,
+        refresh_status: bool = False,
     ) -> Optional[Camera]:
         """Update camera configuration"""
         camera = await CameraService.get_camera(db, camera_id)
@@ -178,12 +179,16 @@ class CameraService:
         await db.commit()
         await db.refresh(camera)
         
-        # Test connection immediately after update to refresh status
-        try:
-            await CameraService.test_rtsp_connection(db, camera.id)
-            await db.refresh(camera)
-        except Exception as e:
-            logger.error(f"Error testing connection for updated camera: {e}")
+        # Keep camera edits fast. RTSP connection testing can block for seconds,
+        # especially over TCP or when the DVR is busy. The explicit
+        # /test-connection endpoint and the background offline monitor refresh
+        # status without making every metadata/AI-feature save wait on RTSP.
+        if refresh_status:
+            try:
+                await CameraService.test_rtsp_connection(db, camera.id)
+                await db.refresh(camera)
+            except Exception as e:
+                logger.error(f"Error testing connection for updated camera: {e}")
         
         logger.info(f"Updated camera: {camera.name} ({camera.id})")
         return camera
