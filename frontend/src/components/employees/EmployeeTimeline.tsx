@@ -23,7 +23,8 @@ const EmployeeTimeline: React.FC<EmployeeTimelineProps> = ({
   const [timeline, setTimeline] = useState<TimelineData[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [dateFilter, setDateFilter] = useState('');
+  const [fromDate, setFromDate] = useState('');
+  const [toDate, setToDate] = useState('');
   const [selectedCapture, setSelectedCapture] = useState<TimelineData | null>(null);
 
   useEffect(() => {
@@ -33,8 +34,11 @@ const EmployeeTimeline: React.FC<EmployeeTimelineProps> = ({
       try {
         const params = new URLSearchParams();
         params.append('person_id', employeeId);
-        if (dateFilter) {
-          params.append('date', dateFilter);
+        if (fromDate) {
+          params.append('from', fromDate);
+        }
+        if (toDate) {
+          params.append('to', toDate);
         }
 
         const response = await fetch(`/api/detections/?${params.toString()}`);
@@ -52,7 +56,7 @@ const EmployeeTimeline: React.FC<EmployeeTimelineProps> = ({
     };
 
     fetchTimeline();
-  }, [employeeId, dateFilter]);
+  }, [employeeId, fromDate, toDate]);
 
   const formatTime = (timestamp: string) => {
     return new Date(timestamp).toLocaleTimeString();
@@ -78,14 +82,24 @@ const EmployeeTimeline: React.FC<EmployeeTimelineProps> = ({
         </div>
       </div>
 
-      {/* Date Filter */}
+      {/* Date Range Filter */}
       <Card className="p-4">
-        <Input
-          type="date"
-          label="Filter by Date"
-          value={dateFilter}
-          onChange={(e) => setDateFilter(e.target.value)}
-        />
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <Input
+            type="date"
+            label="From Date"
+            value={fromDate}
+            max={toDate || undefined}
+            onChange={(e) => setFromDate(e.target.value)}
+          />
+          <Input
+            type="date"
+            label="To Date"
+            value={toDate}
+            min={fromDate || undefined}
+            onChange={(e) => setToDate(e.target.value)}
+          />
+        </div>
       </Card>
 
       {/* Timeline */}

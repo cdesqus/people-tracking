@@ -1,8 +1,8 @@
 import uuid
-from datetime import datetime
+from datetime import datetime, timedelta
 from fastapi import APIRouter, Depends, HTTPException, Query, Response
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy import select
+from sqlalchemy import Date, cast, select
 from typing import Optional
 from app.database import get_db
 from app.models.face import Face
@@ -13,6 +13,31 @@ from app.schemas.face import FaceCreate, FaceResponse
 router = APIRouter()
 
 
+def apply_detection_date_filters(query, date: Optional[str], from_date: Optional[str], to_date: Optional[str]):
+    if date:
+        try:
+            target_date = datetime.strptime(date, "%Y-%m-%d").date()
+            return query.where(cast(Face.timestamp, Date) == target_date)
+        except ValueError:
+            return query
+
+    if from_date:
+        try:
+            start = datetime.strptime(from_date, "%Y-%m-%d")
+            query = query.where(Face.timestamp >= start)
+        except ValueError:
+            pass
+
+    if to_date:
+        try:
+            end = datetime.strptime(to_date, "%Y-%m-%d") + timedelta(days=1)
+            query = query.where(Face.timestamp < end)
+        except ValueError:
+            pass
+
+    return query
+
+
 @router.get("/", response_model=list[FaceResponse])
 async def list_faces(
     skip: int = 0,
@@ -20,6 +45,8 @@ async def list_faces(
     camera_id: Optional[str] = None,
     person_id: Optional[str] = None,
     date: Optional[str] = None,
+    from_date: Optional[str] = Query(None, alias="from"),
+    to_date: Optional[str] = Query(None, alias="to"),
     db: AsyncSession = Depends(get_db)
 ):
     """List all detected faces, joined with camera location and employee names"""
@@ -28,13 +55,7 @@ async def list_faces(
         query = query.where(Face.camera_id == camera_id)
     if person_id:
         query = query.where(Face.person_id == person_id)
-    if date:
-        try:
-            from sqlalchemy import cast, Date
-            target_date = datetime.strptime(date, "%Y-%m-%d").date()
-            query = query.where(cast(Face.timestamp, Date) == target_date)
-        except ValueError:
-            pass
+    query = apply_detection_date_filters(query, date, from_date, to_date)
 
     query = query.order_by(Face.timestamp.desc()).offset(skip).limit(limit)
     res = await db.execute(query)
